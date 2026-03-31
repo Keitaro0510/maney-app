@@ -13,6 +13,7 @@
 <!-- iOS用アイコン -->
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -563,12 +564,81 @@ let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1;
 let catChart=null,dayChart=null,balChart=null,wdStr='',cardEditIdx=-1;
 let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 
-function load(){try{const s=localStorage.getItem('mavFinal2');if(s){const p=JSON.parse(s);st={...st,...p};}}catch(e){}}
-function save(){try{localStorage.setItem('mavFinal2',JSON.stringify(st));}catch(e){}}
-load();
-['wds','fixedIncs','actualInputs','plans','fixedCosts'].forEach(k=>{if(!st[k])st[k]=[];});
-if(!st.catExp||!st.catExp.length)st.catExp=[...DEF_EXP];
-if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
+// ============================================================
+// Supabase設定
+// ============================================================
+const SUPA_URL = 'https://sgvyjolyfuqchugltvls.supabase.co';
+const SUPA_KEY = 'sb_publishable_xQszLlsL0IVxrnxsHK0ZtA_AHqsaDMu';
+const SUPA_KEY_NAME = 'mavFinal2';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ローカルにも保存（オフライン時のキャッシュ）
+function saveLocal(){
+  try{localStorage.setItem('mavFinal2', JSON.stringify(st));}catch(e){}
+}
+
+// Supabaseに保存（非同期・エラーしても続行）
+async function saveRemote(){
+  try{
+    await supa.from('user_data').upsert({
+      key: SUPA_KEY_NAME,
+      value: st,
+      updated_at: new Date().toISOString()
+    }, {onConflict: 'key'});
+  }catch(e){
+    console.warn('Supabase save failed（ローカルには保存済み）:', e);
+  }
+}
+
+// save = ローカル即時保存 + リモート非同期保存
+function save(){
+  saveLocal();
+  saveRemote(); // awaitしない（UIをブロックしない）
+}
+
+// 起動時読み込み：Supabase優先、失敗したらlocalStorage
+async function loadData(){
+  // まずローカルから読んで即座に画面を表示（体感速度UP）
+  try{
+    const s = localStorage.getItem('mavFinal2');
+    if(s){ const p=JSON.parse(s); st={...st,...p}; }
+  }catch(e){}
+
+  fixDefaults();
+  renderHome();
+  renderCal();
+
+  // バックグラウンドでSupabaseから最新データを取得
+  try{
+    const {data, error} = await supa
+      .from('user_data')
+      .select('value')
+      .eq('key', SUPA_KEY_NAME)
+      .single();
+
+    if(!error && data){
+      // Supabaseのデータがローカルより新しければ上書き
+      const remote = data.value;
+      st = {...st, ...remote};
+      fixDefaults();
+      saveLocal(); // ローカルも最新に同期
+      renderHome();
+      renderCal();
+      console.log('Supabaseからデータを読み込みました');
+    } else if(error && error.code !== 'PGRST116'){
+      // PGRST116 = レコードなし（初回）は正常、それ以外はログ
+      console.warn('Supabase load error:', error.message);
+    }
+  }catch(e){
+    console.warn('Supabaseに接続できませんでした（オフライン？）:', e);
+  }
+}
+
+function fixDefaults(){
+  ['wds','fixedIncs','actualInputs','plans','fixedCosts'].forEach(k=>{if(!st[k])st[k]=[];});
+  if(!st.catExp||!st.catExp.length)st.catExp=[...DEF_EXP];
+  if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
+}
 
 // ============================================================
 // ナビゲーション
@@ -791,8 +861,7 @@ if('serviceWorker' in navigator){
 // ============================================================
 // 起動
 // ============================================================
-renderHome();
-renderCal();
+loadData(); // Supabase対応の非同期起動
 </script>
 </body>
 </html>
