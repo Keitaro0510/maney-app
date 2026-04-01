@@ -724,7 +724,13 @@ function saveLocal(){
 // Supabaseに保存（ユーザーIDひも付き）
 // ============================================================
 async function saveRemote(){
-  if(!currentUser) return;
+  // セッションを毎回確認・更新
+  const { data: { session } } = await supa.auth.getSession();
+  if(!session){
+    console.warn('セッション切れ');
+    return;
+  }
+  currentUser = session.user;
   try{
     await supa.from('user_data').upsert({
       user_id: currentUser.id,
