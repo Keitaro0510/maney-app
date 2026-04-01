@@ -652,7 +652,15 @@ let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 // ============================================================
 const SUPA_URL = 'https://sgvyjolyfuqchugltvls.supabase.co';
 const SUPA_KEY = 'sb_publishable_xQszLlsL0IVxrnxsHK0ZtA_AHqsaDMu';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'money-app-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 let currentUser = null;
 
