@@ -724,19 +724,20 @@ function saveLocal(){
 // Supabaseに保存（ユーザーIDひも付き）
 // ============================================================
 async function saveRemote(){
-  // セッションを毎回確認・更新
   const { data: { session } } = await supa.auth.getSession();
+  console.log('session:', session ? 'あり' : 'なし');
   if(!session){
-    console.warn('セッション切れ');
+    console.warn('セッション切れ - 再ログインが必要');
     return;
   }
   currentUser = session.user;
   try{
-    await supa.from('user_data').upsert({
+    const result = await supa.from('user_data').upsert({
       user_id: currentUser.id,
       value: st,
       updated_at: new Date().toISOString()
     }, {onConflict: 'user_id'});
+    console.log('保存結果:', result.status, result.error);
   }catch(e){
     console.warn('Supabase save failed:', e);
   }
