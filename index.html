@@ -725,17 +725,19 @@ function saveLocal(){
 // ============================================================
 async function saveRemote(){
   const { data: { session } } = await supa.auth.getSession();
-  console.log('session:', session ? 'あり' : 'なし');
   if(!session){
     console.warn('セッション切れ - 再ログインが必要');
     return;
   }
   currentUser = session.user;
   try{
+    const now = new Date().toISOString();
+    st._updatedAt = new Date(now).getTime(); // 保存時刻をstに記録（新旧比較用）
+    saveLocal(); // _updatedAtをlocalStorageにも反映
     const result = await supa.from('user_data').upsert({
       user_id: currentUser.id,
       value: st,
-      updated_at: new Date().toISOString()
+      updated_at: now
     }, {onConflict: 'user_id'});
     console.log('保存結果:', result.status, result.error);
   }catch(e){
@@ -756,17 +758,24 @@ async function loadRemote(){
   try{
     const {data, error} = await supa
       .from('user_data')
-      .select('value')
+      .select('value, updated_at')
       .eq('user_id', currentUser.id)
       .single();
 
     if(!error && data){
-      st = {...st, ...data.value};
-      fixDefaults();
-      saveLocal();
-      renderHome();
-      renderCal();
-      console.log('Supabaseからデータを読み込みました');
+      // SupabaseのデータがlocalStorageより新しい場合だけ上書き
+      const localTime = st._updatedAt || 0;
+      const remoteTime = new Date(data.updated_at).getTime();
+      if(remoteTime > localTime){
+        st = {...st, ...data.value};
+        fixDefaults();
+        saveLocal();
+        renderHome();
+        renderCal();
+        console.log('Supabaseからデータを読み込みました');
+      } else {
+        console.log('localStorageの方が新しいため上書きしません');
+      }
     }
   }catch(e){
     console.warn('Supabase load error:', e);
@@ -786,13 +795,15 @@ async function loadData(){
 
   // 認証状態を確認
   const { data: { session } } = await supa.auth.getSession();
+  let initialLoadDone = false; // 初回loadRemote済みフラグ
 
   if(session){
     currentUser = session.user;
     hideLoginScreen(currentUser);
     renderHome();
     renderCal();
-    loadRemote(); // バックグラウンドで最新データ取得
+    await loadRemote(); // 起動時の1回だけ読み込む
+    initialLoadDone = true;
   } else {
     showLoginScreen();
   }
@@ -804,9 +815,14 @@ async function loadData(){
       hideLoginScreen(currentUser);
       renderHome();
       renderCal();
-      await loadRemote();
+      // 初回ログイン時だけloadRemoteを呼ぶ（アプリ復帰時の再発火を防ぐ）
+      if(!initialLoadDone){
+        await loadRemote();
+        initialLoadDone = true;
+      }
     } else if(event === 'SIGNED_OUT'){
       currentUser = null;
+      initialLoadDone = false;
       showLoginScreen();
     }
   });
