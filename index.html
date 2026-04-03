@@ -916,13 +916,101 @@ function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomi
 function renderHome(){const y=gY(),m=gM(),d=gD();const acct=estimateAcct(),fixed=upcomingFixed(),incInfo=upcomingIncome(),wd=totalWd(),dtp=daysToP();const planBudget=upcomingPlanBudget(),safe=acct-fixed-planBudget,todayUse=dtp>0?Math.floor(safe/dtp):safe;const payD=parseInt(st.shiftPayDay)||10;document.getElementById('acct-val').textContent='¥'+acct.toLocaleString();document.getElementById('acct-val').style.color=acct<0?'#A32D2D':'var(--color-text-primary)';document.getElementById('acct-sub').textContent='基準: '+st.baseDate;document.getElementById('ai-fixed').textContent='-¥'+fixed.toLocaleString();document.getElementById('ai-wd').textContent='-¥'+wd.toLocaleString();document.getElementById('ai-inc').textContent='+¥'+incInfo.total.toLocaleString();document.getElementById('ai-inc-detail').innerHTML=incInfo.parts.map(p=>`${p.label}: ¥${p.amount.toLocaleString()}`).join('<br>');const tuEl=document.getElementById('today-use');tuEl.textContent='¥'+Math.max(0,todayUse).toLocaleString();tuEl.style.color=todayUse<0?'#A32D2D':'#3B6D11';document.getElementById('days-pay').textContent=dtp+'日';renderBalanceChart();renderForecast();document.getElementById('h-sinc').textContent='¥'+totalShiftInc(y,m).toLocaleString();const lexp=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('h-lexp').textContent='¥'+lexp.toLocaleString();document.getElementById('h-pending').textContent='¥'+st.cards.reduce((a,card)=>a+cycle(card,1).amount,0).toLocaleString();const cbEl=document.getElementById('h-card-bills');if(!st.cards.length)cbEl.innerHTML='<div class="empty">設定タブでカードを登録するとここに表示されます</div>';else cbEl.innerHTML=st.cards.map((card,ci)=>{const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;return `<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:600;margin-bottom:6px">${card.name}</div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div></div>`;}).join('<div style="border-top:0.5px solid var(--color-border-tertiary);margin:8px 0"></div>');const bud=st.budget||0,pct=bud>0?Math.min(100,Math.round(lexp/bud*100)):0;document.getElementById('h-budlbl').textContent='予算 ¥'+bud.toLocaleString();document.getElementById('h-budused').textContent='支出 ¥'+lexp.toLocaleString();document.getElementById('h-prog').style.width=pct+'%';document.getElementById('h-prog').style.background=pct>80?'#A32D2D':pct>60?'#BA7517':'#3B6D11';let ahtml='';const shimeD=closeDay(y,m),todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${card.name}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else ahtml+=`<div class="abar-action"><strong>${card.name}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(parseInt(card.closeDay)===d)ahtml+=`<div class="abar neutral">今日は <strong>${card.name}</strong> の締め日</div>`;});if(d===payD){const sm=addM(y,m,-1);const estInc=totalShiftInc(sm.y,sm.m);const actual=getActualSalary(sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 バイト給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action">バイト給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===shimeD&&d!==payD)ahtml+=`<div class="abar neutral">今日はバイトの締め日 — 来月${payD}日払い</div>`;st.fixedCosts.filter(fc=>parseInt(fc.day)===d).forEach(fc=>{ahtml+=fc.type==='income'?`<div class="abar ok">今日 <strong>${fc.name}</strong> 入金 ¥${parseInt(fc.amount).toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${fc.name}</strong> 引き落とし ¥${parseInt(fc.amount).toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${s.job}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${p.title}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;const ups=[],todayObj=new Date(y,m,d);monthShifts(y,m).filter(s=>new Date(s.date).getDate()>=d).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3).forEach(s=>{const ji=st.jobs.findIndex(j=>j.name===s.job);const r=calcShiftInc(s);ups.push({day:new Date(s.date).getDate(),label:s.job,sub:`${s.start}〜${s.end}`,amount:'+¥'+r.total.toLocaleString(),color:'#185FA5',cls:'bs'+(ji%5)});});if(new Date(y,m,payD)>=todayObj){const sm=addM(y,m,-1);const act=getActualSalary(sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftInc(sm.y,sm.m);if(si>0)ups.push({day:payD,label:`バイト給料（${sm.m+1}月分）`,sub:'口座に入金',amount:'+¥'+si.toLocaleString(),color:'#3B6D11',cls:'binc'});}st.fixedIncs.filter(fi=>parseInt(fi.day)>=d).forEach(fi=>ups.push({day:parseInt(fi.day),label:fi.name,sub:'口座に入金',amount:'+¥'+parseInt(fi.amount).toLocaleString(),color:'#3B6D11',cls:'binc'}));st.fixedCosts.filter(fc=>parseInt(fc.day)>=d).forEach(fc=>ups.push({day:parseInt(fc.day),label:fc.name,sub:fc.type==='income'?'入金':'引き落とし',amount:(fc.type==='income'?'+':'-')+'¥'+parseInt(fc.amount).toLocaleString(),color:fc.type==='income'?'#3B6D11':'#C45000',cls:fc.type==='income'?'binc':'bfixcost'}));const mEnd=toDS(y,m,new Date(y,m+1,0).getDate());st.plans.filter(p=>{if(p.done)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return e>=todayDS&&s<=mEnd;}).sort((a,b)=>(a.dateStart||a.date).localeCompare(b.dateStart||b.date)).forEach(p=>{const c=planColor(p.color);ups.push({day:ds2d(p.dateStart||p.date).getDate(),label:p.title,sub:p.dateEnd&&p.dateEnd!==p.date?`〜${ds2d(p.dateEnd).getDate()}日`:'予定',amount:p.budget>0?'-¥'+p.budget.toLocaleString():'',color:c.fg,cls:'bplan'});});ups.sort((a,b)=>a.day-b.day);document.getElementById('upcoming-home').innerHTML=!ups.length?'<div class="empty">今後のイベントなし</div>':ups.slice(0,8).map(u=>`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-secondary);min-width:32px">${u.day}日</span><span class="badge ${u.cls}">${u.label}</span><span style="font-size:13px;color:var(--color-text-secondary)">${u.sub}</span></div><span style="font-size:14px;font-weight:600;color:${u.color}">${u.amount}</span></div>`).join('');}
 
 // ============================================================
+// 祝日（Google Calendar API）
+// ============================================================
+const GCAL_API_KEY = 'AIzaSyAoPkTweOLPp4rhjQ8EAPXX1KKdPOB77ws';
+const HOLIDAY_CAL_ID = 'ja.japanese%23holiday%40group.v.calendar.google.com';
+let holidayCache = {}; // { 'YYYY-MM-DD': '祝日名' }
+
+async function fetchHolidays(year, month){
+  const cacheKey = `${year}-${String(month+1).padStart(2,'0')}`;
+  if(holidayCache[cacheKey] !== undefined) return; // 取得済みならスキップ
+
+  const timeMin = new Date(year, month, 1).toISOString();
+  const timeMax = new Date(year, month+1, 0, 23, 59, 59).toISOString();
+  const url = `https://www.googleapis.com/calendar/v3/calendars/${HOLIDAY_CAL_ID}/events?key=${GCAL_API_KEY}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true`;
+
+  try{
+    const res = await fetch(url);
+    const data = await res.json();
+    holidayCache[cacheKey] = {}; // 空でもキャッシュ（再取得しないように）
+    if(data.items){
+      data.items.forEach(item=>{
+        const ds = item.start.date; // 'YYYY-MM-DD'
+        holidayCache[ds] = item.summary;
+      });
+    }
+  }catch(e){
+    console.warn('祝日取得失敗:', e);
+    holidayCache[cacheKey] = {};
+  }
+}
+
+function getHoliday(ds){
+  return holidayCache[ds] || null;
+}
+
+// ============================================================
 // カレンダー
 // ============================================================
-function renderCal(){document.getElementById('cal-title').textContent=calY+'年'+(calM+1)+'月';document.getElementById('cal-hdr').innerHTML=DAYS.map(d=>`<div class="chdr">${d}</div>`).join('');const first=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),prev=new Date(calY,calM,0).getDate();const total=Math.ceil((first+dim)/7)*7;const byDay={};monthShifts(calY,calM).forEach(s=>{const d=new Date(s.date).getDate();(byDay[d]=byDay[d]||[]).push(s);});const shimeD=closeDay(calY,calM),payD=parseInt(st.shiftPayDay)||10;let html='';for(let i=0;i<total;i++){let day,y2=calY,m2=calM,other=false;if(i<first){day=prev-first+i+1;m2=calM-1;if(m2<0){m2=11;y2--;}other=true;}else if(i>=first+dim){day=i-first-dim+1;m2=calM+1;if(m2>11){m2=0;y2++;}other=true;}else day=i-first+1;const isT=!other&&y2===_now.getFullYear()&&m2===_now.getMonth()&&day===_now.getDate();const ds=toDS(y2,m2,day);const shifts=other?[]:(byDay[day]||[]),lds=other?[]:getLedgerForDay(ds),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);const hasFc=!other&&st.fixedCosts.some(fc=>parseInt(fc.day)===day);const isPay=!other&&day===payD,isShime=!other&&day===shimeD;const isClose=!other&&st.cards.some(c=>parseInt(c.closeDay)===day),isBill=!other&&st.cards.some(c=>parseInt(c.billDay)===day);let pills=isPay?'<div class="pill payday">給料日</div>':'';if(isShime&&!isPay)pills+='<div class="pill shime">締め日</div>';if(isClose&&!isShime)pills+='<div class="pill shime">締め日</div>';if(isBill)pills+='<div class="pill hikiotoshi">引き落とし</div>';if(hasFc)pills+='<div class="pill fixedcost">固定費</div>';if(wdT.length)pills+='<div class="pill wd">ATM</div>';shifts.forEach(s=>{const ji=st.jobs.findIndex(j=>j.name===s.job);pills+=`<div class="pill ${JC[ji%5]}">${s.start.slice(0,5)}</div>`;});plans.forEach(p=>{const c=planColor(p.color);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${p.title.slice(0,5)}</div>`;});const ldExp=lds.filter(l=>l.type==='expense'),ldInc=lds.filter(l=>l.type==='income');if(ldExp.length)pills+=`<div class="pill lexp">-¥${ldExp.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;if(ldInc.length)pills+=`<div class="pill linc">+¥${ldInc.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}',${day},${y2},${m2})"><div class="dnum">${day}</div>${pills}</div>`;}document.getElementById('cal-body').innerHTML=html;}
+async function renderCal(){
+  document.getElementById('cal-title').textContent=calY+'年'+(calM+1)+'月';
+  document.getElementById('cal-hdr').innerHTML=DAYS.map(d=>`<div class="chdr">${d}</div>`).join('');
+
+  // 祝日を取得（キャッシュ済みなら即返る）
+  await fetchHolidays(calY, calM);
+  // 前月・翌月分も取得（カレンダーに表示されるため）
+  const prevMo=addM(calY,calM,-1),nextMo=addM(calY,calM,1);
+  await fetchHolidays(prevMo.y, prevMo.m);
+  await fetchHolidays(nextMo.y, nextMo.m);
+
+  const first=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),prev=new Date(calY,calM,0).getDate();
+  const total=Math.ceil((first+dim)/7)*7;
+  const byDay={};
+  monthShifts(calY,calM).forEach(s=>{const d=new Date(s.date).getDate();(byDay[d]=byDay[d]||[]).push(s);});
+  const shimeD=closeDay(calY,calM),payD=parseInt(st.shiftPayDay)||10;
+  let html='';
+  for(let i=0;i<total;i++){
+    let day,y2=calY,m2=calM,other=false;
+    if(i<first){day=prev-first+i+1;m2=calM-1;if(m2<0){m2=11;y2--;}other=true;}
+    else if(i>=first+dim){day=i-first-dim+1;m2=calM+1;if(m2>11){m2=0;y2++;}other=true;}
+    else day=i-first+1;
+    const isT=!other&&y2===_now.getFullYear()&&m2===_now.getMonth()&&day===_now.getDate();
+    const ds=toDS(y2,m2,day);
+    const dow=new Date(y2,m2,day).getDay();
+    const holiday=getHoliday(ds);
+    const isSun=dow===0,isSat=dow===6;
+
+    const shifts=other?[]:(byDay[day]||[]),lds=other?[]:getLedgerForDay(ds),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
+    const hasFc=!other&&st.fixedCosts.some(fc=>parseInt(fc.day)===day);
+    const isPay=!other&&day===payD,isShime=!other&&day===shimeD;
+    const isClose=!other&&st.cards.some(c=>parseInt(c.closeDay)===day),isBill=!other&&st.cards.some(c=>parseInt(c.billDay)===day);
+
+    // 日曜・祝日は赤、土曜は青で日付表示
+    const dnumColor=holiday||isSun?'#A32D2D':isSat?'#185FA5':'var(--color-text-secondary)';
+
+    let pills='';
+    if(holiday&&!other) pills+=`<div class="pill" style="background:#FCEBEB;color:#A32D2D;font-size:8px">${holiday.slice(0,6)}</div>`;
+    if(isPay) pills+='<div class="pill payday">給料日</div>';
+    if(isShime&&!isPay) pills+='<div class="pill shime">締め日</div>';
+    if(isClose&&!isShime) pills+='<div class="pill shime">締め日</div>';
+    if(isBill) pills+='<div class="pill hikiotoshi">引き落とし</div>';
+    if(hasFc) pills+='<div class="pill fixedcost">固定費</div>';
+    if(wdT.length) pills+='<div class="pill wd">ATM</div>';
+    shifts.forEach(s=>{const ji=st.jobs.findIndex(j=>j.name===s.job);pills+=`<div class="pill ${JC[ji%5]}">${s.start.slice(0,5)}</div>`;});
+    plans.forEach(p=>{const c=planColor(p.color);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${p.title.slice(0,5)}</div>`;});
+    const ldExp=lds.filter(l=>l.type==='expense'),ldInc=lds.filter(l=>l.type==='income');
+    if(ldExp.length) pills+=`<div class="pill lexp">-¥${ldExp.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
+    if(ldInc.length) pills+=`<div class="pill linc">+¥${ldInc.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
+
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}',${day},${y2},${m2})"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+  }
+  document.getElementById('cal-body').innerHTML=html;
+}
 
 function dayClick(ds,day,y,m){selDay=ds;const shifts=st.shifts.filter(s=>s.date===ds),lds=getLedgerForDay(ds),wdList=st.wds.filter(w=>w.date===ds),plans=getPlansForDay(ds),fcList=st.fixedCosts.filter(fc=>parseInt(fc.day)===day);const dobj=new Date(ds),payD=parseInt(st.shiftPayDay)||10,shimeD=closeDay(y,m);let html=`<div class="st">${y}年${m+1}月${day}日(${DAYS[dobj.getDay()]})</div>`;if(day===payD){const sm=addM(y,m,-1);const act=getActualSalary(sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftInc(sm.y,sm.m);if(si>0)html+=`<div class="ri"><span class="badge binc">バイト給料入金</span><span style="font-size:14px;font-weight:600;color:#3B6D11">+¥${si.toLocaleString()}</span></div>`;}if(day===shimeD&&day!==payD)html+=`<div class="ri"><span class="badge bpending">バイト締め日</span></div>`;st.cards.forEach((card,ci)=>{const cl=parseInt(card.closeDay),billD=parseInt(card.billDay);if(day===cl){const billM=addM(y,m,1);const isPending=new Date(y,m,cl)>=new Date(gY(),gM(),gD());html+=`<div class="ri"><span class="badge bcard">${card.name}</span><span style="font-size:13px;color:var(--color-text-secondary)">${isPending?'集計中 ':''}締め日 → ${billM.m+1}月${billD}日引き落とし</span></div>`;}if(day===billD){const actual=getActualCard(ci,y,m);const billCycle=cardCycleForBillMonth(card,ci,y,m);const amt=actual?parseInt(actual.actualAmount):billCycle.amount;const billDate=new Date(y,m,billD);const todayDate=new Date(gY(),gM(),gD());const isFuture=billDate>todayDate;html+=`<div class="ri"><div><span class="badge ${isFuture?'bpending':'bfixed'}">${card.name}</span>${actual?'<span class="act-badge">実額</span>':''}<div class="bill-label">${isFuture?'引き落とし予定日':'引き落とし日'}</div><div class="bill-label">${fmtMD(billCycle.cs)}〜${fmtMD(billCycle.ce)} の利用分</div></div><span style="font-size:14px;font-weight:600;color:${isFuture?'#BA7517':'#A32D2D'}">¥${amt.toLocaleString()}</span></div>`;}});fcList.forEach(fc=>{let pl=fc.type==='income'?'入金':fc.pay==='bank'?'口座引き落とし':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';html+=`<div class="ri"><div><span class="badge bfixcost">${fc.name}</span><div style="font-size:11px;color:var(--color-text-secondary)">${pl}</div></div><span style="font-size:14px;font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${parseInt(fc.amount).toLocaleString()}</span></div>`;});wdList.forEach(w=>html+=`<div class="ri"><span class="badge bwd">ATM引き出し</span><span style="font-size:14px;font-weight:600;color:#3C3489">-¥${parseInt(w.amount).toLocaleString()}</span></div>`);plans.forEach(p=>{const pidx=st.plans.indexOf(p),c=planColor(p.color);const isMultiDay=p.dateEnd&&p.dateEnd!==p.date;html+=`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:8px"><input type="checkbox" ${p.done?'checked':''} onchange="togglePlanDone(${pidx});dayClick('${ds}',${day},${y},${m})" style="cursor:pointer;width:18px;height:18px"><div><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${p.title}</span>${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart).getDate()}〜${ds2d(p.dateEnd).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${p.memo}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${p.budget>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${p.budget.toLocaleString()}</span>`:''}<button class="btn sm edit" onclick="openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="deletePlan(${pidx});dayClick('${ds}',${day},${y},${m})">削除</button></div></div>`;});if(!shifts.length&&!lds.length&&!wdList.length&&!plans.length&&!fcList.length&&day!==payD&&day!==shimeD&&!st.cards.some(c=>parseInt(c.closeDay)===day||parseInt(c.billDay)===day))html+='<div class="empty">この日のイベントなし</div>';shifts.forEach(s=>{const ji=st.jobs.findIndex(j=>j.name===s.job);const r=calcShiftInc(s);html+=`<div class="ri"><div><div style="display:flex;align-items:center;gap:8px"><span class="badge ${BC[ji%5]}">${s.job}</span><span style="font-size:13px">${s.start}〜${s.end}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費 ¥${r.transport.toLocaleString()}`:''}</div></div><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span></div>`;});lds.forEach(l=>{const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;html+=`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${parseInt(l.amount).toLocaleString()}</span><button class="btn sm edit" onclick="openLdgEdit(${st.ledger.indexOf(l)})">編集</button><button class="btn sm del" onclick="delLedger(${st.ledger.indexOf(l)});dayClick('${ds}',${day},${y},${m})">削除</button></div></div>`;});document.getElementById('day-detail-content').innerHTML=html;document.getElementById('day-detail').style.display='block';}
-function prevM(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
-function nextM(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+async function prevM(){calM--;if(calM<0){calM=11;calY--;}await renderCal();}
+async function nextM(){calM++;if(calM>11){calM=0;calY++;}await renderCal();}
 function togglePlanDone(idx){st.plans[idx].done=!st.plans[idx].done;save();renderCal();renderHome();}
 function deletePlan(idx){st.plans.splice(idx,1);save();renderCal();renderHome();}
 
