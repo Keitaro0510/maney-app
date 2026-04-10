@@ -1056,10 +1056,80 @@ function shiftListPrev(){const nm=addM(shiftListY,shiftListM,-1);shiftListY=nm.y
 function shiftListNext(){const nm=addM(shiftListY,shiftListM,1);shiftListY=nm.y;shiftListM=nm.m;renderShiftList();}
 function renderShiftList(){const y=shiftListY,m=shiftListM;const ms=monthShifts(y,m).sort((a,b)=>a.date.localeCompare(b.date));const isCurrentMonth=(y===gY()&&m===gM());const payM=addM(y,m,1);const totalInc=ms.reduce((a,s)=>a+calcShiftInc(s).total,0);document.getElementById('shift-list-month-label').textContent=`${y}年${m+1}月のシフト`;document.getElementById('shift-list-month-sub').textContent=`${ms.length}件　¥${totalInc.toLocaleString()}　→　${payM.m+1}月${st.shiftPayDay||10}日払い`;document.getElementById('shift-list-month-label').style.color=isCurrentMonth?'#185FA5':'var(--color-text-primary)';document.getElementById('shift-met-month-label').textContent=`${m+1}月出勤`;document.getElementById('s-days').textContent=ms.length+'日';document.getElementById('s-hours').textContent=ms.reduce((a,s)=>a+calcH(s.start,s.end),0).toFixed(1)+'h';document.getElementById('s-income').textContent='¥'+totalInc.toLocaleString();if(!ms.length){document.getElementById('shift-list').innerHTML='<div class="empty">この月のシフトなし</div>';return;}document.getElementById('shift-list').innerHTML=ms.map(s=>{const ji=st.jobs.findIndex(j=>j.name===s.job),d=ds2d(s.date),ri=st.shifts.indexOf(s),r=calcShiftInc(s);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;color:var(--color-text-secondary)">${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})</span><span class="badge ${BC[ji%5]}">${s.job}</span><div><div style="font-size:13px">${s.start}〜${s.end}</div><div style="font-size:11px;color:var(--color-text-secondary)">${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費¥${r.transport.toLocaleString()}`:''}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span><button class="btn sm del" onclick="delShift(${ri})">削除</button></div></div>`;}).join('');}
 function renderShiftSection(){renderFuyou();renderSalaryTable();renderMonthBars();const y=gY(),m=gM(),ms=monthShifts(y,m),totalInc=ms.reduce((a,s)=>a+calcShiftInc(s).total,0),transport=ms.reduce((a,s)=>a+calcShiftInc(s).transport,0);document.getElementById('year-confirmed').textContent='¥'+yearConfirmedIncome().toLocaleString();document.getElementById('year-estimated').textContent='¥'+yearEstimatedIncome().toLocaleString();document.getElementById('year-this-month').textContent='¥'+(totalInc-transport).toLocaleString();document.getElementById('year-transport').textContent='¥'+transport.toLocaleString();renderShiftList();renderJobList();}
-function renderSalaryTable(){const y=gY(),el=document.getElementById('salary-table');let rows='';for(let m=0;m<12;m++){const estimated=totalShiftIncNoTransport(y,m),actual=getActualSalary(y,m);const pm=addM(y,m,1),isPast=new Date(pm.y,pm.m,parseInt(st.shiftPayDay)||10)<=new Date();if(estimated===0&&!actual&&!isPast&&m>gM())continue;const dispActual=actual?parseInt(actual.actualAmount):null;rows+=`<div class="salary-row"><span class="salary-month">${m+1}月分</span><span class="salary-est">推定 ¥${estimated.toLocaleString()}<br><span style="font-size:10px">${pm.m+1}月${st.shiftPayDay||10}日払い</span></span><div style="display:flex;align-items:center;gap:6px"><input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="${dispActual||''}" onchange="onSalaryChange(${y},${m},this.value)"/>${dispActual?'<span class="act-badge">入力済</span>':''}</div></div>`;}el.innerHTML=rows||'<div class="empty">シフトを登録するとここに表示されます</div>';}
-function onSalaryChange(y,m,val){const amount=parseInt(val)||0;if(amount>0){setActualSalary(y,m,amount);save();renderShiftSection();renderHome();}else{const key=salaryKeyForShiftMonth(y,m);st.actualInputs=st.actualInputs.filter(a=>!(a.type==='shift'&&a.salaryKey===key));save();renderShiftSection();renderHome();}}
-function yearConfirmedIncome(){let total=parseInt(st.otherIncome)||0;const y=gY(),pay=parseInt(st.shiftPayDay)||10,today=new Date();for(let m=0;m<12;m++){const actual=getActualSalary(y,m);const pm=addM(y,m,1),payDate=new Date(pm.y,pm.m,pay);if(actual)total+=parseInt(actual.actualAmount);else if(payDate<=today)total+=totalShiftIncNoTransport(y,m);}return total;}
-function yearEstimatedIncome(){let total=parseInt(st.otherIncome)||0;const y=gY();for(let m=0;m<12;m++){const actual=getActualSalary(y,m);total+=actual?parseInt(actual.actualAmount):totalShiftIncNoTransport(y,m);}return total;}
+function renderSalaryTable(){
+  const y=gY(),pay=parseInt(st.shiftPayDay)||10,el=document.getElementById('salary-table');
+  let rows='';
+  // 振込月ベースで1月〜12月を表示
+  // 振込y年payM月 → 勤務月は前月(y年payM-1月、1月払いなら前年12月)
+  for(let payM=1;payM<=12;payM++){
+    const shiftMo=addM(y,payM-1,-1); // 振込月の前月 = 勤務月
+    const shiftY=shiftMo.y, shiftM=shiftMo.m;
+    const payDate=new Date(y,payM-1,pay);
+    const today=new Date();
+    const salaryKey=`${y}-${String(payM).padStart(2,'0')}`;
+    const actual=st.actualInputs.find(a=>a.type==='shift'&&a.salaryKey===salaryKey);
+    const estimated=totalShiftIncNoTransport(shiftY,shiftM);
+    if(estimated===0&&!actual&&payDate>today)continue;
+    const dispActual=actual?parseInt(actual.actualAmount):null;
+    rows+=`<div class="salary-row">
+      <span class="salary-month">${payM}月払い</span>
+      <span class="salary-est">
+        ${shiftY !== y ? shiftY+'年' : ''}${shiftM+1}月分の勤務<br>
+        推定 ¥${estimated.toLocaleString()}<br>
+        <span style="font-size:10px">${y}年${payM}月${pay}日振込</span>
+      </span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input class="salary-input" type="number" inputmode="numeric" placeholder="実績額"
+          value="${dispActual||''}"
+          onchange="onSalaryChangeByPayMonth(${y},${payM},${shiftY},${shiftM},this.value)"/>
+        ${dispActual?'<span class="act-badge">入力済</span>':''}
+      </div>
+    </div>`;
+  }
+  el.innerHTML=rows||'<div class="empty">シフトを登録するとここに表示されます</div>';
+}
+
+function onSalaryChangeByPayMonth(payY,payM,shiftY,shiftM,val){
+  const amount=parseInt(val)||0;
+  const salaryKey=`${payY}-${String(payM).padStart(2,'0')}`;
+  if(amount>0){
+    const pay=parseInt(st.shiftPayDay)||10;
+    const date=toDS(payY,payM-1,pay);
+    const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.salaryKey===salaryKey);
+    const entry={type:'shift',salaryKey,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransport(shiftY,shiftM)};
+    if(ei>=0)st.actualInputs[ei]=entry;else st.actualInputs.push(entry);
+  }else{
+    st.actualInputs=st.actualInputs.filter(a=>!(a.type==='shift'&&a.salaryKey===salaryKey));
+  }
+  save();renderShiftSection();renderHome();
+}
+
+// 振込年で収入を集計（扶養計算用）
+function yearConfirmedIncome(){
+  let total=parseInt(st.otherIncome)||0;
+  const y=gY(),pay=parseInt(st.shiftPayDay)||10,today=new Date();
+  for(let payM=1;payM<=12;payM++){
+    const salaryKey=`${y}-${String(payM).padStart(2,'0')}`;
+    const actual=st.actualInputs.find(a=>a.type==='shift'&&a.salaryKey===salaryKey);
+    const payDate=new Date(y,payM-1,pay);
+    const shiftMo=addM(y,payM-1,-1);
+    if(actual) total+=parseInt(actual.actualAmount);
+    else if(payDate<=today) total+=totalShiftIncNoTransport(shiftMo.y,shiftMo.m);
+  }
+  return total;
+}
+
+function yearEstimatedIncome(){
+  let total=parseInt(st.otherIncome)||0;
+  const y=gY(),pay=parseInt(st.shiftPayDay)||10;
+  for(let payM=1;payM<=12;payM++){
+    const salaryKey=`${y}-${String(payM).padStart(2,'0')}`;
+    const actual=st.actualInputs.find(a=>a.type==='shift'&&a.salaryKey===salaryKey);
+    const shiftMo=addM(y,payM-1,-1);
+    total+=actual?parseInt(actual.actualAmount):totalShiftIncNoTransport(shiftMo.y,shiftMo.m);
+  }
+  return total;
+}
 function renderFuyou(){const confirmed=yearConfirmedIncome(),estimated=yearEstimatedIncome();const limits=[];if(st.fuyouLimit==='1030000'||st.fuyouLimit==='both')limits.push({label:'103万円の壁',amount:1030000,color:'#185FA5'});if(st.fuyouLimit==='1300000'||st.fuyouLimit==='both')limits.push({label:'130万円の壁',amount:1300000,color:'#993556'});let html='';limits.forEach(lim=>{const pct=Math.min(100,Math.round(confirmed/lim.amount*100)),estPct=Math.min(100,Math.round(estimated/lim.amount*100));const color=pct>=90?'#A32D2D':pct>=70?'#BA7517':lim.color;html+=`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px"><span style="font-size:13px;font-weight:600">${lim.label}</span><span style="font-size:11px;color:var(--color-text-secondary)">残り ¥${Math.max(0,lim.amount-estimated).toLocaleString()}</span></div><div style="height:10px;background:var(--color-background-secondary);border-radius:5px;overflow:hidden"><div style="height:100%;width:${estPct}%;background:${color}30;border-radius:5px"></div><div style="height:100%;width:${pct}%;background:${color};border-radius:5px;position:relative;margin-top:-10px"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-top:3px"><span>確定 ${pct}% ¥${confirmed.toLocaleString()}</span><span>予想 ${estPct}% ¥${estimated.toLocaleString()}</span></div>${pct>=90?`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:6px 10px;font-size:12px;margin-top:6px">⚠ 残り ¥${Math.max(0,lim.amount-confirmed).toLocaleString()}</div>`:''}</div>`;});document.getElementById('fuyou-content').innerHTML=html;}
 function renderMonthBars(){const y=gY(),vals=Array.from({length:12},(_,m)=>{const a=getActualSalary(y,m);return a?parseInt(a.actualAmount):totalShiftIncNoTransport(y,m);});const maxV=Math.max(...vals,1);let html='';for(let m=0;m<12;m++){const v=vals[m],pct=Math.round(v/maxV*100),isCurrent=m===gM(),actual=getActualSalary(y,m);html+=`<div class="month-bar-row"><span class="month-bar-label" style="${isCurrent?'color:var(--color-text-primary);font-weight:600':''}">${m+1}月</span><div class="month-bar-bg"><div class="month-bar" style="width:${pct}%;background:${actual?'#3B6D11':isCurrent?'#185FA5':'#185FA540'}"></div></div><span class="month-bar-val">${v>0?(actual?'¥'+v.toLocaleString()+'✓':'¥'+v.toLocaleString()):'-'}</span></div>`;}document.getElementById('month-bars').innerHTML=html;}
 function renderJobList(){const el=document.getElementById('job-list');el.innerHTML=!st.jobs.length?'<div class="empty">バイト先未登録</div>':st.jobs.map((j,i)=>`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><div class="dot" style="background:${DOTC[i%5]}"></div><div><div style="font-size:14px">${j.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">時給 ¥${j.wage} / 深夜 ${j.nightStart||'22:00'}〜+${j.nightRate||25}% / 交通費 ¥${(j.transport||0)*2}/回</div></div></div><button class="btn sm del" onclick="delJob(${i})">削除</button></div>`).join('');}
