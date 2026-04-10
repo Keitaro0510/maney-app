@@ -321,6 +321,33 @@ body{
 .tab2{display:flex;gap:2px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px;margin-bottom:1rem}
 .tb2{flex:1;padding:7px 0;text-align:center;font-size:13px;border-radius:7px;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
 .tb2.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
+/* ===== 家計簿 日付グループ ===== */
+.ldg-day-group{margin-bottom:8px}
+.ldg-day-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;
+  background:var(--color-background-primary);
+  border:0.5px solid var(--color-border-tertiary);
+  border-radius:var(--border-radius-md);
+  cursor:pointer;
+  user-select:none;
+}
+.ldg-day-header:active{opacity:.7}
+.ldg-day-header-left{display:flex;align-items:center;gap:10px}
+.ldg-day-date{font-size:14px;font-weight:600;min-width:60px}
+.ldg-day-summary{font-size:12px;color:var(--color-text-secondary)}
+.ldg-day-total{font-size:14px;font-weight:600}
+.ldg-day-arrow{font-size:12px;color:var(--color-text-secondary);transition:transform .2s}
+.ldg-day-arrow.open{transform:rotate(180deg)}
+.ldg-day-detail{
+  display:none;
+  background:var(--color-background-primary);
+  border:0.5px solid var(--color-border-tertiary);
+  border-top:none;
+  border-radius:0 0 var(--border-radius-md) var(--border-radius-md);
+  padding:0 12px;
+}
+.ldg-day-detail.open{display:block}
 /* ===== ログイン画面 ===== */
 #login-screen{
   position:fixed;inset:0;
@@ -482,13 +509,13 @@ body{
   <div class="page-title">家計簿</div>
   <div class="tab2"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div></div>
   <div id="ldg-list-sec">
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:.75rem">
       <div class="met"><div class="met-l">今月支出</div><div class="met-v" id="ldg-exp" style="color:#A32D2D">¥0</div></div>
       <div class="met"><div class="met-l">今月収入</div><div class="met-v" id="ldg-inc" style="color:#3B6D11">¥0</div></div>
       <div class="met"><div class="met-v" id="ldg-bal">¥0</div><div class="met-l">収支</div></div>
     </div>
-    <div class="card"><div class="st">今月の記録</div><div id="ldg-list"></div></div>
-    <button class="btn primary full" onclick="openLedgerModal(null)">＋ 支出・収入を記録</button>
+    <button class="btn primary full" onclick="openLedgerModal(null)" style="margin-top:0;margin-bottom:.75rem">＋ 支出・収入を記録</button>
+    <div id="ldg-list"></div>
   </div>
   <div id="ldg-graph-sec" style="display:none">
     <div class="card"><div class="st">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
@@ -897,7 +924,37 @@ function estimateAcct(){const base=ds2d(st.baseDate||TODAY),today=new Date(gY(),
 // ============================================================
 // グラフ
 // ============================================================
-function buildBalanceSeries(){const today=new Date(gY(),gM(),gD());const payDay=parseInt(st.shiftPayDay)||10;const labels=[],balances=[];let bal=estimateAcct();for(let i=0;i<=90;i++){const d=new Date(today);d.setDate(today.getDate()+i);const ds=toDS(d.getFullYear(),d.getMonth(),d.getDate());const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();let delta=0;if(day===payDay){const shiftM=addM(y,m,-1);const actual=getActualSalary(shiftM.y,shiftM.m);delta+=actual?parseInt(actual.actualAmount):totalShiftInc(shiftM.y,shiftM.m);}st.fixedIncs.forEach(fi=>{if(parseInt(fi.day)===day)delta+=parseInt(fi.amount);});st.fixedCosts.forEach(fc=>{if(parseInt(fc.day)===day){if(fc.type==='income')delta+=parseInt(fc.amount);else if(fc.pay==='bank')delta-=parseInt(fc.amount);}});st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===day){const actual=getActualCard(ci,y,m);delta-=actual?parseInt(actual.actualAmount):cardBillForGraphDate(card,ci,y,m);}});st.plans.forEach(p=>{if(!p.done&&p.budget>0&&(p.dateStart||p.date)===ds)delta-=p.budget;});bal+=delta;labels.push(i===0?'今日':`${m+1}/${day}`);balances.push(Math.round(bal));}return{labels,balances};}
+function buildBalanceSeries(){
+  const today=new Date(gY(),gM(),gD());
+  const baseDate=ds2d(st.baseDate||TODAY); // 基準日
+  const payDay=parseInt(st.shiftPayDay)||10;
+  const labels=[],balances=[];
+  let bal=estimateAcct();
+  for(let i=0;i<=90;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const ds=toDS(d.getFullYear(),d.getMonth(),d.getDate());
+    const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+    let delta=0;
+    // 基準日より後の日付のみdeltaを計算（基準日当日・以前はestimateAcctで計算済み）
+    if(d>baseDate){
+      if(day===payDay){
+        // グラフ用の給料は振込月ベースで取得
+        const salaryKey=`${y}-${String(m+1).padStart(2,'0')}`;
+        const actual=st.actualInputs.find(a=>a.type==='shift'&&a.salaryKey===salaryKey);
+        const shiftMo=addM(y,m,-1);
+        delta+=actual?parseInt(actual.actualAmount):totalShiftInc(shiftMo.y,shiftMo.m);
+      }
+      st.fixedIncs.forEach(fi=>{if(parseInt(fi.day)===day)delta+=parseInt(fi.amount);});
+      st.fixedCosts.forEach(fc=>{if(parseInt(fc.day)===day){if(fc.type==='income')delta+=parseInt(fc.amount);else if(fc.pay==='bank')delta-=parseInt(fc.amount);}});
+      st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===day){const actual=getActualCard(ci,y,m);delta-=actual?parseInt(actual.actualAmount):cardBillForGraphDate(card,ci,y,m);}});
+      st.plans.forEach(p=>{if(!p.done&&p.budget>0&&(p.dateStart||p.date)===ds)delta-=p.budget;});
+    }
+    bal+=delta;
+    labels.push(i===0?'今日':`${m+1}/${day}`);
+    balances.push(Math.round(bal));
+  }
+  return{labels,balances};
+}
 function renderBalanceChart(){const{labels,balances}=buildBalanceSeries();const ctx=document.getElementById('balance-chart').getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:ctx2=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx2=>labels[ctx2[0].dataIndex],label:ctx2=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:item=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(v,i)=>labels[i]},grid:{display:false}},y:{ticks:{callback:v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});document.getElementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
 
 // ============================================================
@@ -1160,7 +1217,85 @@ function selLdePay(p,ci){ldePay=p;ldeCardIdx=ci;renderLdePayChips();}
 function saveLdgEdit(){const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();if(!date||!amount)return;const entry={date,amount,name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;st.ledger[ldeIdx]=entry;save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
 function ldgTab(t){document.querySelectorAll('.tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';if(t==='graph')renderCharts();}
 function renderLedgerMetrics(){const ml=monthLedger(gY(),gM());const exp=ml.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);const inc=ml.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('ldg-exp').textContent='¥'+exp.toLocaleString();document.getElementById('ldg-inc').textContent='¥'+inc.toLocaleString();const bal=inc-exp;const bEl=document.getElementById('ldg-bal');bEl.textContent=(bal>=0?'+':'')+'¥'+bal.toLocaleString();bEl.style.color=bal>=0?'#3B6D11':'#A32D2D';}
-function renderLedger(){const ml=monthLedger(gY(),gM()).sort((a,b)=>b.date.localeCompare(a.date)),el=document.getElementById('ldg-list');if(!ml.length){el.innerHTML='<div class="empty">今月の記録なし</div>';return;}el.innerHTML=ml.map(l=>{const ri=st.ledger.indexOf(l),d=ds2d(l.date),cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;return `<div class="ri"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;color:var(--color-text-secondary)">${d.getMonth()+1}/${d.getDate()}</span><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}${l.memo?' · '+l.memo:''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${parseInt(l.amount).toLocaleString()}</span><button class="btn sm edit" onclick="openLdgEdit(${ri})">編集</button><button class="btn sm del" onclick="delLedger(${ri})">削除</button></div></div>`;}).join('');}
+function renderLedger(){
+  const ml=monthLedger(gY(),gM()).sort((a,b)=>b.date.localeCompare(a.date));
+  const el=document.getElementById('ldg-list');
+  if(!ml.length){el.innerHTML='<div class="card"><div class="empty">今月の記録なし</div></div>';return;}
+
+  // 日付ごとにグループ化
+  const groups={};
+  ml.forEach(l=>{
+    if(!groups[l.date])groups[l.date]=[];
+    groups[l.date].push(l);
+  });
+
+  const html=Object.keys(groups).sort((a,b)=>b.localeCompare(a)).map(date=>{
+    const items=groups[date];
+    const d=ds2d(date);
+    const dateStr=`${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})`;
+    const dayExp=items.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);
+    const dayInc=items.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);
+    const dayNet=dayInc-dayExp;
+
+    // サマリー（件数）
+    const summary=`${items.length}件`;
+
+    // 合計表示
+    let totalHtml='';
+    if(dayExp>0&&dayInc>0){
+      totalHtml=`<span style="color:#A32D2D">-¥${dayExp.toLocaleString()}</span><span style="color:var(--color-text-secondary);margin:0 3px">/</span><span style="color:#3B6D11">+¥${dayInc.toLocaleString()}</span>`;
+    }else if(dayExp>0){
+      totalHtml=`<span style="color:#A32D2D">-¥${dayExp.toLocaleString()}</span>`;
+    }else{
+      totalHtml=`<span style="color:#3B6D11">+¥${dayInc.toLocaleString()}</span>`;
+    }
+
+    // 詳細アイテム
+    const detailItems=items.map(l=>{
+      const ri=st.ledger.indexOf(l);
+      const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;
+      return `<div class="ri">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span>
+          <div>
+            <div style="font-size:14px">${l.name}</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}${l.memo?' · '+l.memo:''}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${parseInt(l.amount).toLocaleString()}</span>
+          <button class="btn sm edit" onclick="openLdgEdit(${ri})">編集</button>
+          <button class="btn sm del" onclick="delLedger(${ri})">削除</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const groupId=`ldg-group-${date}`;
+    return `<div class="ldg-day-group">
+      <div class="ldg-day-header" onclick="toggleLdgGroup('${groupId}')">
+        <div class="ldg-day-header-left">
+          <span class="ldg-day-date">${dateStr}</span>
+          <span class="ldg-day-summary">${summary}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="ldg-day-total">${totalHtml}</div>
+          <span class="ldg-day-arrow" id="${groupId}-arrow">▼</span>
+        </div>
+      </div>
+      <div class="ldg-day-detail" id="${groupId}">${detailItems}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=html;
+}
+
+function toggleLdgGroup(id){
+  const detail=document.getElementById(id);
+  const arrow=document.getElementById(id+'-arrow');
+  const isOpen=detail.classList.contains('open');
+  detail.classList.toggle('open',!isOpen);
+  arrow.classList.toggle('open',!isOpen);
+}
 function delLedger(i){st.ledger.splice(i,1);save();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
 function renderCharts(){const ml=monthLedger(gY(),gM()).filter(l=>l.type==='expense');const catMap={};ml.forEach(l=>{catMap[l.cat]=(catMap[l.cat]||0)+parseInt(l.amount);});const catLabels=Object.keys(catMap),catData=Object.values(catMap),catColors=catLabels.map((c,i)=>CAT_COL[c]||DOTC[i%DOTC.length]);if(catChart)catChart.destroy();catChart=new Chart(document.getElementById('cat-chart').getContext('2d'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catData,backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}});const dim=new Date(gY(),gM()+1,0).getDate(),dayMap={};for(let d=1;d<=dim;d++)dayMap[d]=0;ml.forEach(l=>{const d=ds2d(l.date).getDate();dayMap[d]=(dayMap[d]||0)+parseInt(l.amount);});if(dayChart)dayChart.destroy();dayChart=new Chart(document.getElementById('day-chart').getContext('2d'),{type:'bar',data:{labels:Object.keys(dayMap).map(d=>d+'日'),datasets:[{data:Object.values(dayMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:15}},y:{ticks:{callback:v=>'¥'+v.toLocaleString(),font:{size:10}}}}}});}
 
