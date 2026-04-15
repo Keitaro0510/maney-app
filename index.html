@@ -641,7 +641,7 @@ body{
 
 <!-- MODALS -->
 <div class="mbg" id="wd-mbg"><div class="modal"><div class="modal-handle"></div><h3>ATMで現金を引き出す</h3><div class="amount-display" id="wd-display">¥0</div><div class="numpad"><button class="numkey" onclick="nk('1')">1</button><button class="numkey" onclick="nk('2')">2</button><button class="numkey" onclick="nk('3')">3</button><button class="numkey" onclick="nk('4')">4</button><button class="numkey" onclick="nk('5')">5</button><button class="numkey" onclick="nk('6')">6</button><button class="numkey" onclick="nk('7')">7</button><button class="numkey" onclick="nk('8')">8</button><button class="numkey" onclick="nk('9')">9</button><button class="numkey" onclick="nk('000')">000</button><button class="numkey" onclick="nk('0')">0</button><button class="numkey" onclick="nd()">⌫</button></div><div style="display:flex;gap:8px"><button class="btn full" style="margin-top:0;flex:1" onclick="closeWd()">キャンセル</button><button class="btn primary full" style="margin-top:0;flex:2" onclick="doWd()">引き出す</button></div></div></div>
-<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3><div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div><div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div><div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div><div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div><div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div><div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div></div></div>
+<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3><div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div><div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div><div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div><div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div><div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div><div class="fg" id="plan-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="plan-pay-chips"></div><div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div></div><div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div></div></div>
 <div class="mbg" id="card-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>カードを編集</h3><div class="fg"><label>カード名</label><input id="ce-name"/></div><div class="fgr"><div class="fg"><label>締め日</label><input id="ce-close" type="number" inputmode="numeric" min="1" max="31"/></div><div class="fg"><label>引き落とし日</label><input id="ce-bill" type="number" inputmode="numeric" min="1" max="31"/></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeCardEdit()">キャンセル</button><button class="btn primary" onclick="saveCardEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>記録を編集</h3><div class="pay-chips" id="lde-type-chips"><div class="pay-chip sel" onclick="selLdeType('expense')">支出</div><div class="pay-chip" onclick="selLdeType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="lde-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="lde-amount"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="lde-cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="lde-name"/></div><div class="fg" id="lde-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="lde-pay-chips"></div></div><div class="fg"><label>備考</label><textarea id="lde-memo"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgEdit()">キャンセル</button><button class="btn primary" onclick="saveLdgEdit()">保存</button></div></div></div>
 <div class="mbg" id="shift-mbg"><div class="modal"><div class="modal-handle"></div><h3>シフトを追加</h3><div class="fg"><label>バイト先</label><select id="m-job"></select></div><div class="fgr"><div class="fg"><label>出勤</label><input type="time" id="m-start" value="09:00"/></div><div class="fg"><label>退勤</label><input type="time" id="m-end" value="17:00"/></div></div><div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:12px;font-size:13px">1日: <strong id="m-prev">¥0</strong>（深夜:<span id="m-night">0h</span>）交通費:<strong id="m-transport">¥0</strong> 合計:<strong id="m-prev-total">¥0</strong></div><div class="fg"><label>日付を選択（複数OK）</label><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="m-month-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button class="btn sm" onclick="shiftCalPrev()">&#8592;</button><button class="btn sm" onclick="shiftCalNext()">&#8594;</button></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="shift-cal-dow"></div><div id="shift-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="sel-days-count">0日</span>　合計: <strong id="m-total-all">¥0</strong></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeShiftModal()">キャンセル</button><button class="btn primary" onclick="saveShift()">一括保存</button></div></div></div>
@@ -911,8 +911,11 @@ const calcH=(s,e)=>{const[sh,sm]=s.split(':').map(Number);const[eh,em]=e.split('
 // ============================================================
 // カードサイクル
 // ============================================================
-function cardCycleForBillMonth(card,ci,billY,billM){const cl=parseInt(card.closeDay),bill=parseInt(card.billDay);const prevM=addM(billY,billM,-1);const prev2M=addM(billY,billM,-2);const cs=new Date(prev2M.y,prev2M.m,cl+1);const ce=new Date(prevM.y,prevM.m,cl);const ledgerAmt=st.ledger.filter(l=>{if(l.type!=='expense'||l.cardIdx!==ci)return false;const d=ds2d(l.date);return d>=cs&&d<=ce;}).reduce((a,l)=>a+parseInt(l.amount),0);const fixedAmt=st.fixedCosts.filter(fc=>fc.type==='expense'&&fc.pay===`card-${ci}`).reduce((a,fc)=>{const fcDay=parseInt(fc.day);let d=new Date(cs);while(d<=ce){const fd=new Date(d.getFullYear(),d.getMonth(),fcDay);if(fd>=cs&&fd<=ce)return a+parseInt(fc.amount);d=new Date(d.getFullYear(),d.getMonth()+1,1);}return a;},0);return{cs,ce,billD:bill,amount:ledgerAmt+fixedAmt};}
-function cycle(card,idx){const cl=parseInt(card.closeDay),bill=parseInt(card.billDay),td=gD(),y=gY(),m=gM();let fS,fE,fB,cS,cE,cB;if(td>cl){fS=addM(y,m,-1);fE={y,m};fB=addM(y,m,1);cS={y,m};cE=addM(y,m,1);cB=addM(y,m,2);}else{fS=addM(y,m,-2);fE=addM(y,m,-1);fB={y,m};cS=addM(y,m,-1);cE={y,m};cB=addM(y,m,1);}const cycles=[{label:'確定',cs:new Date(fS.y,fS.m,cl+1),ce:new Date(fE.y,fE.m,cl),billY:fB.y,billM:fB.m,billD:bill},{label:'集計中',cs:new Date(cS.y,cS.m,cl+1),ce:new Date(cE.y,cE.m,cl),billY:cB.y,billM:cB.m,billD:bill}];const cy=cycles[idx],ci=st.cards.indexOf(card);const ledgerAmt=st.ledger.filter(l=>{if(l.type!=='expense'||l.cardIdx!==ci)return false;const d=ds2d(l.date);return d>=cy.cs&&d<=cy.ce;}).reduce((a,l)=>a+parseInt(l.amount),0);const fixedAmt=st.fixedCosts.filter(fc=>fc.type==='expense'&&fc.pay===`card-${ci}`).reduce((a,fc)=>{const fcDay=parseInt(fc.day);let d=new Date(cy.cs);while(d<=cy.ce){const fd=new Date(d.getFullYear(),d.getMonth(),fcDay);if(fd>=cy.cs&&fd<=cy.ce)return a+parseInt(fc.amount);d=new Date(d.getFullYear(),d.getMonth()+1,1);}return a;},0);return{...cy,amount:ledgerAmt+fixedAmt};}
+function cardCycleForBillMonth(card,ci,billY,billM){const cl=parseInt(card.closeDay),bill=parseInt(card.billDay);const prevM=addM(billY,billM,-1);const prev2M=addM(billY,billM,-2);const cs=new Date(prev2M.y,prev2M.m,cl+1);const ce=new Date(prevM.y,prevM.m,cl);const ledgerAmt=st.ledger.filter(l=>{if(l.type!=='expense'||l.cardIdx!==ci)return false;const d=ds2d(l.date);return d>=cs&&d<=ce;}).reduce((a,l)=>a+parseInt(l.amount),0);const fixedAmt=st.fixedCosts.filter(fc=>fc.type==='expense'&&fc.pay===`card-${ci}`).reduce((a,fc)=>{const fcDay=parseInt(fc.day);let d=new Date(cs);while(d<=ce){const fd=new Date(d.getFullYear(),d.getMonth(),fcDay);if(fd>=cs&&fd<=ce)return a+parseInt(fc.amount);d=new Date(d.getFullYear(),d.getMonth()+1,1);}return a;},0);
+// カード払い予定をサイクルに含める
+const planAmt=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!==ci)return false;const d=ds2d(p.dateStart||p.date);return d>=cs&&d<=ce;}).reduce((a,p)=>a+p.budget,0);
+return{cs,ce,billD:bill,amount:ledgerAmt+fixedAmt+planAmt};}
+function cycle(card,idx){const cl=parseInt(card.closeDay),bill=parseInt(card.billDay),td=gD(),y=gY(),m=gM();let fS,fE,fB,cS,cE,cB;if(td>cl){fS=addM(y,m,-1);fE={y,m};fB=addM(y,m,1);cS={y,m};cE=addM(y,m,1);cB=addM(y,m,2);}else{fS=addM(y,m,-2);fE=addM(y,m,-1);fB={y,m};cS=addM(y,m,-1);cE={y,m};cB=addM(y,m,1);}const cycles=[{label:'確定',cs:new Date(fS.y,fS.m,cl+1),ce:new Date(fE.y,fE.m,cl),billY:fB.y,billM:fB.m,billD:bill},{label:'集計中',cs:new Date(cS.y,cS.m,cl+1),ce:new Date(cE.y,cE.m,cl),billY:cB.y,billM:cB.m,billD:bill}];const cy=cycles[idx],ci=st.cards.indexOf(card);const ledgerAmt=st.ledger.filter(l=>{if(l.type!=='expense'||l.cardIdx!==ci)return false;const d=ds2d(l.date);return d>=cy.cs&&d<=cy.ce;}).reduce((a,l)=>a+parseInt(l.amount),0);const fixedAmt=st.fixedCosts.filter(fc=>fc.type==='expense'&&fc.pay===`card-${ci}`).reduce((a,fc)=>{const fcDay=parseInt(fc.day);let d=new Date(cy.cs);while(d<=cy.ce){const fd=new Date(d.getFullYear(),d.getMonth(),fcDay);if(fd>=cy.cs&&fd<=cy.ce)return a+parseInt(fc.amount);d=new Date(d.getFullYear(),d.getMonth()+1,1);}return a;},0);const planAmt=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!==ci)return false;const d=ds2d(p.dateStart||p.date);return d>=cy.cs&&d<=cy.ce;}).reduce((a,p)=>a+p.budget,0);return{...cy,amount:ledgerAmt+fixedAmt+planAmt};}
 const cardBillForGraphDate=(card,ci,billY,billM)=>cardCycleForBillMonth(card,ci,billY,billM).amount;
 const cardBillForDate=(card,bY,bM)=>cardBillForGraphDate(card,st.cards.indexOf(card),bY,bM);
 
@@ -947,7 +950,12 @@ function buildBalanceSeries(){
       st.fixedIncs.forEach(fi=>{if(parseInt(fi.day)===day)delta+=parseInt(fi.amount);});
       st.fixedCosts.forEach(fc=>{if(parseInt(fc.day)===day){if(fc.type==='income')delta+=parseInt(fc.amount);else if(fc.pay==='bank')delta-=parseInt(fc.amount);}});
       st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===day){const actual=getActualCard(ci,y,m);delta-=actual?parseInt(actual.actualAmount):cardBillForGraphDate(card,ci,y,m);}});
-      st.plans.forEach(p=>{if(!p.done&&p.budget>0&&(p.dateStart||p.date)===ds)delta-=p.budget;});
+      st.plans.forEach(p=>{
+        // カード払い予定は引き落とし日に計上するので予定日では引かない
+        if(!p.done&&p.budget>0&&(p.dateStart||p.date)===ds&&p.planCardIdx===undefined){
+          delta-=p.budget;
+        }
+      });
     }
     bal+=delta;
     labels.push(i===0?'今日':`${m+1}/${day}`);
@@ -1341,10 +1349,90 @@ function renderColorSwatches(){document.getElementById('plan-color-swatches').in
 function selPlanColor(key){planColorSel=key;renderColorSwatches();}
 function setDateMode(mode){planDateMode=mode;document.getElementById('dmt-single').classList.toggle('active',mode==='single');document.getElementById('dmt-range').classList.toggle('active',mode==='range');document.getElementById('date-single-wrap').style.display=mode==='single'?'block':'none';document.getElementById('date-range-wrap').style.display=mode==='range'?'block':'none';}
 function updateRangePreview(){const s=document.getElementById('plan-date-start').value,e=document.getElementById('plan-date-end').value,el=document.getElementById('range-preview');if(!s||!e){el.textContent='';return;}const days=Math.round((ds2d(e)-ds2d(s))/(864e5))+1;el.textContent=days>=1?`${days}日間の予定として登録されます`:'終了日は開始日より後にしてください';}
-function openPlanModal(ds){planEditIdx=-1;planColorSel='pink';document.getElementById('plan-modal-title').textContent='予定を追加';['plan-title','plan-memo'].forEach(id=>document.getElementById(id).value='');document.getElementById('plan-date').value=ds||TODAY;document.getElementById('plan-date-start').value=ds||TODAY;document.getElementById('plan-date-end').value=ds||TODAY;document.getElementById('plan-budget').value='';document.getElementById('plan-save-btn').textContent='追加';setDateMode('single');renderColorSwatches();document.getElementById('plan-date-start').oninput=updateRangePreview;document.getElementById('plan-date-end').oninput=updateRangePreview;document.getElementById('plan-mbg').classList.add('open');}
-function openPlanEdit(idx){planEditIdx=idx;const p=st.plans[idx];planColorSel=p.color||'pink';document.getElementById('plan-modal-title').textContent='予定を編集';document.getElementById('plan-title').value=p.title;document.getElementById('plan-date').value=p.date;document.getElementById('plan-date-start').value=p.dateStart||p.date;document.getElementById('plan-date-end').value=p.dateEnd||p.date;document.getElementById('plan-budget').value=p.budget||'';document.getElementById('plan-memo').value=p.memo||'';document.getElementById('plan-save-btn').textContent='保存';const mode=p.dateEnd&&p.dateEnd!==p.date?'range':'single';setDateMode(mode);renderColorSwatches();document.getElementById('plan-date-start').oninput=updateRangePreview;document.getElementById('plan-date-end').oninput=updateRangePreview;if(mode==='range')updateRangePreview();document.getElementById('plan-mbg').classList.add('open');}
+let planCardIdx=-1; // -1=現金、0以上=カードインデックス
+
+function renderPlanPayChips(){
+  if(!document.getElementById('plan-pay-chips'))return;
+  const opts=['現金',...st.cards.map(c=>c.name)];
+  document.getElementById('plan-pay-chips').innerHTML=opts.map((o,i)=>`<div class="pay-chip${(i===0&&planCardIdx===-1)||(i>0&&planCardIdx===i-1)?' sel':''}" onclick="selPlanPay(${i-1})">${o}</div>`).join('');
+  const hint=document.getElementById('plan-pay-hint');
+  if(hint){
+    if(planCardIdx>=0&&st.cards[planCardIdx]){
+      hint.textContent=`${st.cards[planCardIdx].name}払い：カードの集計に加算され、引き落とし日に残高から引かれます`;
+    }else{
+      hint.textContent='現金・口座払いの場合は予定日に残高から引かれます';
+    }
+  }
+}
+
+function selPlanPay(ci){
+  planCardIdx=ci;
+  renderPlanPayChips();
+}
+
+function openPlanModal(ds){
+  planEditIdx=-1;planColorSel='pink';planCardIdx=-1;
+  document.getElementById('plan-modal-title').textContent='予定を追加';
+  ['plan-title','plan-memo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('plan-date').value=ds||TODAY;
+  document.getElementById('plan-date-start').value=ds||TODAY;
+  document.getElementById('plan-date-end').value=ds||TODAY;
+  document.getElementById('plan-budget').value='';
+  document.getElementById('plan-save-btn').textContent='追加';
+  setDateMode('single');
+  renderColorSwatches();
+  renderPlanPayChips();
+  document.getElementById('plan-date-start').oninput=updateRangePreview;
+  document.getElementById('plan-date-end').oninput=updateRangePreview;
+  document.getElementById('plan-mbg').classList.add('open');
+}
+
+function openPlanEdit(idx){
+  planEditIdx=idx;
+  const p=st.plans[idx];
+  planColorSel=p.color||'pink';
+  planCardIdx=p.planCardIdx!==undefined?p.planCardIdx:-1;
+  document.getElementById('plan-modal-title').textContent='予定を編集';
+  document.getElementById('plan-title').value=p.title;
+  document.getElementById('plan-date').value=p.date;
+  document.getElementById('plan-date-start').value=p.dateStart||p.date;
+  document.getElementById('plan-date-end').value=p.dateEnd||p.date;
+  document.getElementById('plan-budget').value=p.budget||'';
+  document.getElementById('plan-memo').value=p.memo||'';
+  document.getElementById('plan-save-btn').textContent='保存';
+  const mode=p.dateEnd&&p.dateEnd!==p.date?'range':'single';
+  setDateMode(mode);
+  renderColorSwatches();
+  renderPlanPayChips();
+  document.getElementById('plan-date-start').oninput=updateRangePreview;
+  document.getElementById('plan-date-end').oninput=updateRangePreview;
+  if(mode==='range')updateRangePreview();
+  document.getElementById('plan-mbg').classList.add('open');
+}
+
 function closePlanModal(){document.getElementById('plan-mbg').classList.remove('open');}
-function savePlan(){const title=document.getElementById('plan-title').value.trim();if(!title)return;const budget=parseInt(document.getElementById('plan-budget').value)||0,memo=document.getElementById('plan-memo').value.trim(),color=planColorSel;let dateStart,dateEnd;if(planDateMode==='range'){dateStart=document.getElementById('plan-date-start').value;dateEnd=document.getElementById('plan-date-end').value;if(!dateStart||!dateEnd||ds2d(dateEnd)<ds2d(dateStart))return;}else{dateStart=document.getElementById('plan-date').value;if(!dateStart)return;dateEnd=dateStart;}const obj={id:planEditIdx>=0?st.plans[planEditIdx].id:Date.now(),title,date:dateStart,dateStart,dateEnd,budget,memo,color,done:false};if(planEditIdx>=0){obj.done=st.plans[planEditIdx].done;st.plans[planEditIdx]=obj;}else st.plans.push(obj);save();closePlanModal();renderCal();renderHome();}
+
+function savePlan(){
+  const title=document.getElementById('plan-title').value.trim();
+  if(!title)return;
+  const budget=parseInt(document.getElementById('plan-budget').value)||0,memo=document.getElementById('plan-memo').value.trim(),color=planColorSel;
+  let dateStart,dateEnd;
+  if(planDateMode==='range'){
+    dateStart=document.getElementById('plan-date-start').value;
+    dateEnd=document.getElementById('plan-date-end').value;
+    if(!dateStart||!dateEnd||ds2d(dateEnd)<ds2d(dateStart))return;
+  }else{
+    dateStart=document.getElementById('plan-date').value;
+    if(!dateStart)return;
+    dateEnd=dateStart;
+  }
+  const obj={id:planEditIdx>=0?st.plans[planEditIdx].id:Date.now(),title,date:dateStart,dateStart,dateEnd,budget,memo,color,done:false};
+  // カード払いの場合planCardIdxを保存
+  if(planCardIdx>=0) obj.planCardIdx=planCardIdx;
+  if(planEditIdx>=0){obj.done=st.plans[planEditIdx].done;st.plans[planEditIdx]=obj;}
+  else st.plans.push(obj);
+  save();closePlanModal();renderCal();renderHome();
+}
 
 // ============================================================
 // Service Worker登録
