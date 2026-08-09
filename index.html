@@ -513,19 +513,30 @@ body{
       <div class="badge bs0" id="card-tx-inbox-count" style="font-size:14px;padding:4px 12px">0</div>
     </div>
   </div>
-  <div class="tab2"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div></div>
+  <div class="tab2" id="ldg-main-tabs"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div></div>
+  <div class="month-nav" id="ldg-month-nav">
+    <button class="btn sm" onclick="ldgMonthPrev()">&#8592;</button>
+    <div style="text-align:center"><div class="month-nav-label" id="ldg-month-label"></div></div>
+    <button class="btn sm" onclick="ldgMonthNext()">&#8594;</button>
+  </div>
+  <div class="month-nav" id="ldg-year-nav" style="display:none">
+    <button class="btn sm" onclick="ldgYearPrev()">&#8592;</button>
+    <div style="text-align:center"><div class="month-nav-label" id="ldg-year-label"></div></div>
+    <button class="btn sm" onclick="ldgYearNext()">&#8594;</button>
+  </div>
   <div id="ldg-list-sec">
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:.75rem">
-      <div class="met"><div class="met-l">今月支出</div><div class="met-v" id="ldg-exp" style="color:#A32D2D">¥0</div></div>
-      <div class="met"><div class="met-l">今月収入</div><div class="met-v" id="ldg-inc" style="color:#3B6D11">¥0</div></div>
+      <div class="met"><div class="met-l">支出</div><div class="met-v" id="ldg-exp" style="color:#A32D2D">¥0</div></div>
+      <div class="met"><div class="met-l">収入</div><div class="met-v" id="ldg-inc" style="color:#3B6D11">¥0</div></div>
       <div class="met"><div class="met-v" id="ldg-bal">¥0</div><div class="met-l">収支</div></div>
     </div>
     <button class="btn primary full" onclick="openLedgerModal(null)" style="margin-top:0;margin-bottom:.75rem">＋ 支出・収入を記録</button>
     <div id="ldg-list"></div>
   </div>
   <div id="ldg-graph-sec" style="display:none">
-    <div class="card"><div class="st">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
-    <div class="card"><div class="st">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
+    <div class="tab2"><div class="tb2 active" onclick="setLdgGraphMode('month')">月</div><div class="tb2" onclick="setLdgGraphMode('year')">年</div></div>
+    <div class="card"><div class="st" id="cat-chart-title">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
+    <div class="card"><div class="st" id="day-chart-title">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
   </div>
 </div>
 
@@ -688,6 +699,7 @@ let st={acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixed
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
 let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
+let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
 let selShiftDays=new Set();
 let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
 let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
@@ -1090,7 +1102,7 @@ function sw(t){
   });
   if(t==='home')renderHome();
   else if(t==='cal')renderCal();
-  else if(t==='ledger'){renderLedger();renderLedgerMetrics();renderCardTxInboxCard();}
+  else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();renderCardTxInboxCard();}
   else if(t==='shift')renderShiftSection();
   else if(t==='set')initSettingTab();
 }
@@ -1593,12 +1605,42 @@ function renderLdePayChips(){
 function selLdeReceive(r){ldeReceive=r;renderLdePayChips();}
 function selLdePay(p,ci){ldePay=p;ldeCardIdx=ci;renderLdePayChips();}
 function saveLdgEdit(){const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();if(!date||!amount)return;const entry={date,amount,name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;if(ldeType==='income')entry.receive=ldeReceive;st.ledger[ldeIdx]=entry;save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
-function ldgTab(t){document.querySelectorAll('.tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';if(t==='graph')renderCharts();}
-function renderLedgerMetrics(){const ml=monthLedger(gY(),gM());const exp=ml.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);const inc=ml.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('ldg-exp').textContent='¥'+exp.toLocaleString();document.getElementById('ldg-inc').textContent='¥'+inc.toLocaleString();const bal=inc-exp;const bEl=document.getElementById('ldg-bal');bEl.textContent=(bal>=0?'+':'')+'¥'+bal.toLocaleString();bEl.style.color=bal>=0?'#3B6D11':'#A32D2D';}
+function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();}
+
+// ============================================================
+// 家計簿の対象年月ナビゲーション（記録一覧・グラフで共有）
+// ============================================================
+function updateLdgNav_(){
+  document.getElementById('ldg-month-label').textContent=`${ldgListY}年${ldgListM+1}月`;
+  const yEl=document.getElementById('ldg-year-label');
+  if(yEl)yEl.textContent=`${ldgListY}年`;
+  const graphVisible=document.getElementById('ldg-graph-sec').style.display!=='none';
+  const showYearNav=graphVisible&&ldgGraphMode==='year';
+  document.getElementById('ldg-month-nav').style.display=showYearNav?'none':'flex';
+  document.getElementById('ldg-year-nav').style.display=showYearNav?'flex':'none';
+}
+function ldgMonthPrev(){const nm=addM(ldgListY,ldgListM,-1);ldgListY=nm.y;ldgListM=nm.m;renderLedgerAll_();}
+function ldgMonthNext(){const nm=addM(ldgListY,ldgListM,1);ldgListY=nm.y;ldgListM=nm.m;renderLedgerAll_();}
+function ldgYearPrev(){ldgListY--;renderLedgerAll_();}
+function ldgYearNext(){ldgListY++;renderLedgerAll_();}
+function setLdgGraphMode(mode){
+  ldgGraphMode=mode;
+  document.querySelectorAll('#ldg-graph-sec .tab2 .tb2').forEach((el,i)=>el.classList.toggle('active',['month','year'][i]===mode));
+  updateLdgNav_();
+  renderCharts();
+}
+function renderLedgerAll_(){
+  updateLdgNav_();
+  renderLedger();
+  renderLedgerMetrics();
+  if(document.getElementById('ldg-graph-sec').style.display!=='none')renderCharts();
+}
+
+function renderLedgerMetrics(){const ml=monthLedger(ldgListY,ldgListM);const exp=ml.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);const inc=ml.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('ldg-exp').textContent='¥'+exp.toLocaleString();document.getElementById('ldg-inc').textContent='¥'+inc.toLocaleString();const bal=inc-exp;const bEl=document.getElementById('ldg-bal');bEl.textContent=(bal>=0?'+':'')+'¥'+bal.toLocaleString();bEl.style.color=bal>=0?'#3B6D11':'#A32D2D';}
 function renderLedger(){
-  const ml=monthLedger(gY(),gM()).sort((a,b)=>b.date.localeCompare(a.date));
+  const ml=monthLedger(ldgListY,ldgListM).sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('ldg-list');
-  if(!ml.length){el.innerHTML='<div class="card"><div class="empty">今月の記録なし</div></div>';return;}
+  if(!ml.length){el.innerHTML='<div class="card"><div class="empty">この月の記録なし</div></div>';return;}
 
   // 日付ごとにグループ化
   const groups={};
@@ -1675,7 +1717,34 @@ function toggleLdgGroup(id){
   arrow.classList.toggle('open',!isOpen);
 }
 function delLedger(i){st.ledger.splice(i,1);save();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
-function renderCharts(){const ml=monthLedger(gY(),gM()).filter(l=>l.type==='expense');const catMap={};ml.forEach(l=>{catMap[l.cat]=(catMap[l.cat]||0)+parseInt(l.amount);});const catLabels=Object.keys(catMap),catData=Object.values(catMap),catColors=catLabels.map((c,i)=>CAT_COL[c]||DOTC[i%DOTC.length]);if(catChart)catChart.destroy();catChart=new Chart(document.getElementById('cat-chart').getContext('2d'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catData,backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}});const dim=new Date(gY(),gM()+1,0).getDate(),dayMap={};for(let d=1;d<=dim;d++)dayMap[d]=0;ml.forEach(l=>{const d=ds2d(l.date).getDate();dayMap[d]=(dayMap[d]||0)+parseInt(l.amount);});if(dayChart)dayChart.destroy();dayChart=new Chart(document.getElementById('day-chart').getContext('2d'),{type:'bar',data:{labels:Object.keys(dayMap).map(d=>d+'日'),datasets:[{data:Object.values(dayMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:15}},y:{ticks:{callback:v=>'¥'+v.toLocaleString(),font:{size:10}}}}}});}
+function renderCatChart_(ml){
+  const catMap={};ml.forEach(l=>{catMap[l.cat]=(catMap[l.cat]||0)+parseInt(l.amount);});
+  const catLabels=Object.keys(catMap),catData=Object.values(catMap),catColors=catLabels.map((c,i)=>CAT_COL[c]||DOTC[i%DOTC.length]);
+  if(catChart)catChart.destroy();
+  catChart=new Chart(document.getElementById('cat-chart').getContext('2d'),{type:'doughnut',data:{labels:catLabels,datasets:[{data:catData,backgroundColor:catColors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:10,padding:8}}}}});
+}
+function renderChartsMonth_(){
+  document.getElementById('cat-chart-title').textContent='カテゴリ別支出';
+  document.getElementById('day-chart-title').textContent='日別支出推移';
+  const ml=monthLedger(ldgListY,ldgListM).filter(l=>l.type==='expense');
+  renderCatChart_(ml);
+  const dim=new Date(ldgListY,ldgListM+1,0).getDate(),dayMap={};
+  for(let d=1;d<=dim;d++)dayMap[d]=0;
+  ml.forEach(l=>{const d=ds2d(l.date).getDate();dayMap[d]=(dayMap[d]||0)+parseInt(l.amount);});
+  if(dayChart)dayChart.destroy();
+  dayChart=new Chart(document.getElementById('day-chart').getContext('2d'),{type:'bar',data:{labels:Object.keys(dayMap).map(d=>d+'日'),datasets:[{data:Object.values(dayMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:15}},y:{ticks:{callback:v=>'¥'+v.toLocaleString(),font:{size:10}}}}}});
+}
+function renderChartsYear_(){
+  document.getElementById('cat-chart-title').textContent='カテゴリ別支出（年間）';
+  document.getElementById('day-chart-title').textContent='月別支出推移';
+  const yl=st.ledger.filter(l=>l.type==='expense'&&ds2d(l.date).getFullYear()===ldgListY);
+  renderCatChart_(yl);
+  const monthMap={};for(let m=0;m<12;m++)monthMap[m]=0;
+  yl.forEach(l=>{const m=ds2d(l.date).getMonth();monthMap[m]=(monthMap[m]||0)+parseInt(l.amount);});
+  if(dayChart)dayChart.destroy();
+  dayChart=new Chart(document.getElementById('day-chart').getContext('2d'),{type:'bar',data:{labels:Object.keys(monthMap).map(m=>(parseInt(m)+1)+'月'),datasets:[{data:Object.values(monthMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:v=>'¥'+v.toLocaleString(),font:{size:10}}}}}});
+}
+function renderCharts(){ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();}
 
 // ============================================================
 // 設定
