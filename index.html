@@ -986,8 +986,11 @@ function buildBalanceSeries(){
     const ds=toDS(d.getFullYear(),d.getMonth(),d.getDate());
     const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
     let delta=0;
-    // 基準日より後の日付のみdeltaを計算（基準日当日・以前はestimateAcctで計算済み）
-    if(d>baseDate){
+    // 基準日より後、かつ今日より後の日付のみdeltaを計算
+    // （基準日当日・以前と「今日」自体はestimateAcctで計算済みのため、
+    //   d>baseDateだけの条件だと、今日がbaseDateより後の通常ケースで
+    //   今日が給料日/カード引き落とし日等と重なった際に二重計上されるバグがあった）
+    if(d>baseDate && d>today){
       st.jobs.forEach(job=>{
         if(day===jobPayDay(job)){
           const shiftMo=addM(y,m,-1);
