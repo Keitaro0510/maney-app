@@ -507,6 +507,12 @@ body{
 <!-- LEDGER -->
 <div id="sec-ledger" class="sec">
   <div class="page-title">家計簿</div>
+  <div class="card" id="card-tx-inbox-card" style="display:none;border-color:#B5D4F4;cursor:pointer" onclick="openCardTxInboxModal()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><div class="st" style="margin-bottom:2px">楽天カード 未確認の明細</div><div style="font-size:12px;color:var(--color-text-secondary)">タップして確認・カテゴリ変更・承認</div></div>
+      <div class="badge bs0" id="card-tx-inbox-count" style="font-size:14px;padding:4px 12px">0</div>
+    </div>
+  </div>
   <div class="tab2"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div></div>
   <div id="ldg-list-sec">
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:.75rem">
@@ -612,6 +618,11 @@ body{
     <button class="btn primary" onclick="addCard()">追加</button>
     <div id="card-list-sec" style="margin-top:10px"></div>
   </div>
+  <div class="card"><div class="st">楽天カード自動取り込み</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">楽天カードの利用通知メールを自動で読み取り、家計簿タブの「未確認の明細」に追加します（承認するまで家計簿には反映されません）。詳細: <a href="https://github.com/Keitaro0510/maney-app-sync" target="_blank" style="color:#185FA5">maney-app-sync</a></div>
+    <div class="fg"><label>取り込み先カード</label><select id="set-rakuten-card"><option value="-1">— 使用しない —</option></select></div>
+    <div class="info-box" id="rakuten-last-run">最終取り込み: 未設定</div>
+  </div>
   <button class="btn primary full" onclick="saveSetting()" style="margin-top:4px;background:#185FA5">設定を保存</button>
   <div class="card" style="margin-top:10px"><div class="st">ATM引き出し履歴</div><div id="wd-hist"></div></div>
 </div>
@@ -650,6 +661,7 @@ body{
 <div class="mbg" id="shift-mbg"><div class="modal"><div class="modal-handle"></div><h3>シフトを追加</h3><div class="fg"><label>バイト先</label><select id="m-job"></select></div><div class="fgr"><div class="fg"><label>出勤</label><input type="time" id="m-start" value="09:00"/></div><div class="fg"><label>退勤</label><input type="time" id="m-end" value="17:00"/></div></div><div class="fg"><label>休憩時間（分）</label><div class="pay-chips" id="m-rest-chips"></div><input type="number" id="m-rest" value="0" min="0" step="5" placeholder="例: 60"/></div><div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:12px;font-size:13px">1日: <strong id="m-prev">¥0</strong>（深夜:<span id="m-night">0h</span>　休憩:<span id="m-rest-lbl">0分</span>）交通費:<strong id="m-transport">¥0</strong> 合計:<strong id="m-prev-total">¥0</strong></div><div class="fg"><label>日付を選択（複数OK）</label><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="m-month-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button class="btn sm" onclick="shiftCalPrev()">&#8592;</button><button class="btn sm" onclick="shiftCalNext()">&#8594;</button></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="shift-cal-dow"></div><div id="shift-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="sel-days-count">0日</span>　合計: <strong id="m-total-all">¥0</strong></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeShiftModal()">キャンセル</button><button class="btn primary" onclick="saveShift()">一括保存</button></div></div></div>
 <div class="mbg" id="job-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>バイト先を編集</h3><div class="fgr"><div class="fg"><label>名前</label><input id="je-name" placeholder="カフェなど"/></div><div class="fg"><label>通常時給 (¥)</label><input id="je-wage" type="number" placeholder="1100"/></div></div><div class="fgr3"><div class="fg"><label>深夜開始</label><input id="je-night-start" type="time"/></div><div class="fg"><label>深夜割増(%)</label><input id="je-night-rate" type="number"/></div><div class="fg"><label>交通費(片道¥)</label><input id="je-transport" type="number" placeholder="230"/></div></div><div class="fgr"><div class="fg"><label>締め日</label><input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）"/></div><div class="fg"><label>給料日（翌月）</label><input id="je-pay-day" type="number" min="1" max="31" placeholder="10"/></div></div><div class="fg"><label>カレンダーの色</label><div class="color-swatches" id="je-color-swatches"></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeJobEdit()">キャンセル</button><button class="btn primary" onclick="saveJobEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-mbg"><div class="modal"><div class="modal-handle"></div><h3>収支を記録</h3><div class="pay-chips" id="ldg-type-chips"><div class="pay-chip sel" onclick="selLdgType('expense')">支出</div><div class="pay-chip" onclick="selLdgType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="ldg-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="ldg-amount" placeholder="1500"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="ldg-name" placeholder="ランチ、交通費など"/></div><div class="fg" id="ldg-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="ldg-pay-chips"></div></div><div class="fg" id="ldg-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="ldg-receive-chips"></div><div class="hint" id="ldg-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="ldg-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgModal()">キャンセル</button><button class="btn primary" onclick="saveLedger()">保存</button></div></div></div>
+<div class="mbg" id="card-tx-inbox-mbg"><div class="modal"><div class="modal-handle"></div><h3>楽天カード 未確認の明細</h3><div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">カテゴリを確認・変更してから承認してください。承認すると通常の家計簿記録として追加されます。</div><div id="card-tx-inbox-list"></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn full" style="margin-top:0;flex:1" onclick="closeCardTxInboxModal()">閉じる</button><button class="btn primary full" style="margin-top:0;flex:2" onclick="approveAllCardTx()">すべて承認</button></div></div></div>
 
 <script>
 // ============================================================
@@ -670,7 +682,7 @@ const _now=new Date();
 const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 const TODAY=toDS(_now.getFullYear(),_now.getMonth(),_now.getDate());
 
-let st={acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[]};
+let st={acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[],merchantRules:{},rakutenCardIdx:-1};
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
 let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
@@ -836,6 +848,7 @@ async function loadData(){
     renderHome();
     renderCal();
     await loadRemote(); // 起動時の1回だけ読み込む
+    await loadCardTxInbox(); // 楽天カード自動取り込みの未確認明細
     initialLoadDone = true;
   } else {
     showLoginScreen();
@@ -851,6 +864,7 @@ async function loadData(){
       // 初回ログイン時だけloadRemoteを呼ぶ（アプリ復帰時の再発火を防ぐ）
       if(!initialLoadDone){
         await loadRemote();
+        await loadCardTxInbox();
         initialLoadDone = true;
       }
     } else if(event === 'SIGNED_OUT'){
@@ -865,6 +879,150 @@ function fixDefaults(){
   ['wds','fixedIncs','actualInputs','plans','fixedCosts'].forEach(k=>{if(!st[k])st[k]=[];});
   if(!st.catExp||!st.catExp.length)st.catExp=[...DEF_EXP];
   if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
+  if(!st.merchantRules)st.merchantRules={};
+  if(st.rakutenCardIdx===undefined)st.rakutenCardIdx=-1;
+}
+
+// ============================================================
+// 楽天カード自動取り込み（card_tx インボックス）
+// maney-app-sync (GAS) が Supabase の card_tx テーブルに書き込んだ未確認明細を
+// 読み込み・承認するUI。承認後は普通の st.ledger エントリになるため、
+// monthLedger / cycle() / renderCal / renderLedger 等は一切変更していない。
+// 詳細設計: https://github.com/Keitaro0510/maney-app-sync/blob/main/docs/design.md
+// ============================================================
+let cardTxInbox=[];
+
+// カテゴリ自動推定の静的ルール（st.merchantRules で個別に上書き・学習される）
+const MERCHANT_RULES=[
+  [/ローソン|セブン|ファミリーマート|ミニストップ|デイリーヤマザキ/,'食費'],
+  [/マイバスケツト|マイバスケット|ライフ|オーケー|サミット|イオン|業務スーパー/,'食費'],
+  [/マクドナルド|ミスタードーナツ|スターバックス|サイゼリヤ|ジンギスカン|ガスト/,'外食'],
+  [/SUICA|PASMO|JR|東急|小田急|メトロ|タクシー|ANA|JAL/,'交通費'],
+  [/楽天トラベル|高速バス|ホテル|じゃらん/,'娯楽'],
+  [/AMAZON|楽天市場|ヨドバシ|ビックカメラ/,'日用品'],
+  [/インリヨウジハンキ|自販機/,'食費'],
+];
+
+function guessCategory(merchantKey){
+  if(st.merchantRules[merchantKey])return st.merchantRules[merchantKey];
+  for(const[re,cat]of MERCHANT_RULES){if(re.test(merchantKey))return cat;}
+  return st.catExp.includes('その他')?'その他':(st.catExp[0]||'その他');
+}
+
+async function loadCardTxInbox(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('card_tx').select('*').eq('status','pending').order('used_on',{ascending:false});
+    if(error){console.warn('card_tx読み込みエラー:',error);return;}
+    // st.ledgerに既にtxIdが記録されているものは除外（承認処理の途中でPATCHだけ
+    // 失敗しstatusがpendingのまま残っているケースの自己修復）
+    const importedIds=new Set(st.ledger.filter(l=>l.txId).map(l=>l.txId));
+    cardTxInbox=(data||[]).filter(r=>!importedIds.has(r.id));
+    renderCardTxInboxCard();
+  }catch(e){console.warn('card_tx読み込み失敗:',e);}
+}
+
+function renderCardTxInboxCard(){
+  const el=document.getElementById('card-tx-inbox-card');
+  if(!el)return;
+  if(!cardTxInbox.length){el.style.display='none';return;}
+  el.style.display='block';
+  document.getElementById('card-tx-inbox-count').textContent=cardTxInbox.length;
+}
+
+function openCardTxInboxModal(){
+  renderCardTxInboxList();
+  document.getElementById('card-tx-inbox-mbg').classList.add('open');
+}
+function closeCardTxInboxModal(){document.getElementById('card-tx-inbox-mbg').classList.remove('open');}
+
+function renderCardTxInboxList(){
+  const el=document.getElementById('card-tx-inbox-list');
+  if(!el)return;
+  if(!cardTxInbox.length){el.innerHTML='<div class="empty">未確認の明細はありません</div>';return;}
+  el.innerHTML=cardTxInbox.map(r=>{
+    const key=r.merchant_norm||r.merchant_raw;
+    if(!r._cat)r._cat=guessCategory(key);
+    const catOpts=st.catExp.map(c=>`<option value="${c}"${c===r._cat?' selected':''}>${c}</option>`).join('');
+    return `<div class="ri" style="align-items:flex-start;flex-direction:column;gap:6px;padding:10px 0">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:600">${key}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">${r.used_on}${r.section?'　'+r.section:''}</div>
+        </div>
+        <div style="font-size:15px;font-weight:700;color:#A32D2D">¥${r.amount.toLocaleString()}</div>
+      </div>
+      <div style="display:flex;gap:6px;width:100%;align-items:center">
+        <select style="flex:1;padding:6px 8px;font-size:13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)" onchange="changeCardTxCategory('${r.id}',this.value)">${catOpts}</select>
+        <button class="btn sm" onclick="ignoreCardTx('${r.id}')">無視</button>
+        <button class="btn sm primary" onclick="approveCardTx('${r.id}')">承認</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function changeCardTxCategory(id,cat){
+  const r=cardTxInbox.find(x=>x.id===id);
+  if(r)r._cat=cat;
+}
+
+function requireRakutenCard_(){
+  if(st.rakutenCardIdx<0||!st.cards[st.rakutenCardIdx]){
+    alert('設定タブの「楽天カード自動取り込み」で、明細の取り込み先カードを選択してください');
+    return false;
+  }
+  return true;
+}
+
+// card_tx 1件を st.ledger エントリに変換する。承認時にユーザーが選んだ
+// カテゴリを st.merchantRules に学習させ、次回以降は自動適用する。
+function cardTxToLedgerEntry_(r){
+  const key=r.merchant_norm||r.merchant_raw;
+  const cat=r._cat||guessCategory(key);
+  if(st.merchantRules[key]!==cat)st.merchantRules[key]=cat;
+  return{date:r.used_on,amount:r.amount,name:key,cat,type:'expense',pay:st.cards[st.rakutenCardIdx].name,cardIdx:st.rakutenCardIdx,memo:'',src:'rakuten',txId:r.id};
+}
+
+async function approveCardTx(id){
+  if(!requireRakutenCard_())return;
+  const r=cardTxInbox.find(x=>x.id===id);
+  if(!r)return;
+
+  st.ledger.push(cardTxToLedgerEntry_(r));
+  await saveRemote(); // 完了を待つ（README記載のiOS PWA既知問題「awaitなしのsaveRemote()は途中で打ち切られる」への対策）
+
+  try{
+    await supa.from('card_tx').update({status:'imported',ledger_ref:r.id}).eq('id',r.id);
+  }catch(e){console.warn('card_tx status更新失敗:',e);}
+
+  cardTxInbox=cardTxInbox.filter(x=>x.id!==id);
+  renderCardTxInboxCard();renderCardTxInboxList();
+  renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
+}
+
+async function approveAllCardTx(){
+  if(!requireRakutenCard_())return;
+  const targets=[...cardTxInbox];
+  if(!targets.length)return;
+
+  targets.forEach(r=>st.ledger.push(cardTxToLedgerEntry_(r)));
+  await saveRemote();
+
+  for(const r of targets){
+    try{await supa.from('card_tx').update({status:'imported',ledger_ref:r.id}).eq('id',r.id);}
+    catch(e){console.warn('card_tx status更新失敗:',e);}
+  }
+
+  cardTxInbox=[];
+  renderCardTxInboxCard();closeCardTxInboxModal();
+  renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
+}
+
+async function ignoreCardTx(id){
+  try{await supa.from('card_tx').update({status:'ignored'}).eq('id',id);}
+  catch(e){console.warn('card_tx無視処理失敗:',e);}
+  cardTxInbox=cardTxInbox.filter(x=>x.id!==id);
+  renderCardTxInboxCard();renderCardTxInboxList();
 }
 
 // ============================================================
@@ -878,7 +1036,7 @@ function sw(t){
   });
   if(t==='home')renderHome();
   else if(t==='cal')renderCal();
-  else if(t==='ledger'){renderLedger();renderLedgerMetrics();}
+  else if(t==='ledger'){renderLedger();renderLedgerMetrics();renderCardTxInboxCard();}
   else if(t==='shift')renderShiftSection();
   else if(t==='set')initSettingTab();
 }
@@ -1482,7 +1640,31 @@ function renderCatTags(){const e=document.getElementById('cat-exp-tags'),n=docum
 function addFixedInc(){const name=document.getElementById('fi-name').value.trim(),amount=document.getElementById('fi-amount').value,day=document.getElementById('fi-date').value;if(!name||!amount||!day)return;st.fixedIncs.push({name,amount,day});save();document.getElementById('fi-name').value='';document.getElementById('fi-amount').value='';document.getElementById('fi-date').value='';renderFiList();}
 function renderFiList(){const el=document.getElementById('fi-list');if(!el)return;if(!st.fixedIncs.length){el.innerHTML='<div class="empty">固定収入なし</div>';return;}el.innerHTML=st.fixedIncs.map((fi,i)=>`<div class="ri"><div style="font-size:14px">${fi.name}<span style="font-size:12px;color:var(--color-text-secondary);margin-left:8px">毎月${fi.day}日</span></div><div style="display:flex;align-items:center;gap:8px"><span style="color:#3B6D11;font-weight:600">+¥${parseInt(fi.amount).toLocaleString()}</span><button class="btn sm del" onclick="delFi(${i})">削除</button></div></div>`).join('');}
 function delFi(i){st.fixedIncs.splice(i,1);save();renderFiList();renderHome();}
-function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderFcList();renderFiList();renderWdHist();renderCatTags();updateFcPaySelect();renderCardList();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
+function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderFcList();renderFiList();renderWdHist();renderCatTags();updateFcPaySelect();renderCardList();renderRakutenCardSelect();loadRakutenLastRun();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
+
+// 設定タブの「楽天カード自動取り込み」セレクトを st.cards から再構築する
+function renderRakutenCardSelect(){
+  const sel=document.getElementById('set-rakuten-card');
+  if(!sel)return;
+  const opts=['<option value="-1">— 使用しない —</option>'].concat(st.cards.map((c,i)=>`<option value="${i}">${c.name}</option>`));
+  sel.innerHTML=opts.join('');
+  sel.value=String(st.rakutenCardIdx!==undefined?st.rakutenCardIdx:-1);
+}
+
+// GASのScript PropertiesはPWAから直接読めないため、card_txの最新created_atを
+// 「最終取り込み」の代替表示として使う（design.md参照）
+async function loadRakutenLastRun(){
+  const el=document.getElementById('rakuten-last-run');
+  if(!el||!currentUser)return;
+  try{
+    const{data,error}=await supa.from('card_tx').select('created_at').order('created_at',{ascending:false}).limit(1);
+    if(error||!data||!data.length){el.textContent='最終取り込み: まだありません';el.style.color='';return;}
+    const hoursAgo=Math.round((Date.now()-new Date(data[0].created_at).getTime())/3600000);
+    const label=hoursAgo<1?'1時間以内':hoursAgo<24?`${hoursAgo}時間前`:`${Math.round(hoursAgo/24)}日前`;
+    el.textContent=`最終取り込み: ${label}`;
+    el.style.color=hoursAgo>=24?'#BA7517':'';
+  }catch(e){console.warn('rakuten last run取得失敗:',e);}
+}
 function updateShiftCyclePreview(){const cd=document.getElementById('set-close').value,pd=document.getElementById('set-pay').value;document.getElementById('shift-cycle-preview').textContent=`締め日: ${cd>=28?'月末':'毎月'+cd+'日'}　→　翌月${pd}日に口座に入金`;}
 function saveSetting(){
   st.acctBase=parseInt(document.getElementById('set-bal').value)||0;
@@ -1492,6 +1674,7 @@ function saveSetting(){
   st.budget=parseInt(document.getElementById('set-bud').value)||0;
   st.fuyouLimit=document.getElementById('set-fuyou').value;
   st.otherIncome=parseInt(document.getElementById('set-other-inc').value)||0;
+  st.rakutenCardIdx=parseInt(document.getElementById('set-rakuten-card').value);
   saveLocal();
   renderHome();
   renderCal();
