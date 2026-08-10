@@ -197,6 +197,21 @@ body{
 /* ===== リストアイテム ===== */
 .ri{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 .ri:last-child{border-bottom:none}
+/* 時刻ガター付きリストアイテム（日/週ビュー用。.riは中身のflexレイアウトのみ担当し、
+   padding/border-bottomは外側の.ri-with-timeが持つ） */
+.ri-with-time{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.ri-with-time:last-child{border-bottom:none}
+.ri-with-time .ri{flex:1;min-width:0;padding:0;border-bottom:none}
+.ri-time{font-size:12px;color:var(--color-text-secondary);min-width:40px;flex-shrink:0;font-variant-numeric:tabular-nums}
+/* ===== 週ビュー：日ごとのブロック ===== */
+.cal-day-block{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);margin-bottom:8px;overflow:hidden}
+.cal-day-block.today{border-color:#185FA5;border-width:1.5px}
+.cal-day-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--color-background-secondary);cursor:pointer;user-select:none}
+.cal-day-head:active{opacity:.7}
+.cal-day-date{font-size:13px;font-weight:700}
+.cal-day-sum{margin-left:auto;font-size:11px;color:var(--color-text-secondary)}
+.cal-day-body{padding:0 12px}
+.cal-day-body .empty{padding:8px 0}
 /* ===== バッジ ===== */
 .badge{font-size:11px;padding:2px 8px;border-radius:100px;font-weight:600}
 .bs0{background:#E6F1FB;color:#185FA5}.bs1{background:#EAF3DE;color:#3B6D11}
@@ -332,6 +347,7 @@ body{
 .date-mode-tabs{display:flex;gap:2px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px;margin-bottom:12px}
 .date-mode-tab{flex:1;padding:7px 0;text-align:center;font-size:13px;border-radius:7px;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
 .date-mode-tab.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
+#cal-view-tabs .date-mode-tab{padding:10px 0}
 .cat-tag{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;font-size:12px;border:0.5px solid var(--color-border-secondary);margin:3px}
 .cat-tag-del{cursor:pointer;color:var(--color-text-secondary);font-size:15px;line-height:1}
 .graph-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px;color:var(--color-text-secondary)}
@@ -522,9 +538,17 @@ body{
 <div id="sec-cal" class="sec">
   <div class="page-title">カレンダー</div>
   <div class="card" style="padding:.75rem .875rem">
+    <div class="date-mode-tabs" id="cal-view-tabs" style="margin-bottom:8px">
+      <div class="date-mode-tab" id="cvt-day" onclick="setCalView('day')">日</div>
+      <div class="date-mode-tab" id="cvt-week" onclick="setCalView('week')">週</div>
+      <div class="date-mode-tab active" id="cvt-month" onclick="setCalView('month')">月</div>
+    </div>
     <div class="cal-nav"><button class="btn sm" onclick="prevM()">&#8592;</button><h2 id="cal-title"></h2><button class="btn sm" onclick="nextM()">&#8594;</button></div>
-    <div class="cal-grid" id="cal-hdr"></div>
-    <div class="cal-grid" id="cal-body" style="margin-top:3px"></div>
+    <div id="cal-month-wrap">
+      <div class="cal-grid" id="cal-hdr"></div>
+      <div class="cal-grid" id="cal-body" style="margin-top:3px"></div>
+    </div>
+    <div id="cal-list" style="display:none"></div>
   </div>
   <div class="card" id="day-detail" style="display:none">
     <div id="day-detail-content"></div>
@@ -704,7 +728,7 @@ body{
 
 <!-- MODALS -->
 <div class="mbg" id="wd-mbg"><div class="modal"><div class="modal-handle"></div><h3>ATMで現金を引き出す</h3><div class="amount-display" id="wd-display">¥0</div><div class="numpad"><button class="numkey" onclick="nk('1')">1</button><button class="numkey" onclick="nk('2')">2</button><button class="numkey" onclick="nk('3')">3</button><button class="numkey" onclick="nk('4')">4</button><button class="numkey" onclick="nk('5')">5</button><button class="numkey" onclick="nk('6')">6</button><button class="numkey" onclick="nk('7')">7</button><button class="numkey" onclick="nk('8')">8</button><button class="numkey" onclick="nk('9')">9</button><button class="numkey" onclick="nk('000')">000</button><button class="numkey" onclick="nk('0')">0</button><button class="numkey" onclick="nd()">⌫</button></div><div style="display:flex;gap:8px"><button class="btn full" style="margin-top:0;flex:1" onclick="closeWd()">キャンセル</button><button class="btn primary full" style="margin-top:0;flex:2" onclick="doWd()">引き出す</button></div></div></div>
-<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3><div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div><div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div><div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div><div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div><div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div><div class="fg" id="plan-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="plan-pay-chips"></div><div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div></div><div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div></div></div>
+<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3><div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div><div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div><div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div><div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div><div class="fg" id="plan-time-wrap"><label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span>時刻</span><span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><input type="checkbox" id="plan-allday" onchange="togglePlanAllDay()" style="width:auto;height:18px;margin:0"> 終日</span></label><div class="fgr" id="plan-time-inputs"><input type="time" id="plan-time-start"/><input type="time" id="plan-time-end"/></div><div class="hint" id="plan-time-hint">開始のみでもOK（終了は空欄可）</div></div><div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div><div class="fg" id="plan-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="plan-pay-chips"></div><div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div></div><div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div></div></div>
 <div class="mbg" id="card-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>カードを編集</h3><div class="fg"><label>カード名</label><input id="ce-name"/></div><div class="fgr"><div class="fg"><label>締め日</label><div style="display:flex;align-items:center;gap:8px"><input id="ce-close" type="number" inputmode="numeric" min="1" max="31" style="flex:1"/><label style="display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap;margin-bottom:0"><input type="checkbox" id="ce-close-eom" onchange="toggleCardCloseEom('ce')"> 末日</label></div></div><div class="fg"><label>引き落とし日</label><input id="ce-bill" type="number" inputmode="numeric" min="1" max="31"/></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeCardEdit()">キャンセル</button><button class="btn primary" onclick="saveCardEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>記録を編集</h3><div class="pay-chips" id="lde-type-chips"><div class="pay-chip sel" onclick="selLdeType('expense')">支出</div><div class="pay-chip" onclick="selLdeType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="lde-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="lde-amount"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="lde-cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="lde-name"/></div><div class="fg" id="lde-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="lde-pay-chips"></div></div><div class="fg" id="lde-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="lde-receive-chips"></div><div class="hint" id="lde-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="lde-memo"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgEdit()">キャンセル</button><button class="btn primary" onclick="saveLdgEdit()">保存</button></div></div></div>
 <div class="mbg" id="shift-mbg"><div class="modal"><div class="modal-handle"></div><h3>シフトを追加</h3><div class="fg"><label>バイト先</label><select id="m-job"></select></div><div class="fgr"><div class="fg"><label>出勤</label><input type="time" id="m-start" value="09:00"/></div><div class="fg"><label>退勤</label><input type="time" id="m-end" value="17:00"/></div></div><div class="fg"><label>休憩時間（分）</label><div class="pay-chips" id="m-rest-chips"></div><input type="number" id="m-rest" value="0" min="0" step="5" placeholder="例: 60"/></div><div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:12px;font-size:13px">1日: <strong id="m-prev">¥0</strong>（深夜:<span id="m-night">0h</span>　休憩:<span id="m-rest-lbl">0分</span>）交通費:<strong id="m-transport">¥0</strong> 合計:<strong id="m-prev-total">¥0</strong></div><div class="fg"><label>日付を選択（複数OK）</label><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="m-month-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button class="btn sm" onclick="shiftCalPrev()">&#8592;</button><button class="btn sm" onclick="shiftCalNext()">&#8594;</button></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="shift-cal-dow"></div><div id="shift-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="sel-days-count">0日</span>　合計: <strong id="m-total-all">¥0</strong></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeShiftModal()">キャンセル</button><button class="btn primary" onclick="saveShift()">一括保存</button></div></div></div>
@@ -733,6 +757,9 @@ const TODAY=toDS(_now.getFullYear(),_now.getMonth(),_now.getDate());
 
 let st={acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[],merchantRules:{},rakutenCardIdx:-1};
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
+let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
+let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
+let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
 let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
 let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
 let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
@@ -931,6 +958,11 @@ function fixDefaults(){
   if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
   if(!st.merchantRules)st.merchantRules={};
   if(st.rakutenCardIdx===undefined)st.rakutenCardIdx=-1;
+  // 予定に時刻フィールドを追加(2026-08-10〜)。既存予定はtimeStart:''(終日)として正規化する
+  st.plans.forEach(p=>{
+    if(typeof p.timeStart!=='string')p.timeStart='';
+    if(typeof p.timeEnd!=='string')p.timeEnd='';
+  });
 }
 
 // ============================================================
@@ -1309,6 +1341,20 @@ const upcomingPlanBudget=()=>{const today=toDS(gY(),gM(),gD());return st.plans.f
 function thisMonthPlanBudget(){const y=gY(),m=gM(),ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());return st.plans.filter(p=>{if(p.done||!p.budget)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).reduce((a,p)=>a+p.budget,0);}
 function getPlansForDay(ds){return st.plans.filter(p=>{const s=p.dateStart||p.date,e=p.dateEnd||p.date;return ds>=s&&ds<=e;});}
 
+// 'HH:MM' → 分（時刻なしは-1）。calcShiftInc()のsh*60+smイディオムを関数化したもの
+const hm2min = t => { if(!t) return -1; const [h,m]=t.split(':').map(Number); return h*60+m; };
+
+// 指定日における予定の時刻情報を返す。期間予定は「初日=timeStart、最終日=timeEnd、中日=終日」という
+// Googleカレンダー準拠のセマンティクスにする
+function planTimeOnDay(p, ds){
+  const s=p.dateStart||p.date, e=p.dateEnd||p.date;
+  if(!p.timeStart) return {start:'',end:'',min:-1};
+  if(s===e) return {start:p.timeStart,end:p.timeEnd||'',min:hm2min(p.timeStart)};
+  if(ds===s) return {start:p.timeStart,end:'',min:hm2min(p.timeStart)};
+  if(ds===e) return {start:'',end:p.timeEnd||'',min:p.timeEnd?hm2min(p.timeEnd):-1};
+  return {start:'',end:'',min:-1};
+}
+
 function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">¥${acct.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・固定費</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>=0?'＋':''} ¥${forecast.toLocaleString()}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
 
 function renderHome(){const y=gY(),m=gM(),d=gD();const acct=estimateAcct(),fixed=upcomingFixed(),incInfo=upcomingIncome(),wd=totalWd(),dtp=daysToP();const planBudget=upcomingPlanBudget(),safe=acct-fixed-planBudget,todayUse=dtp>0?Math.floor(safe/dtp):safe;document.getElementById('acct-val').textContent='¥'+acct.toLocaleString();document.getElementById('acct-val').style.color=acct<0?'#A32D2D':'var(--color-text-primary)';document.getElementById('acct-sub').textContent='基準: '+st.baseDate;document.getElementById('ai-fixed').textContent='-¥'+fixed.toLocaleString();document.getElementById('ai-wd').textContent='-¥'+wd.toLocaleString();document.getElementById('ai-inc').textContent='+¥'+incInfo.total.toLocaleString();document.getElementById('ai-inc-detail').innerHTML=incInfo.parts.map(p=>`${p.label}: ¥${p.amount.toLocaleString()}`).join('<br>');const tuEl=document.getElementById('today-use');tuEl.textContent='¥'+Math.max(0,todayUse).toLocaleString();tuEl.style.color=todayUse<0?'#A32D2D':'#3B6D11';document.getElementById('days-pay').textContent=dtp+'日';renderBalanceChart();renderForecast();document.getElementById('h-sinc').textContent='¥'+totalShiftInc(y,m).toLocaleString();const lexp=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('h-lexp').textContent='¥'+lexp.toLocaleString();document.getElementById('h-pending').textContent='¥'+st.cards.reduce((a,card)=>a+cycle(card,1).amount,0).toLocaleString();const cbEl=document.getElementById('h-card-bills');if(!st.cards.length)cbEl.innerHTML='<div class="empty">設定タブでカードを登録するとここに表示されます</div>';else cbEl.innerHTML=st.cards.map((card,ci)=>{const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;return `<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:600;margin-bottom:6px">${card.name}</div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div></div>`;}).join('<div style="border-top:0.5px solid var(--color-border-tertiary);margin:8px 0"></div>');const bud=st.budget||0,pct=bud>0?Math.min(100,Math.round(lexp/bud*100)):0;document.getElementById('h-budlbl').textContent='予算 ¥'+bud.toLocaleString();document.getElementById('h-budused').textContent='支出 ¥'+lexp.toLocaleString();document.getElementById('h-prog').style.width=pct+'%';document.getElementById('h-prog').style.background=pct>80?'#A32D2D':pct>60?'#BA7517':'#3B6D11';let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${card.name}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else ahtml+=`<div class="abar-action"><strong>${card.name}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(parseInt(card.closeDay)===d)ahtml+=`<div class="abar neutral">今日は <strong>${card.name}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=jobPayDay(job),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${job.name}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${job.name}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${job.name}</strong> の締め日 — ${jPayD}日払い</div>`;});st.fixedCosts.filter(fc=>parseInt(fc.day)===d).forEach(fc=>{ahtml+=fc.type==='income'?`<div class="abar ok">今日 <strong>${fc.name}</strong> 入金 ¥${parseInt(fc.amount).toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${fc.name}</strong> 引き落とし ¥${parseInt(fc.amount).toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${s.job}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${p.title}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;const ups=[],todayObj=new Date(y,m,d);monthShifts(y,m).filter(s=>new Date(s.date).getDate()>=d).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3).forEach(s=>{const c=jobColorByName(s.job);const r=calcShiftInc(s);ups.push({day:new Date(s.date).getDate(),label:s.job,sub:`${s.start}〜${s.end}`,amount:'+¥'+r.total.toLocaleString(),color:'#185FA5',badgeStyle:`background:${c.bg};color:${c.fg}`});});st.jobs.forEach(job=>{const jPayD=jobPayDay(job);if(new Date(y,m,jPayD)>=todayObj){const sm=addM(y,m,-1);const act=getActualSalary(job.name,sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftIncForJob(job.name,sm.y,sm.m);if(si>0)ups.push({day:jPayD,label:`${job.name}給料（${sm.m+1}月分）`,sub:'口座に入金',amount:'+¥'+si.toLocaleString(),color:'#3B6D11',cls:'binc'});}});st.fixedIncs.filter(fi=>parseInt(fi.day)>=d).forEach(fi=>ups.push({day:parseInt(fi.day),label:fi.name,sub:'口座に入金',amount:'+¥'+parseInt(fi.amount).toLocaleString(),color:'#3B6D11',cls:'binc'}));st.fixedCosts.filter(fc=>parseInt(fc.day)>=d).forEach(fc=>ups.push({day:parseInt(fc.day),label:fc.name,sub:fc.type==='income'?'入金':'引き落とし',amount:(fc.type==='income'?'+':'-')+'¥'+parseInt(fc.amount).toLocaleString(),color:fc.type==='income'?'#3B6D11':'#C45000',cls:fc.type==='income'?'binc':'bfixcost'}));const mEnd=toDS(y,m,new Date(y,m+1,0).getDate());st.plans.filter(p=>{if(p.done)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return e>=todayDS&&s<=mEnd;}).sort((a,b)=>(a.dateStart||a.date).localeCompare(b.dateStart||b.date)).forEach(p=>{const c=planColor(p.color);ups.push({day:ds2d(p.dateStart||p.date).getDate(),label:p.title,sub:p.dateEnd&&p.dateEnd!==p.date?`〜${ds2d(p.dateEnd).getDate()}日`:'予定',amount:p.budget>0?'-¥'+p.budget.toLocaleString():'',color:c.fg,cls:'bplan'});});ups.sort((a,b)=>a.day-b.day);document.getElementById('upcoming-home').innerHTML=!ups.length?'<div class="empty">今後のイベントなし</div>':ups.slice(0,8).map(u=>`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-secondary);min-width:32px">${u.day}日</span><span class="badge${u.cls?` ${u.cls}`:''}" style="${u.badgeStyle||''}">${u.label}</span><span style="font-size:13px;color:var(--color-text-secondary)">${u.sub}</span></div><span style="font-size:14px;font-weight:600;color:${u.color}">${u.amount}</span></div>`).join('');}
@@ -1351,16 +1397,33 @@ function getHoliday(ds){
 // ============================================================
 // カレンダー
 // ============================================================
+// fetchHolidaysはholidayCacheにキー済みなら即returnするため重複呼び出しは無料。
+// holidayCacheは'YYYY-MM'(取得済みマーカー)と'YYYY-MM-DD'(祝日名)が同一オブジェクトに
+// 混在するため、getHoliday(ds)経由以外でキー走査しないこと
+async function ensureHolidays(dsList){
+  const keys=[...new Set(dsList.map(ds=>ds.slice(0,7)))];
+  for(const k of keys){ const[y,mm]=k.split('-').map(Number); await fetchHolidays(y,mm-1); }
+}
+
 async function renderCal(){
+  const seq=++calRenderSeq;
+  const isMonth=calView==='month';
+  document.getElementById('cal-month-wrap').style.display=isMonth?'block':'none';
+  document.getElementById('cal-list').style.display=isMonth?'none':'block';
+  if(!isMonth) document.getElementById('day-detail').style.display='none';
+  if(isMonth) await renderCalMonth(seq);
+  else if(calView==='week') await renderCalWeek(seq);
+  else await renderCalDay(seq);
+}
+
+async function renderCalMonth(seq){
   document.getElementById('cal-title').textContent=calY+'年'+(calM+1)+'月';
   document.getElementById('cal-hdr').innerHTML=DAYS.map(d=>`<div class="chdr">${d}</div>`).join('');
 
-  // 祝日を取得（キャッシュ済みなら即返る）
-  await fetchHolidays(calY, calM);
-  // 前月・翌月分も取得（カレンダーに表示されるため）
+  // 当月・前月・翌月分の祝日を取得（カレンダーに表示されるため）
   const prevMo=addM(calY,calM,-1),nextMo=addM(calY,calM,1);
-  await fetchHolidays(prevMo.y, prevMo.m);
-  await fetchHolidays(nextMo.y, nextMo.m);
+  await ensureHolidays([toDS(calY,calM,1),toDS(prevMo.y,prevMo.m,1),toDS(nextMo.y,nextMo.m,1)]);
+  if(seq!==calRenderSeq)return;
 
   const first=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),prev=new Date(calY,calM,0).getDate();
   const total=Math.ceil((first+dim)/7)*7;
@@ -1396,21 +1459,202 @@ async function renderCal(){
     if(hasFc) pills+='<div class="pill fixedcost">固定費</div>';
     if(wdT.length) pills+='<div class="pill wd">ATM</div>';
     shifts.forEach(s=>{const c=jobColorByName(s.job);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg}">${s.start.slice(0,5)}</div>`;});
-    plans.forEach(p=>{const c=planColor(p.color);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${p.title.slice(0,5)}</div>`;});
+    // 予定は時刻順に並べ、時刻があれば先頭に表示する。.pillはoverflow:hidden+ellipsisがあるので
+    // JS側でtitleを.sliceして切らない方が正しく省略される
+    plans.sort((a,b)=>planTimeOnDay(a,ds).min-planTimeOnDay(b,ds).min);
+    plans.forEach(p=>{const c=planColor(p.color),t=planTimeOnDay(p,ds);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${t.start?t.start+' ':''}${p.title}</div>`;});
     const ldExp=lds.filter(l=>l.type==='expense'),ldInc=lds.filter(l=>l.type==='income');
     if(ldExp.length) pills+=`<div class="pill lexp">-¥${ldExp.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
     if(ldInc.length) pills+=`<div class="pill linc">+¥${ldInc.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
 
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}',${day},${y2},${m2})"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}')"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
   }
   document.getElementById('cal-body').innerHTML=html;
 }
 
-function dayClick(ds,day,y,m){selDay=ds;const shifts=st.shifts.filter(s=>s.date===ds),lds=getLedgerForDay(ds),wdList=st.wds.filter(w=>w.date===ds),plans=getPlansForDay(ds),fcList=st.fixedCosts.filter(fc=>parseInt(fc.day)===day);const dobj=new Date(ds);let html=`<div class="st">${y}年${m+1}月${day}日(${DAYS[dobj.getDay()]})</div>`;let hasJobEvent=false;st.jobs.forEach(job=>{const jPayD=jobPayDay(job),jShimeD=jobCloseDayNum(job,y,m);if(day===jPayD){hasJobEvent=true;const sm=addM(y,m,-1);const act=getActualSalary(job.name,sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftIncForJob(job.name,sm.y,sm.m);if(si>0)html+=`<div class="ri"><span class="badge binc">${job.name} 給料入金</span><span style="font-size:14px;font-weight:600;color:#3B6D11">+¥${si.toLocaleString()}</span></div>`;}if(day===jShimeD&&day!==jPayD){hasJobEvent=true;html+=`<div class="ri"><span class="badge bpending">${job.name} 締め日</span></div>`;}});st.cards.forEach((card,ci)=>{const cl=parseInt(card.closeDay),billD=parseInt(card.billDay);if(day===cl){const billM=addM(y,m,1);const isPending=new Date(y,m,cl)>=new Date(gY(),gM(),gD());html+=`<div class="ri"><span class="badge bcard">${card.name}</span><span style="font-size:13px;color:var(--color-text-secondary)">${isPending?'集計中 ':''}締め日 → ${billM.m+1}月${billD}日引き落とし</span></div>`;}if(day===billD){const actual=getActualCard(ci,y,m);const billCycle=cardCycleForBillMonth(card,ci,y,m);const amt=actual?parseInt(actual.actualAmount):billCycle.amount;const billDate=new Date(y,m,billD);const todayDate=new Date(gY(),gM(),gD());const isFuture=billDate>todayDate;html+=`<div class="ri"><div><span class="badge ${isFuture?'bpending':'bfixed'}">${card.name}</span>${actual?'<span class="act-badge">実額</span>':''}<div class="bill-label">${isFuture?'引き落とし予定日':'引き落とし日'}</div><div class="bill-label">${fmtMD(billCycle.cs)}〜${fmtMD(billCycle.ce)} の利用分</div></div><span style="font-size:14px;font-weight:600;color:${isFuture?'#BA7517':'#A32D2D'}">¥${amt.toLocaleString()}</span></div>`;}});fcList.forEach(fc=>{let pl=fc.type==='income'?'入金':fc.pay==='bank'?'口座引き落とし':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';html+=`<div class="ri"><div><span class="badge bfixcost">${fc.name}</span><div style="font-size:11px;color:var(--color-text-secondary)">${pl}</div></div><span style="font-size:14px;font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${parseInt(fc.amount).toLocaleString()}</span></div>`;});wdList.forEach(w=>html+=`<div class="ri"><span class="badge bwd">ATM引き出し</span><span style="font-size:14px;font-weight:600;color:#3C3489">-¥${parseInt(w.amount).toLocaleString()}</span></div>`);plans.forEach(p=>{const pidx=st.plans.indexOf(p),c=planColor(p.color);const isMultiDay=p.dateEnd&&p.dateEnd!==p.date;html+=`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:8px"><input type="checkbox" ${p.done?'checked':''} onchange="togglePlanDone(${pidx});dayClick('${ds}',${day},${y},${m})" style="cursor:pointer;width:18px;height:18px"><div><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${p.title}</span>${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart).getDate()}〜${ds2d(p.dateEnd).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${p.memo}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${p.budget>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${p.budget.toLocaleString()}</span>`:''}<button class="btn sm edit" onclick="openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="deletePlan(${pidx});dayClick('${ds}',${day},${y},${m})">削除</button></div></div>`;});if(!shifts.length&&!lds.length&&!wdList.length&&!plans.length&&!fcList.length&&!hasJobEvent&&!st.cards.some(c=>parseInt(c.closeDay)===day||parseInt(c.billDay)===day))html+='<div class="empty">この日のイベントなし</div>';shifts.forEach(s=>{const c=jobColorByName(s.job);const r=calcShiftInc(s);html+=`<div class="ri"><div><div style="display:flex;align-items:center;gap:8px"><span class="badge" style="background:${c.bg};color:${c.fg}">${s.job}</span><span style="font-size:13px">${s.start}〜${s.end}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費 ¥${r.transport.toLocaleString()}`:''}</div></div><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span></div>`;});lds.forEach(l=>{const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;html+=`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${parseInt(l.amount).toLocaleString()}</span><button class="btn sm edit" onclick="openLdgEdit(${st.ledger.indexOf(l)})">編集</button><button class="btn sm del" onclick="delLedger(${st.ledger.indexOf(l)});dayClick('${ds}',${day},${y},${m})">削除</button></div></div>`;});document.getElementById('day-detail-content').innerHTML=html;document.getElementById('day-detail').style.display='block';}
-async function prevM(){calM--;if(calM<0){calM=11;calY--;}await renderCal();}
-async function nextM(){calM++;if(calM>11){calM=0;calY++;}await renderCal();}
-function togglePlanDone(idx){st.plans[idx].done=!st.plans[idx].done;save();renderCal();renderHome();}
-function deletePlan(idx){st.plans.splice(idx,1);save();renderCal();renderHome();}
+function weekStart(ds){ const d=ds2d(ds); d.setDate(d.getDate()-d.getDay()); return d; } // 日曜始まり
+
+function dayActionButtonsHtml(){
+  return `<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+    <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(selDay)">＋ 予定</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(selDay)">＋ シフト</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(selDay)">＋ 支出</button>
+  </div>`;
+}
+
+async function renderCalDay(seq){
+  const ds=calAnchor;
+  await ensureHolidays([ds]);
+  if(seq!==calRenderSeq)return;
+  selDay=ds;
+  const d=ds2d(ds), hd=getHoliday(ds), dow=d.getDay();
+  const col=hd||dow===0?'#A32D2D':dow===6?'#185FA5':'var(--color-text-primary)';
+  document.getElementById('cal-title').innerHTML=`<span style="color:${col}">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[dow]})</span>`+(ds===TODAY?' <span class="badge bs0" style="font-size:10px">今日</span>':'');
+
+  const {items}=buildDay(ds,{actions:true, showTime:true});
+  const allday=items.filter(i=>i.sort<0), timed=items.filter(i=>i.sort>=0);
+
+  let html='<div class="card" style="margin-bottom:8px">';
+  if(hd) html+=`<div class="abar" style="background:#FCEBEB;color:#A32D2D">${hd}</div>`;
+  if(allday.length) html+='<div class="st">終日・日付イベント</div>'+allday.map(i=>i.html).join('');
+  if(timed.length) html+='<div class="st" style="margin-top:14px">時間指定</div>'+timed.map(i=>i.html).join('');
+  if(!items.length) html+='<div class="empty">この日のイベントなし</div>';
+  html+='</div>'+dayActionButtonsHtml();
+  document.getElementById('cal-list').innerHTML=html;
+}
+
+async function renderCalWeek(seq){
+  const ws=weekStart(calAnchor);
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return toDS(d.getFullYear(),d.getMonth(),d.getDate());});
+  await ensureHolidays(days); // 月跨ぎの週でも自動で2ヶ月分取得される
+  if(seq!==calRenderSeq)return;
+  const we=ds2d(days[6]);
+  document.getElementById('cal-title').textContent=`${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}`;
+
+  let html='';
+  days.forEach(ds=>{
+    const {items,inc,exp}=buildDay(ds,{actions:false, showTime:true});
+    const d=ds2d(ds), dow=d.getDay(), hd=getHoliday(ds), isT=ds===TODAY;
+    const col=hd||dow===0?'#A32D2D':dow===6?'#185FA5':'var(--color-text-primary)';
+    const sum=[inc?`+¥${inc.toLocaleString()}`:'',exp?`-¥${exp.toLocaleString()}`:''].filter(Boolean).join(' / ');
+    html+=`<div class="cal-day-block${isT?' today':''}">
+      <div class="cal-day-head" onclick="jumpToDay('${ds}')">
+        <span class="cal-day-date" style="color:${col}">${d.getMonth()+1}/${d.getDate()}(${DAYS[dow]})</span>
+        ${hd?`<span style="font-size:10px;color:#A32D2D">${hd}</span>`:''}
+        <span class="cal-day-sum">${sum||(items.length?items.length+'件':'')}</span>
+      </div>
+      <div class="cal-day-body">${items.length?items.map(i=>i.html).join(''):'<div class="empty">予定なし</div>'}</div>
+    </div>`;
+  });
+  document.getElementById('cal-list').innerHTML=html;
+}
+
+/**
+ * 指定日のイベントを収集して返す（DOMには触らない）。
+ * pushする順序は現行dayClickと同一に保つ（給料/締め日→カード→固定費→ATM→予定→シフト→家計簿）。
+ * これによりsortが同値=終日群(-1)はJSのstable sortでpush順のまま保たれ、
+ * 月タップの#day-detail（showTime:false）は現行の見た目・並びと完全に一致する。
+ * @param {string} ds 'YYYY-MM-DD'
+ * @param {{actions?:boolean, showTime?:boolean}} opts
+ *   actions  : 編集/削除ボタンを含めるか（省略時true。週ビューはfalseで圧縮しつつ
+ *              インデックスずれ事故のリスクも減らす）
+ *   showTime : 各アイテムの左に時刻ガター(.ri-time)を出すか（省略時false）
+ * @returns {{items:Array<{sort:number,time:string,html:string}>, inc:number, exp:number}}
+ */
+function buildDay(ds, opts={}){
+  const actions=opts.actions!==false, showTime=!!opts.showTime;
+  const d=ds2d(ds), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  const shifts=st.shifts.filter(s=>s.date===ds),lds=getLedgerForDay(ds),wdList=st.wds.filter(w=>w.date===ds),
+        plans=getPlansForDay(ds),fcList=st.fixedCosts.filter(fc=>parseInt(fc.day)===day);
+  const items=[]; let inc=0, exp=0;
+  const push=(sort,time,html)=>items.push({sort,time,html:showTime?`<div class="ri-with-time"><span class="ri-time">${time||''}</span>${html}</div>`:html});
+
+  st.jobs.forEach(job=>{
+    const jPayD=jobPayDay(job),jShimeD=jobCloseDayNum(job,y,m);
+    if(day===jPayD){
+      const sm=addM(y,m,-1);
+      const act=getActualSalary(job.name,sm.y,sm.m);
+      const si=act?parseInt(act.actualAmount):totalShiftIncForJob(job.name,sm.y,sm.m);
+      if(si>0){inc+=si;push(-1,'',`<div class="ri"><span class="badge binc">${job.name} 給料入金</span><span style="font-size:14px;font-weight:600;color:#3B6D11">+¥${si.toLocaleString()}</span></div>`);}
+    }
+    if(day===jShimeD&&day!==jPayD)push(-1,'',`<div class="ri"><span class="badge bpending">${job.name} 締め日</span></div>`);
+  });
+  st.cards.forEach((card,ci)=>{
+    const cl=parseInt(card.closeDay),billD=parseInt(card.billDay);
+    if(day===cl){
+      const billM=addM(y,m,1);
+      const isPending=new Date(y,m,cl)>=new Date(gY(),gM(),gD());
+      push(-1,'',`<div class="ri"><span class="badge bcard">${card.name}</span><span style="font-size:13px;color:var(--color-text-secondary)">${isPending?'集計中 ':''}締め日 → ${billM.m+1}月${billD}日引き落とし</span></div>`);
+    }
+    if(day===billD){
+      const actual=getActualCard(ci,y,m);
+      const billCycle=cardCycleForBillMonth(card,ci,y,m);
+      const amt=actual?parseInt(actual.actualAmount):billCycle.amount;
+      const billDate=new Date(y,m,billD),todayDate=new Date(gY(),gM(),gD());
+      const isFuture=billDate>todayDate;
+      push(-1,'',`<div class="ri"><div><span class="badge ${isFuture?'bpending':'bfixed'}">${card.name}</span>${actual?'<span class="act-badge">実額</span>':''}<div class="bill-label">${isFuture?'引き落とし予定日':'引き落とし日'}</div><div class="bill-label">${fmtMD(billCycle.cs)}〜${fmtMD(billCycle.ce)} の利用分</div></div><span style="font-size:14px;font-weight:600;color:${isFuture?'#BA7517':'#A32D2D'}">¥${amt.toLocaleString()}</span></div>`);
+    }
+  });
+  fcList.forEach(fc=>{
+    let pl=fc.type==='income'?'入金':fc.pay==='bank'?'口座引き落とし':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';
+    if(fc.type==='income')inc+=parseInt(fc.amount); // 支出側(固定費)の集計はcycle等の既存ロジックと重複するため対象外、収入だけ加算
+    push(-1,'',`<div class="ri"><div><span class="badge bfixcost">${fc.name}</span><div style="font-size:11px;color:var(--color-text-secondary)">${pl}</div></div><span style="font-size:14px;font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${parseInt(fc.amount).toLocaleString()}</span></div>`);
+  });
+  wdList.forEach(w=>push(-1,'',`<div class="ri"><span class="badge bwd">ATM引き出し</span><span style="font-size:14px;font-weight:600;color:#3C3489">-¥${parseInt(w.amount).toLocaleString()}</span></div>`));
+  plans.forEach(p=>{
+    const pidx=st.plans.indexOf(p),c=planColor(p.color);
+    const isMultiDay=p.dateEnd&&p.dateEnd!==p.date;
+    const t=planTimeOnDay(p,ds);
+    const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
+    const actionsHtml=actions?`<button class="btn sm edit" onclick="openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="deletePlan(${pidx})">削除</button>`:'';
+    push(t.min,timeLabel,`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:8px"><input type="checkbox" ${p.done?'checked':''} onchange="togglePlanDone(${pidx})" style="cursor:pointer;width:18px;height:18px"><div><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${p.title}</span>${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart).getDate()}〜${ds2d(p.dateEnd).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${p.memo}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${p.budget>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${p.budget.toLocaleString()}</span>`:''}${actionsHtml}</div></div>`);
+  });
+  shifts.forEach(s=>{
+    const c=jobColorByName(s.job),r=calcShiftInc(s);
+    inc+=r.total;
+    push(hm2min(s.start),s.start,`<div class="ri"><div><div style="display:flex;align-items:center;gap:8px"><span class="badge" style="background:${c.bg};color:${c.fg}">${s.job}</span><span style="font-size:13px">${s.start}〜${s.end}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費 ¥${r.transport.toLocaleString()}`:''}</div></div><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span></div>`);
+  });
+  lds.forEach(l=>{
+    const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;
+    const amt=parseInt(l.amount);
+    if(l.type==='income')inc+=amt; else exp+=amt;
+    const actionsHtml=actions?`<button class="btn sm edit" onclick="openLdgEdit(${st.ledger.indexOf(l)})">編集</button><button class="btn sm del" onclick="delLedger(${st.ledger.indexOf(l)})">削除</button>`:'';
+    push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
+  });
+
+  items.sort((a,b)=>a.sort-b.sort); // 終日(-1)が先頭、以降は時刻昇順。同値はstable sortでpush順を維持
+  return {items, inc, exp};
+}
+
+function closeDayDetail(){ document.getElementById('day-detail').style.display='none'; selDay=null; }
+
+// 月表示タップ時の日詳細（#day-detail、常設カード）。時刻ガターは出さず現行の見た目を維持
+function dayClick(ds){
+  selDay=ds;
+  const d=ds2d(ds), hd=getHoliday(ds);
+  const {items}=buildDay(ds,{actions:true, showTime:false});
+  let html=`<div class="st" style="display:flex;align-items:center;justify-content:space-between"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span><span onclick="jumpToDay('${ds}')" style="cursor:pointer;color:#185FA5;font-size:12px;font-weight:500;margin-right:12px">詳しく見る →</span><span onclick="closeDayDetail()" style="cursor:pointer;color:var(--color-text-secondary);font-size:18px;line-height:1">×</span></span></div>`;
+  html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
+  document.getElementById('day-detail-content').innerHTML=html;
+  document.getElementById('day-detail').style.display='block';
+}
+// dir: -1|+1。月ビューは月単位、週ビューは7日単位、日ビューは1日単位でcalAnchorを動かす
+function calShift(dir){
+  if(calView==='month'){
+    const nm=addM(calY,calM,dir); calY=nm.y; calM=nm.m;
+    calAnchor=toDS(calY,calM,1);
+  }else{
+    const step=calView==='week'?7:1;
+    const d=ds2d(calAnchor); d.setDate(d.getDate()+dir*step);
+    calAnchor=toDS(d.getFullYear(),d.getMonth(),d.getDate());
+    calY=d.getFullYear(); calM=d.getMonth(); // 月ビュー復帰時のために同期しておく
+  }
+  return renderCal();
+}
+async function prevM(){await calShift(-1);}  // 既存の関数名・onclickを温存
+async function nextM(){await calShift(1);}
+
+async function setCalView(v){
+  if(calView===v)return;
+  if(v==='month'){
+    const d=ds2d(calAnchor); calY=d.getFullYear(); calM=d.getMonth();
+  }else if(calView==='month'){
+    calAnchor = selDay || ((calY===gY()&&calM===gM())?TODAY:toDS(calY,calM,1));
+  }
+  calView=v;
+  ['day','week','month'].forEach(x=>document.getElementById('cvt-'+x).classList.toggle('active',x===v));
+  await renderCal();
+}
+// 週ビューの日ヘッダタップ／#day-detailの「詳しく見る」から日ビューへ遷移する共通入口
+function jumpToDay(ds){ calAnchor=ds; selDay=ds; setCalView('day'); }
+// 予定/シフト/家計簿の増減後の再描画を1本化する。月ビューではselDayがあれば#day-detailを
+// 更新、日/週ビューはbuildDayベースで丸ごと再描画（祝日はキャッシュ済みなので体感コストは低い）
+function refreshDayViews(){
+  if(calView==='month'){ if(selDay) dayClick(selDay); }
+  else renderCal();
+}
+function togglePlanDone(idx){st.plans[idx].done=!st.plans[idx].done;save();renderCal();refreshDayViews();renderHome();}
+function deletePlan(idx){st.plans.splice(idx,1);save();renderCal();refreshDayViews();renderHome();}
 
 // ============================================================
 // カード設定（設定タブ内）
@@ -1794,7 +2038,7 @@ function toggleLdgGroup(id){
   detail.classList.toggle('open',!isOpen);
   arrow.classList.toggle('open',!isOpen);
 }
-function delLedger(i){st.ledger.splice(i,1);save();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
+function delLedger(i){st.ledger.splice(i,1);save();renderLedger();renderLedgerMetrics();renderCal();refreshDayViews();renderHome();renderCardList();}
 function renderCatChart_(ml){
   const catMap={};ml.forEach(l=>{catMap[l.cat]=(catMap[l.cat]||0)+parseInt(l.amount);});
   const catLabels=Object.keys(catMap),catData=Object.values(catMap),catColors=catLabels.map((c,i)=>CAT_COL[c]||DOTC[i%DOTC.length]);
@@ -1912,6 +2156,13 @@ function selPlanPay(ci){
   renderPlanPayChips();
 }
 
+// .fgrはdisplay:gridなので、非表示解除時は'block'ではなく'grid'に戻すこと
+function togglePlanAllDay(){
+  const on=document.getElementById('plan-allday').checked;
+  document.getElementById('plan-time-inputs').style.display=on?'none':'grid';
+  document.getElementById('plan-time-hint').style.display=on?'none':'block';
+}
+
 function openPlanModal(ds){
   planEditIdx=-1;planColorSel='pink';planCardIdx=-1;
   document.getElementById('plan-modal-title').textContent='予定を追加';
@@ -1922,6 +2173,11 @@ function openPlanModal(ds){
   document.getElementById('plan-budget').value='';
   document.getElementById('plan-save-btn').textContent='追加';
   setDateMode('single');
+  // 新規予定はデフォルト終日
+  document.getElementById('plan-allday').checked=true;
+  document.getElementById('plan-time-start').value='';
+  document.getElementById('plan-time-end').value='';
+  togglePlanAllDay();
   renderColorSwatches();
   renderPlanPayChips();
   document.getElementById('plan-date-start').oninput=updateRangePreview;
@@ -1944,6 +2200,10 @@ function openPlanEdit(idx){
   document.getElementById('plan-save-btn').textContent='保存';
   const mode=p.dateEnd&&p.dateEnd!==p.date?'range':'single';
   setDateMode(mode);
+  document.getElementById('plan-allday').checked=!p.timeStart;
+  document.getElementById('plan-time-start').value=p.timeStart||'';
+  document.getElementById('plan-time-end').value=p.timeEnd||'';
+  togglePlanAllDay();
   renderColorSwatches();
   renderPlanPayChips();
   document.getElementById('plan-date-start').oninput=updateRangePreview;
@@ -1968,12 +2228,18 @@ function savePlan(){
     if(!dateStart)return;
     dateEnd=dateStart;
   }
-  const obj={id:planEditIdx>=0?st.plans[planEditIdx].id:Date.now(),title,date:dateStart,dateStart,dateEnd,budget,memo,color,done:false};
+  const allDay=document.getElementById('plan-allday').checked;
+  let timeStart=allDay?'':(document.getElementById('plan-time-start').value||'');
+  let timeEnd=allDay?'':(document.getElementById('plan-time-end').value||'');
+  if(!timeStart)timeEnd='';
+  // 'HH:MM'は辞書順=時刻順なので単純比較でOK。単日で終了が開始より前なら終了を捨てる
+  if(timeStart&&timeEnd&&dateStart===dateEnd&&timeEnd<timeStart)timeEnd='';
+  const obj={id:planEditIdx>=0?st.plans[planEditIdx].id:Date.now(),title,date:dateStart,dateStart,dateEnd,timeStart,timeEnd,budget,memo,color,done:false};
   // カード払いの場合planCardIdxを保存
   if(planCardIdx>=0) obj.planCardIdx=planCardIdx;
   if(planEditIdx>=0){obj.done=st.plans[planEditIdx].done;st.plans[planEditIdx]=obj;}
   else st.plans.push(obj);
-  save();closePlanModal();renderCal();renderHome();
+  save();closePlanModal();renderCal();refreshDayViews();renderHome();
 }
 
 // ============================================================
