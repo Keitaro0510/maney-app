@@ -17,13 +17,17 @@
 <style>
 :root{
   --color-background-primary:#ffffff;
-  --color-background-secondary:#f5f5f5;
-  --color-text-primary:#111111;
-  --color-text-secondary:#666666;
-  --color-border-tertiary:rgba(0,0,0,0.1);
-  --color-border-secondary:rgba(0,0,0,0.2);
-  --border-radius-lg:12px;
-  --border-radius-md:8px;
+  --color-background-secondary:#f4f7fb;
+  --color-text-primary:#122033;
+  --color-text-secondary:#617084;
+  --color-border-tertiary:rgba(22,48,78,0.11);
+  --color-border-secondary:rgba(22,48,78,0.22);
+  --color-brand:#185FA5;
+  --color-brand-dark:#114B84;
+  --color-brand-soft:#EAF3FC;
+  --color-danger:#A32D2D;
+  --border-radius-lg:16px;
+  --border-radius-md:10px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark){
@@ -35,6 +39,7 @@
     --color-border-tertiary:rgba(255,255,255,0.12);
     --color-border-secondary:rgba(255,255,255,0.2);
   }
+  .bottom-nav{background:rgba(28,28,30,.94)}
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%}
@@ -43,7 +48,7 @@ body{
   background:var(--color-background-secondary);
   color:var(--color-text-primary);
   min-height:100%;
-  padding-bottom:calc(64px + var(--safe-bottom));
+  padding-bottom:calc(72px + var(--safe-bottom));
   /* iOSでスクロールをネイティブっぽく */
   -webkit-overflow-scrolling:touch;
 }
@@ -51,12 +56,12 @@ body{
 .bottom-nav{
   position:fixed;
   bottom:0;left:0;right:0;
-  height:calc(56px + var(--safe-bottom));
-  background:var(--color-background-primary);
+  height:calc(64px + var(--safe-bottom));
+  background:rgba(255,255,255,.94);
   border-top:0.5px solid var(--color-border-tertiary);
   display:flex;
   align-items:flex-start;
-  padding-top:4px;
+  padding:5px 6px 0;
   padding-bottom:var(--safe-bottom);
   z-index:100;
   backdrop-filter:blur(12px);
@@ -67,26 +72,27 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:2px;
+  gap:3px;
   cursor:pointer;
-  padding:4px 2px;
+  padding:5px 2px;
+  border-radius:10px;
   color:var(--color-text-secondary);
   font-size:10px;
   transition:color .15s;
   user-select:none;
 }
-.nav-item.active{color:#185FA5}
+.nav-item.active{color:var(--color-brand);background:var(--color-brand-soft);font-weight:700}
 .nav-item svg{width:22px;height:22px;stroke-width:1.8}
 /* ===== メインコンテンツ ===== */
 .app{
   max-width:640px;
   margin:0 auto;
-  padding:.75rem .875rem;
+  padding:1rem .875rem;
 }
 .page-title{
-  font-size:20px;
+  font-size:22px;
   font-weight:700;
-  margin-bottom:1rem;
+  margin-bottom:.875rem;
   padding-top:env(safe-area-inset-top, 8px);
   letter-spacing:-.3px;
 }
@@ -96,32 +102,49 @@ body{
   background:var(--color-background-primary);
   border:0.5px solid var(--color-border-tertiary);
   border-radius:var(--border-radius-lg);
-  padding:1rem 1rem;
-  margin-bottom:10px;
+  padding:1rem;
+  margin-bottom:12px;
+  box-shadow:0 2px 10px rgba(20,55,90,.035);
 }
-.st{font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px}
+.st{font-size:12px;font-weight:700;color:var(--color-text-secondary);margin-bottom:10px;letter-spacing:.25px}
 /* ===== 残高ボックス ===== */
 .acct-box{
   border-radius:var(--border-radius-lg);
   padding:1.25rem 1rem;
-  border:0.5px solid var(--color-border-tertiary);
-  background:var(--color-background-primary);
-  margin-bottom:.75rem;
+  border:0;
+  background:linear-gradient(135deg,#185FA5 0%,#246EAE 60%,#3380BC 100%);
+  color:#fff;
+  box-shadow:0 10px 26px rgba(24,95,165,.22);
+  margin-bottom:.625rem;
 }
-.acct-lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;font-weight:500}
+.acct-lbl{font-size:11px;color:rgba(255,255,255,.76);margin-bottom:4px;font-weight:600}
 .acct-val{font-size:34px;font-weight:700;margin-bottom:2px;letter-spacing:-1px}
-.acct-sub{font-size:11px;color:var(--color-text-secondary)}
+.acct-sub{font-size:11px;color:rgba(255,255,255,.7)}
 .acct-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
-.acct-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 8px}
-.acct-item-l{font-size:10px;color:var(--color-text-secondary);margin-bottom:2px}
+.acct-item{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:var(--border-radius-md);padding:8px}
+.acct-item-l{font-size:10px;color:rgba(255,255,255,.72);margin-bottom:2px}
 .acct-item-v{font-size:14px;font-weight:600}
-.inc-detail{font-size:10px;color:var(--color-text-secondary);margin-top:2px;line-height:1.5}
+.acct-item-v[style]{color:#fff !important}
+.inc-detail{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px;line-height:1.5}
+/* ===== ホームの判断・記録導線 ===== */
+.home-actions{display:grid;grid-template-columns:1.35fr 1fr;gap:8px;margin-bottom:.75rem}
+.home-actions .btn{margin:0;min-height:46px}
+.quick-ledger{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--color-brand)!important;box-shadow:0 4px 10px rgba(24,95,165,.2)}
+.quick-plan{background:var(--color-background-primary)!important;color:var(--color-brand)!important;border-color:#B5D4F4!important;font-weight:600}
+.home-status{margin-bottom:.75rem}
+.home-status:empty{display:none}
+.status-card{display:flex;gap:10px;align-items:flex-start;border-radius:var(--border-radius-md);padding:11px 12px;font-size:13px;border:1px solid}
+.status-card strong{display:block;margin-bottom:2px;font-size:13px}
+.status-card small{display:block;font-size:11px;line-height:1.45;opacity:.88}
+.status-card.danger{background:#FFF2F2;color:#8C2424;border-color:#F2C7C7}
+.status-card.warn{background:#FFF8E8;color:#8A5A00;border-color:#F0D69A}
+.status-card.ok{background:#EFF8F0;color:#286331;border-color:#C7E5CB}
 /* ===== ATMボタン ===== */
 .wd-btn{
   width:100%;padding:13px;
   border:0.5px solid var(--color-border-secondary);
   border-radius:var(--border-radius-lg);
-  background:var(--color-background-secondary);
+  background:var(--color-background-primary);
   color:var(--color-text-primary);
   font-size:14px;font-weight:600;
   cursor:pointer;margin-bottom:.75rem;
@@ -130,7 +153,8 @@ body{
 /* ===== 今日使えるバー ===== */
 .today-row{
   display:flex;align-items:center;justify-content:space-between;
-  background:var(--color-background-secondary);
+  background:var(--color-brand-soft);
+  border:1px solid #D6E8F8;
   border-radius:var(--border-radius-md);
   padding:12px 14px;margin-bottom:.75rem;
 }
@@ -194,7 +218,7 @@ body{
   appearance:none;-webkit-appearance:none;
 }
 .fg input:focus,.fg select:focus,.fg textarea:focus{
-  outline:none;border-color:#185FA5;
+  outline:2px solid rgba(24,95,165,.16);border-color:var(--color-brand);
 }
 .fg .hint{font-size:11px;color:var(--color-text-secondary);margin-top:4px}
 .fg textarea{height:60px;resize:none}
@@ -206,10 +230,11 @@ body{
   border:0.5px solid var(--color-border-secondary);
   border-radius:var(--border-radius-md);
   background:transparent;color:var(--color-text-primary);
-  font-size:14px;cursor:pointer;font-weight:500;
+  font-size:14px;cursor:pointer;font-weight:600;
   -webkit-tap-highlight-color:transparent;
 }
-.btn.primary{background:#185FA5;color:#fff;border-color:transparent;font-weight:600}
+.btn.primary{background:var(--color-brand);color:#fff;border-color:transparent;font-weight:700}
+.btn:active,.nav-item:active,.pay-chip:active,.chip:active{transform:scale(.98)}
 .btn.sm{padding:5px 11px;font-size:12px}
 .btn.del{color:#A32D2D;border-color:#F0959560}
 .btn.edit{color:#185FA5;border-color:#B5D4F4}
@@ -348,6 +373,12 @@ body{
   padding:0 12px;
 }
 .ldg-day-detail.open{display:block}
+@media (max-width:380px){
+  .app{padding-left:.7rem;padding-right:.7rem}
+  .acct-grid{gap:4px}.acct-item{padding:7px 5px}.acct-item-v{font-size:12px}
+  .metrics{gap:4px}.met{padding:9px 4px}.met-v{font-size:14px}
+  .home-actions{grid-template-columns:1fr 1fr}
+}
 /* ===== ログイン画面 ===== */
 #login-screen{
   position:fixed;inset:0;
@@ -441,7 +472,6 @@ body{
 <!-- HOME -->
 <div id="sec-home" class="sec active">
   <div class="page-title">ホーム</div>
-  <div id="alerts-home"></div>
   <div class="acct-box">
     <div class="acct-lbl">口座残高（推定）</div>
     <div class="acct-val" id="acct-val">¥0</div>
@@ -452,11 +482,17 @@ body{
       <div class="acct-item"><div class="acct-item-l">予定収入</div><div class="acct-item-v" id="ai-inc" style="color:#3B6D11">+¥0</div><div class="inc-detail" id="ai-inc-detail"></div></div>
     </div>
   </div>
-  <button class="wd-btn" onclick="openWd()"><span style="font-size:22px">💴</span><span>ATMで現金を引き出す</span></button>
+  <div class="home-actions">
+    <button class="btn primary quick-ledger" onclick="openLedgerModal(null)"><span aria-hidden="true">＋</span> 支出を記録</button>
+    <button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
+  </div>
+  <div id="home-status" class="home-status"></div>
+  <div id="alerts-home"></div>
   <div class="today-row">
     <div><div style="font-size:11px;color:var(--color-text-secondary)">今日使える（引き落とし・予定控除後）</div><div style="font-size:24px;font-weight:700" id="today-use">¥0</div></div>
     <div style="text-align:right"><div style="font-size:11px;color:var(--color-text-secondary)">給料まで</div><div style="font-size:20px;font-weight:700" id="days-pay">-日</div></div>
   </div>
+  <button class="wd-btn" onclick="openWd()"><span style="font-size:22px">💴</span><span>ATMで現金を引き出す</span></button>
   <div class="card">
     <div class="st">残高推移（今後90日）</div>
     <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">バイト収入・カード・固定費・予定支出込みの見通し</div>
@@ -1939,6 +1975,42 @@ function savePlan(){
   else st.plans.push(obj);
   save();closePlanModal();renderCal();renderHome();
 }
+
+// ============================================================
+// ホームの状態表示（計算・保存ロジックには触れないUI専用の表示）
+// ============================================================
+function renderHomeStatus(){
+  const target=document.getElementById('home-status');
+  if(!target)return;
+  const y=gY(),m=gM(),acct=estimateAcct(),fixed=upcomingFixed(),planBudget=upcomingPlanBudget();
+  const safe=acct-fixed-planBudget;
+  const expense=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);
+  const budget=parseInt(st.budget)||0;
+  let type='ok',icon='✓',title='今月の見通しは安定しています',detail='支出を記録すると、残高と見通しがすぐに更新されます。';
+  if(safe<0){
+    type='danger';icon='!';title='口座残高が不足する見込みです';
+    detail=`確定引き落としと予定支出を含めると ¥${Math.abs(safe).toLocaleString()} 足りません。`;
+  }else if(budget>0&&expense>=budget){
+    type='danger';icon='!';title='今月の予算を超えています';
+    detail=`予算 ¥${budget.toLocaleString()} に対し、¥${expense.toLocaleString()} を記録済みです。`;
+  }else if(budget>0&&expense/budget>=.8){
+    type='warn';icon='!';title='今月の予算が残りわずかです';
+    detail=`予算の ${Math.round(expense/budget*100)}%（¥${expense.toLocaleString()}）を使っています。`;
+  }
+  target.innerHTML=`<div class="status-card ${type}"><span aria-hidden="true" style="font-weight:800;font-size:16px;line-height:1">${icon}</span><div><strong>${title}</strong><small>${detail}</small></div></div>`;
+}
+var renderHomeOriginal=renderHome;
+renderHome=function(){
+  renderHomeOriginal();
+  const balance=document.getElementById('acct-val');
+  if(balance)balance.style.color=balance.textContent.includes('-')?'#FFDADA':'#FFFFFF';
+  renderHomeStatus();
+};
+var openLedgerModalOriginal=openLedgerModal;
+openLedgerModal=function(date){
+  openLedgerModalOriginal(date);
+  window.setTimeout(()=>document.getElementById('ldg-amount')?.focus(),80);
+};
 
 // ============================================================
 // Service Worker登録
