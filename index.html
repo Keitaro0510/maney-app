@@ -239,6 +239,21 @@ body{
 .fg textarea{height:60px;resize:none}
 .fgr{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .fgr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+/* ===== 予定の時間指定 ===== */
+.plan-time-card{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px;margin-bottom:14px}
+.plan-time-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.plan-time-title{font-size:12px;font-weight:700;color:var(--color-text-primary)}
+.plan-time-toggle{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:rgba(24,95,165,.09);border-radius:9px;padding:3px;min-width:184px}
+.plan-time-toggle button{border:0;border-radius:7px;background:transparent;color:var(--color-text-secondary);padding:6px 8px;font-size:12px;font-weight:700;cursor:pointer}
+.plan-time-toggle button.active{background:var(--color-background-primary);color:var(--color-brand);box-shadow:0 1px 3px rgba(20,55,90,.12)}
+.plan-time-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.plan-time-field{min-width:0}
+.plan-time-field span{display:block;font-size:11px;color:var(--color-text-secondary);font-weight:600;margin:0 0 4px 2px}
+.plan-time-field input{width:100%;padding:10px 11px;font-size:15px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)}
+.plan-time-field input:focus{outline:2px solid rgba(24,95,165,.16);border-color:var(--color-brand)}
+.plan-time-note{font-size:11px;color:var(--color-text-secondary);line-height:1.4}
+.plan-time-card.is-all-day .plan-time-inputs{display:none}
+.plan-time-card.is-all-day .plan-time-note{padding:3px 1px}
 /* ===== ボタン ===== */
 .btn{
   padding:8px 16px;
@@ -728,7 +743,21 @@ body{
 
 <!-- MODALS -->
 <div class="mbg" id="wd-mbg"><div class="modal"><div class="modal-handle"></div><h3>ATMで現金を引き出す</h3><div class="amount-display" id="wd-display">¥0</div><div class="numpad"><button class="numkey" onclick="nk('1')">1</button><button class="numkey" onclick="nk('2')">2</button><button class="numkey" onclick="nk('3')">3</button><button class="numkey" onclick="nk('4')">4</button><button class="numkey" onclick="nk('5')">5</button><button class="numkey" onclick="nk('6')">6</button><button class="numkey" onclick="nk('7')">7</button><button class="numkey" onclick="nk('8')">8</button><button class="numkey" onclick="nk('9')">9</button><button class="numkey" onclick="nk('000')">000</button><button class="numkey" onclick="nk('0')">0</button><button class="numkey" onclick="nd()">⌫</button></div><div style="display:flex;gap:8px"><button class="btn full" style="margin-top:0;flex:1" onclick="closeWd()">キャンセル</button><button class="btn primary full" style="margin-top:0;flex:2" onclick="doWd()">引き出す</button></div></div></div>
-<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3><div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div><div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div><div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div><div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div><div class="fg" id="plan-time-wrap"><label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span>時刻</span><span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600"><input type="checkbox" id="plan-allday" onchange="togglePlanAllDay()" style="width:auto;height:18px;margin:0"> 終日</span></label><div class="fgr" id="plan-time-inputs"><input type="time" id="plan-time-start"/><input type="time" id="plan-time-end"/></div><div class="hint" id="plan-time-hint">開始のみでもOK（終了は空欄可）</div></div><div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div><div class="fg" id="plan-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="plan-pay-chips"></div><div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div></div><div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div></div></div>
+<div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3>
+  <div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div>
+  <div class="date-mode-tabs"><div class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')">1日</div><div class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')">期間（連続日程）</div></div>
+  <div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div>
+  <div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div>
+  <div class="plan-time-card is-all-day" id="plan-time-wrap">
+    <div class="plan-time-header"><span class="plan-time-title">予定の時間</span><div class="plan-time-toggle" role="group" aria-label="予定の時間設定"><button type="button" id="plan-mode-allday" class="active" onclick="setPlanTimeMode(true)">終日</button><button type="button" id="plan-mode-timed" onclick="setPlanTimeMode(false)">時刻指定</button></div></div>
+    <input type="checkbox" id="plan-allday" checked onchange="togglePlanAllDay()" hidden/>
+    <div class="plan-time-inputs" id="plan-time-inputs"><label class="plan-time-field"><span>開始</span><input type="time" id="plan-time-start"/></label><label class="plan-time-field"><span>終了（任意）</span><input type="time" id="plan-time-end"/></label></div>
+    <div class="plan-time-note" id="plan-time-hint">この予定は終日として表示されます。</div>
+  </div>
+  <div class="fg"><label>予算（合計 ¥）</label><input type="number" inputmode="numeric" id="plan-budget" placeholder="5000"/><div class="hint">収支見通し・残高グラフに反映されます</div></div>
+  <div class="fg" id="plan-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="plan-pay-chips"></div><div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div></div>
+  <div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div>
+</div></div>
 <div class="mbg" id="card-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>カードを編集</h3><div class="fg"><label>カード名</label><input id="ce-name"/></div><div class="fgr"><div class="fg"><label>締め日</label><div style="display:flex;align-items:center;gap:8px"><input id="ce-close" type="number" inputmode="numeric" min="1" max="31" style="flex:1"/><label style="display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap;margin-bottom:0"><input type="checkbox" id="ce-close-eom" onchange="toggleCardCloseEom('ce')"> 末日</label></div></div><div class="fg"><label>引き落とし日</label><input id="ce-bill" type="number" inputmode="numeric" min="1" max="31"/></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeCardEdit()">キャンセル</button><button class="btn primary" onclick="saveCardEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>記録を編集</h3><div class="pay-chips" id="lde-type-chips"><div class="pay-chip sel" onclick="selLdeType('expense')">支出</div><div class="pay-chip" onclick="selLdeType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="lde-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="lde-amount"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="lde-cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="lde-name"/></div><div class="fg" id="lde-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="lde-pay-chips"></div></div><div class="fg" id="lde-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="lde-receive-chips"></div><div class="hint" id="lde-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="lde-memo"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgEdit()">キャンセル</button><button class="btn primary" onclick="saveLdgEdit()">保存</button></div></div></div>
 <div class="mbg" id="shift-mbg"><div class="modal"><div class="modal-handle"></div><h3>シフトを追加</h3><div class="fg"><label>バイト先</label><select id="m-job"></select></div><div class="fgr"><div class="fg"><label>出勤</label><input type="time" id="m-start" value="09:00"/></div><div class="fg"><label>退勤</label><input type="time" id="m-end" value="17:00"/></div></div><div class="fg"><label>休憩時間（分）</label><div class="pay-chips" id="m-rest-chips"></div><input type="number" id="m-rest" value="0" min="0" step="5" placeholder="例: 60"/></div><div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:12px;font-size:13px">1日: <strong id="m-prev">¥0</strong>（深夜:<span id="m-night">0h</span>　休憩:<span id="m-rest-lbl">0分</span>）交通費:<strong id="m-transport">¥0</strong> 合計:<strong id="m-prev-total">¥0</strong></div><div class="fg"><label>日付を選択（複数OK）</label><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="m-month-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button class="btn sm" onclick="shiftCalPrev()">&#8592;</button><button class="btn sm" onclick="shiftCalNext()">&#8594;</button></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="shift-cal-dow"></div><div id="shift-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="sel-days-count">0日</span>　合計: <strong id="m-total-all">¥0</strong></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeShiftModal()">キャンセル</button><button class="btn primary" onclick="saveShift()">一括保存</button></div></div></div>
@@ -2156,11 +2185,20 @@ function selPlanPay(ci){
   renderPlanPayChips();
 }
 
-// .fgrはdisplay:gridなので、非表示解除時は'block'ではなく'grid'に戻すこと
+function setPlanTimeMode(allDay){
+  document.getElementById('plan-allday').checked=allDay;
+  togglePlanAllDay();
+  if(!allDay)window.setTimeout(()=>document.getElementById('plan-time-start').focus(),0);
+}
+
 function togglePlanAllDay(){
   const on=document.getElementById('plan-allday').checked;
-  document.getElementById('plan-time-inputs').style.display=on?'none':'grid';
-  document.getElementById('plan-time-hint').style.display=on?'none':'block';
+  document.getElementById('plan-time-wrap').classList.toggle('is-all-day',on);
+  document.getElementById('plan-mode-allday').classList.toggle('active',on);
+  document.getElementById('plan-mode-timed').classList.toggle('active',!on);
+  document.getElementById('plan-time-hint').textContent=on
+    ?'この予定は終日として表示されます。'
+    :'開始時刻を入力してください。終了時刻は任意です。';
 }
 
 function openPlanModal(ds){
