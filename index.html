@@ -1010,6 +1010,19 @@ function cardTxToLedgerEntry_(r){
   return{date:r.used_on,amount:r.amount,name:key,cat,type:'expense',pay:st.cards[st.rakutenCardIdx].name,cardIdx:st.rakutenCardIdx,memo:'',src:'rakuten',txId:r.id};
 }
 
+// card_tx行rと同じ日付・金額・支払いカードの手動入力(txIdなし)をst.ledgerから探す。
+// 明細メールの到着が遅く先に手動記録してしまうケースの二重計上を防ぐため、
+// 承認時にこれが見つかったら手動入力側を削除してから自動取り込みエントリに置き換える。
+// 日付・金額・カードの3条件すべての完全一致のみを対象にし、別の同額支出を
+// 誤って消さないようにする。
+function findManualDuplicate_(r){
+  return st.ledger.findIndex(l=>
+    l.type==='expense' && !l.txId &&
+    l.date===r.used_on && parseInt(l.amount)===r.amount &&
+    l.cardIdx===st.rakutenCardIdx
+  );
+}
+
 async function approveCardTx(id){
   if(cardTxBusy)return;
   if(!requireRakutenCard_())return;
@@ -1018,6 +1031,8 @@ async function approveCardTx(id){
 
   setCardTxBusy_(true);renderCardTxInboxList();
   try{
+    const dupIdx=findManualDuplicate_(r);
+    if(dupIdx>=0)st.ledger.splice(dupIdx,1);
     st.ledger.push(cardTxToLedgerEntry_(r));
     await saveRemote(); // 完了を待つ（README記載のiOS PWA既知問題「awaitなしのsaveRemote()は途中で打ち切られる」への対策）
 
@@ -1028,6 +1043,7 @@ async function approveCardTx(id){
     cardTxInbox=cardTxInbox.filter(x=>x.id!==id);
     renderCardTxInboxCard();
     renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
+    if(dupIdx>=0)alert('手動入力していた記録と重複していたため、統合しました');
   }finally{
     setCardTxBusy_(false);renderCardTxInboxList();
   }
@@ -1041,7 +1057,12 @@ async function approveAllCardTx(){
 
   setCardTxBusy_(true);renderCardTxInboxList();
   try{
-    targets.forEach(r=>st.ledger.push(cardTxToLedgerEntry_(r)));
+    let mergedCount=0;
+    targets.forEach(r=>{
+      const dupIdx=findManualDuplicate_(r);
+      if(dupIdx>=0){st.ledger.splice(dupIdx,1);mergedCount++;}
+      st.ledger.push(cardTxToLedgerEntry_(r));
+    });
     await saveRemote();
 
     for(const r of targets){
@@ -1052,6 +1073,7 @@ async function approveAllCardTx(){
     cardTxInbox=[];
     renderCardTxInboxCard();closeCardTxInboxModal();
     renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
+    if(mergedCount>0)alert(`${targets.length}件を承認しました(うち${mergedCount}件は手動入力と重複していたため統合)`);
   }finally{
     setCardTxBusy_(false);
   }
@@ -1604,7 +1626,27 @@ function renderLdePayChips(){
 }
 function selLdeReceive(r){ldeReceive=r;renderLdePayChips();}
 function selLdePay(p,ci){ldePay=p;ldeCardIdx=ci;renderLdePayChips();}
-function saveLdgEdit(){const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();if(!date||!amount)return;const entry={date,amount,name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;if(ldeType==='income')entry.receive=ldeReceive;st.ledger[ldeIdx]=entry;save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
+function saveLdgEdit(){
+  const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();
+  if(!date||!amount)return;
+  const original=st.ledger[ldeIdx];
+  const entry={date,amount,name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};
+  if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;
+  if(ldeType==='income')entry.receive=ldeReceive;
+  // 楽天カード自動取り込み由来のエントリはsrc/txIdを引き継ぐ。これが無いと編集の
+  // たびに「自動取り込み由来」の印が消え、次回のインボックス自己修復フィルタや
+  // 重複整理ツール(dedupeRakutenLedger)の対象から外れてしまう
+  if(original&&original.src)entry.src=original.src;
+  if(original&&original.txId)entry.txId=original.txId;
+  st.ledger[ldeIdx]=entry;
+  // 楽天由来エントリでカテゴリを変更した場合、その店名を今後も同じカテゴリに
+  // 自動振り分けするよう学習する(承認時のドロップダウン選択だけでなく、
+  // 承認後の編集でも学習が効くようにするための対応)
+  if(entry.src==='rakuten'&&st.merchantRules[entry.name]!==entry.cat){
+    st.merchantRules[entry.name]=entry.cat;
+  }
+  save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
+}
 function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();}
 
 // ============================================================
