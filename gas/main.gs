@@ -33,6 +33,16 @@ function main() {
     const query = `from:${RAKUTEN_SENDER} -label:${RAKUTEN_LABEL_NAME} newer_than:14d`;
     const result = importRakutenMails_(query);
     recordLastRun_(true, `imported=${result.imported} skipped=${result.skipped} threads=${result.threadsLabeled}/${result.threadsTotal}`);
+
+    // AI機能(カテゴリ自動判定、gas/categorize.gs)。GEMINI_API_KEY未設定の間は
+    // categorizeNewCardTx_ 内部で何もせず戻る。万一失敗してもカード取り込み
+    // 自体は既に成功しているため、ここだけ個別にtry/catchしてmain()全体を
+    // 巻き添えにしない。
+    try {
+      categorizeNewCardTx_(getConfig_());
+    } catch (e) {
+      logFailure_('カテゴリ自動判定の実行中に例外が発生しました', `${e}\n\n${e.stack || '(stack trace なし)'}`);
+    }
   } catch (e) {
     recordLastRun_(false, String(e));
     logFailure_('GAS実行中に例外が発生しました', `${e}\n\n${e.stack || '(stack trace なし)'}`);
