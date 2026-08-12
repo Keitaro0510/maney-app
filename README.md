@@ -53,16 +53,19 @@ Gmail（楽天カード確定版メール）
 - [x] 「すべて承認」連打による記録重複バグを修正、復旧用の重複整理ツールを追加（`maney-app` 側、[commit](https://github.com/Keitaro0510/maney-app/commit/3fadb49)）
 - [x] カテゴリ学習を承認後の編集でも効くように拡張 + 手動入力との重複を承認時に自動統合（`maney-app` 側、[PR #1](https://github.com/Keitaro0510/maney-app/pull/1)）
 
-### 設計確定・実装待ちの拡張（2026-08-11〜）
+### AI機能 + LINEダイジェスト通知（2026-08-11〜、コード実装済み・設定待ち）
 
-詳細設計は [`docs/design.md`](docs/design.md) の「拡張: AI機能（カテゴリ自動判定・月次アドバイス） + 毎朝のLINEダイジェスト通知」節を参照。無料のGoogle Gemini API・LINE Messaging APIを使い、いずれもGAS側だけで完結させてPWA（ブラウザ）にはAPIキーを一切露出させない設計。
+詳細設計は [`docs/design.md`](docs/design.md) の「拡張: AI機能（カテゴリ自動判定・月次アドバイス） + 毎朝のLINEダイジェスト通知」節を参照。無料のGoogle Gemini API・LINE Messaging APIを使い、いずれもGAS側だけで完結させてPWA（ブラウザ）にはAPIキーを一切露出させない設計。コードは[maney-app-sync PR #1](https://github.com/Keitaro0510/maney-app-sync/pull/1)と[maney-app PR #5](https://github.com/Keitaro0510/maney-app/pull/5)でmainにマージ済み。残るは下記セットアップ手順6・7の設定作業のみ。
 
-- [ ] Supabase: `card_tx.ai_suggested_cat`カラム追加、`ai_insights`テーブル新設（`sql/ai_features.sql`）
-- [ ] `gas/shared.gs`: `fetchUserData_()` / `getGeminiKey_()`
-- [ ] `gas/categorize.gs`: 楽天カード明細の初見店名をGeminiでカテゴリ自動判定（学習済み店名は呼ばない）
-- [ ] `gas/advice.gs`: 月次支出アドバイス（カテゴリ別前月比をGASで集計 → Geminiが自然文化）
-- [ ] `gas/notify.gs`: 毎朝7時のLINEダイジェスト通知（予定・シフト・お金のイベント・未承認明細件数）
-- [ ] `maney-app`側: `resolveCardTxCategory_()`, `#ai-insight-card`, `loadAiInsight()`
+- [x] Supabase: `card_tx.ai_suggested_cat`カラム追加、`ai_insights`テーブル新設（`sql/ai_features.sql`）※SQL自体はSupabaseで未実行、手順1と同様に手動実行が必要
+- [x] `gas/shared.gs`: `fetchUserData_()` / `getGeminiKey_()`
+- [x] `gas/categorize.gs`: 楽天カード明細の初見店名をGeminiでカテゴリ自動判定（学習済み店名は呼ばない）
+- [x] `gas/advice.gs`: 月次支出アドバイス（カテゴリ別前月比をGASで集計 → Geminiが自然文化）
+- [x] `gas/notify.gs`: 毎朝7時のLINEダイジェスト通知（予定・シフト・お金のイベント・未承認明細件数）
+- [x] `maney-app`側: `resolveCardTxCategory_()`, `#ai-insight-card`, `loadAiInsight()`
+- [ ] `sql/ai_features.sql`をSupabaseで実行
+- [ ] `GEMINI_API_KEY`・`LINE_CHANNEL_ACCESS_TOKEN`・`LINE_USER_ID`をGASのスクリプトプロパティに設定
+- [ ] `installMonthlyAdviceTrigger()` / `installDigestTrigger()`を手動実行してトリガー登録
 
 以下のセットアップ手順は、今後別アカウント・別環境で同じ仕組みを再構築する場合の再現手順として残す。
 

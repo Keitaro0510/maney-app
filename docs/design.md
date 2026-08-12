@@ -161,9 +161,11 @@ if (body.indexOf('<カードご利用情報>') === -1) continue;
 - `gas/main.gs`（本リポジトリ） — GASコード
 - `sql/card_tx.sql`（本リポジトリ） — Supabaseマイグレーション
 
-## 拡張: AI機能（カテゴリ自動判定・月次アドバイス） + 毎朝のLINEダイジェスト通知（2026-08-11、設計確定・実装待ち）
+## 拡張: AI機能（カテゴリ自動判定・月次アドバイス） + 毎朝のLINEダイジェスト通知（2026-08-11、実装済み）
 
-「maneyfowardのイメージで、記録せずに使ったものを認識してほしい」「アプリにAIを組み込みたい」という要望を受けて追加検討したもの。実装はまだ着手していないが、別セッション・別端末から参照して実装を進められるよう、設計をここに書き出しておく。
+「maneyfowardのイメージで、記録せずに使ったものを認識してほしい」「アプリにAIを組み込みたい」という要望を受けて追加検討したもの。
+
+> **ステータス**: 実装完了。[maney-app-sync PR #1](https://github.com/Keitaro0510/maney-app-sync/pull/1)（GAS/SQL側）と[maney-app PR #5](https://github.com/Keitaro0510/maney-app/pull/5)（PWA側）がいずれもmainにマージ済み。ただし`GEMINI_API_KEY`/`LINE_CHANNEL_ACCESS_TOKEN`等のスクリプトプロパティ設定と、`installMonthlyAdviceTrigger()`/`installDigestTrigger()`の初回手動実行はまだ行っていない（README.mdのセットアップ手順6・7を参照）。
 
 ### 前提となる2つの制約
 
