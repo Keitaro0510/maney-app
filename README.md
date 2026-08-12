@@ -57,14 +57,15 @@ Gmail（楽天カード確定版メール）
 
 詳細設計は [`docs/design.md`](docs/design.md) の「拡張: AI機能（カテゴリ自動判定・月次アドバイス） + 毎朝のLINEダイジェスト通知」節を参照。無料のGoogle Gemini API・LINE Messaging APIを使い、いずれもGAS側だけで完結させてPWA（ブラウザ）にはAPIキーを一切露出させない設計。コードは[maney-app-sync PR #1](https://github.com/Keitaro0510/maney-app-sync/pull/1)と[maney-app PR #5](https://github.com/Keitaro0510/maney-app/pull/5)でmainにマージ済み。残るは下記セットアップ手順6・7の設定作業のみ。
 
-- [x] Supabase: `card_tx.ai_suggested_cat`カラム追加、`ai_insights`テーブル新設（`sql/ai_features.sql`）※SQL自体はSupabaseで未実行、手順1と同様に手動実行が必要
+- [x] Supabase: `card_tx.ai_suggested_cat`カラム追加、`ai_insights`テーブル新設（`sql/ai_features.sql`）
 - [x] `gas/shared.gs`: `fetchUserData_()` / `getGeminiKey_()`
 - [x] `gas/categorize.gs`: 楽天カード明細の初見店名をGeminiでカテゴリ自動判定（学習済み店名は呼ばない）
 - [x] `gas/advice.gs`: 月次支出アドバイス（カテゴリ別前月比をGASで集計 → Geminiが自然文化）
 - [x] `gas/notify.gs`: 毎朝7時のLINEダイジェスト通知（予定・シフト・お金のイベント・未承認明細件数）
 - [x] `maney-app`側: `resolveCardTxCategory_()`, `#ai-insight-card`, `loadAiInsight()`
-- [ ] `sql/ai_features.sql`をSupabaseで実行
-- [ ] `GEMINI_API_KEY`・`LINE_CHANNEL_ACCESS_TOKEN`・`LINE_USER_ID`をGASのスクリプトプロパティに設定
+- [x] `sql/ai_features.sql`をSupabaseで実行
+- [x] `GEMINI_API_KEY`をGASのスクリプトプロパティに設定
+- [ ] `LINE_CHANNEL_ACCESS_TOKEN`・`LINE_USER_ID`をGASのスクリプトプロパティに設定（`LINE_USER_ID`は`gas/get_line_userid.gs`での取得作業が途中、手順7-2参照）
 - [ ] `installMonthlyAdviceTrigger()` / `installDigestTrigger()`を手動実行してトリガー登録
 
 以下のセットアップ手順は、今後別アカウント・別環境で同じ仕組みを再構築する場合の再現手順として残す。
@@ -108,7 +109,9 @@ Gmail（楽天カード確定版メール）
 - パースやSupabase書き込みに失敗した場合は自分のGmail宛にエラーメールが届く（実行1回につき1通に集約、詳細は実行ログを参照）
 - **「最終取り込み」の表示が古いままでも、それ自体は異常とは限らない**。`maney-app`の設定画面の表示は`card_tx`の最新`created_at`を見ているだけなので、単に楽天カードを使っていない（＝取り込む新着メールがない）期間はそのまま古い時刻が表示され続ける。GAS側にエラー通知が来ていなければ正常。楽天カード側の仕様として、**500円未満の利用・海外利用・公共料金の継続利用・ETCカード利用はメール自体が配信されない**という制約があることも判明している（2026-08-03付けの楽天カード公式案内より）
 
-### 6.（実装後に必要）AI機能を有効化する
+### 6.（設定済み）AI機能を有効化する
+
+> **ステータス**: 完了（`sql/ai_features.sql`実行・`GEMINI_API_KEY`設定とも済み）。以下は再現手順として残す。
 
 カテゴリ自動判定・月次アドバイスの実装後にこの手順が必要になる。無料のGoogle Gemini APIを使う（クレジットカード登録不要）。
 
