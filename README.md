@@ -120,11 +120,31 @@ Gmail（楽天カード確定版メール）
 
 毎朝7時のダイジェスト通知の実装後にこの手順が必要になる。LINE Notifyは終了済みのため、後継のLINE Messaging APIを使う（無料プランで月200通まで、本機能は月31通で十分収まる）。
 
-1. [LINE Developers](https://developers.line.biz/)でプロバイダー→Messaging APIチャネルを作成
-2. Messaging APIタブでチャネルアクセストークン（長期）を発行
-3. 同画面の「あなたのユーザーID」を控える
-4. 発行されたLINE公式アカウントを自分のLINEで友だち追加（未追加だとpushが届かない）
-5. GASのスクリプトプロパティに`LINE_CHANNEL_ACCESS_TOKEN`と`LINE_USER_ID`を追加
+**7-1. チャネルを作成しトークンを取得する**
+
+1. [LINE Developers](https://developers.line.biz/console/)にログインし、プロバイダー（ビジネスマネージャーの組織）を作成、または既存のものを選択する
+2. プロバイダー内で「Messaging API」チャネルを新規作成する（チャネル名は何でもよい。運用目的は「その他」、主な使い方は「メッセージ配信用」を選ぶ）
+3. 作成したチャネルの「Messaging API settings」タブで「Channel access token (long-lived)」を発行して控える
+4. 同タブに表示されるQRコードを、自分のスマホのLINEで読み取って**友だち追加する**（これを忘れるとpushが届かない）
+5. （推奨）同タブの「Auto-reply messages」「Greeting messages」を無効化しておく（送信専用の用途で、Botからの自動応答は不要なため）
+
+**7-2. `LINE_USER_ID`（送信先）を取得する**
+
+> **注意（2026-08-11時点で判明）**: 以前は「Messaging API settings」または「Channel basic settings」タブに「Your user ID」という自己参照フィールドがあると想定していたが、**現在のLINE Developersコンソールにはこの項目が存在しないことを実機で確認した**。そのため、LINEの標準的な方法である「Webhookで受信したイベントからsource.userIdを読み取る」方式で取得する必要がある。[`gas/get_line_userid.gs`](gas/get_line_userid.gs)がこの取得作業専用の一時ヘルパー（同ファイルの冒頭コメントに詳細手順あり）。
+
+1. `gas/get_line_userid.gs`をGASプロジェクトに追加した状態で、「デプロイ」→「新しいデプロイ」→種類「ウェブアプリ」、実行するユーザー「自分」、アクセスできるユーザー「全員」でデプロイし、発行されたURLを控える
+2. LINE Developersの「Messaging API settings」タブ →「Webhook URL」に1のURLを貼り付けて「Update」→「Use webhook」をEnabledにする（「Verify」ボタンは接続確認用の空リクエストなので、押してもuserIdは取得できない。気にしなくてよい）
+3. 友だち追加済みのBotへ、スマホのLINEから何かメッセージを送る
+4. `Session.getActiveUser().getEmail()`宛（GASの実行アカウントのGmail）に「[maney-app-sync] LINE userId取得」という件名でメールが届く。本文の`U`から始まる文字列が`LINE_USER_ID`
+5. 取得できたら「Use webhook」をDisabledに戻す（このアプリは送信専用のため常時有効化は不要。`gas/get_line_userid.gs`のdoPostはそのまま残しておいて害はない）
+
+**7-3. スクリプトプロパティに登録する**
+
+GASの「プロジェクトの設定」→「スクリプト プロパティ」に、7-1・7-2で取得した2つを追加:
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_USER_ID`
+
+チャネルアクセストークンをどこか（チャット・メモアプリ等）に一時的に貼り付けた場合は、スクリプトプロパティへの登録が終わったら、LINE Developers側で一度**再発行（前のトークンを無効化）**しておくと安全。
 
 ## 関連リポジトリ
 
