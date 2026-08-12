@@ -518,6 +518,12 @@ body{
     <button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
   </div>
   <div id="home-status" class="home-status"></div>
+  <div class="card" id="ai-insight-card" style="display:none;border-color:#EEEDFE">
+    <div style="display:flex;align-items:flex-start;gap:8px">
+      <span style="font-size:16px">💡</span>
+      <div id="ai-insight-text" style="font-size:13px;line-height:1.5"></div>
+    </div>
+  </div>
   <div id="alerts-home"></div>
   <div class="today-row">
     <div><div style="font-size:11px;color:var(--color-text-secondary)">今日使える（引き落とし・予定控除後）</div><div style="font-size:24px;font-weight:700" id="today-use">¥0</div></div>
@@ -955,6 +961,7 @@ async function loadData(){
     renderCal();
     await loadRemote(); // 起動時の1回だけ読み込む
     await loadCardTxInbox(); // 楽天カード自動取り込みの未確認明細
+    await loadAiInsight(); // 月次支出アドバイス
     initialLoadDone = true;
   } else {
     showLoginScreen();
@@ -1003,6 +1010,29 @@ function fixDefaults(){
 // ============================================================
 let cardTxInbox=[];
 
+// ============================================================
+// 月次支出アドバイス(ai_insights)
+// maney-app-sync (GAS) が月1回、カテゴリ別前月比等をGeminiで文章化して
+// 書き込む。PWAはこのテーブルをSELECTするだけ(GASのみが書く、card_txと
+// 同じ書き手分離の原則)。
+// ============================================================
+let aiInsight=null;
+async function loadAiInsight(){
+  if(!currentUser)return;
+  try{
+    const{data,error}=await supa.from('ai_insights').select('message,period').eq('kind','monthly_advice').order('created_at',{ascending:false}).limit(1);
+    if(!error&&data&&data.length)aiInsight=data[0];
+    renderAiInsightCard();
+  }catch(e){console.warn('ai_insights読み込み失敗:',e);}
+}
+function renderAiInsightCard(){
+  const el=document.getElementById('ai-insight-card');
+  if(!el)return;
+  if(!aiInsight){el.style.display='none';return;}
+  el.style.display='block';
+  document.getElementById('ai-insight-text').textContent=aiInsight.message;
+}
+
 // カテゴリ自動推定の静的ルール（st.merchantRules で個別に上書き・学習される）
 const MERCHANT_RULES=[
   [/ローソン|セブン|ファミリーマート|ミニストップ|デイリーヤマザキ/,'食費'],
@@ -1017,6 +1047,20 @@ const MERCHANT_RULES=[
 function guessCategory(merchantKey){
   if(st.merchantRules[merchantKey])return st.merchantRules[merchantKey];
   for(const[re,cat]of MERCHANT_RULES){if(re.test(merchantKey))return cat;}
+  return st.catExp.includes('その他')?'その他':(st.catExp[0]||'その他');
+}
+
+// card_txの未確認明細だけで使うカテゴリ決定関数。guessCategory()自体は
+// 変更しない(挙動が確定しているコードに触れるリスクを避けるため)。
+// 優先順位: 学習済みルール(merchantRules) > 静的正規表現ルール
+//         > GAS側のAI示唆(ai_suggested_cat、maney-app-syncのcategorize.gsが
+//           初見の店名だけをGeminiで分類して書き込む) > デフォルトカテゴリ
+// ①②に当たる限りAI示唆は一切参照されない(学習が完了した店は二度とAIを経由しない)。
+function resolveCardTxCategory_(r){
+  const key=r.merchant_norm||r.merchant_raw;
+  if(st.merchantRules[key])return st.merchantRules[key];
+  for(const[re,cat]of MERCHANT_RULES){if(re.test(key))return cat;}
+  if(r.ai_suggested_cat&&st.catExp.includes(r.ai_suggested_cat))return r.ai_suggested_cat; // カテゴリ削除/改名への防御
   return st.catExp.includes('その他')?'その他':(st.catExp[0]||'その他');
 }
 
@@ -1066,7 +1110,7 @@ function renderCardTxInboxList(){
   if(!cardTxInbox.length){el.innerHTML='<div class="empty">未確認の明細はありません</div>';return;}
   el.innerHTML=cardTxInbox.map(r=>{
     const key=r.merchant_norm||r.merchant_raw;
-    if(!r._cat)r._cat=guessCategory(key);
+    if(!r._cat)r._cat=resolveCardTxCategory_(r);
     const catOpts=st.catExp.map(c=>`<option value="${c}"${c===r._cat?' selected':''}>${c}</option>`).join('');
     return `<div class="ri" style="align-items:flex-start;flex-direction:column;gap:6px;padding:10px 0">
       <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
