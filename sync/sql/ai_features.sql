@@ -7,7 +7,7 @@
 -- Supabase の SQL Editor で実行する（実行済み）。
 -- 楽天カード取り込み用の card_tx テーブルと ai_suggested_cat カラムは、
 -- 取り込み機能の削除(2026-10-24)に合わせてこのファイルから外した
--- （Supabase上のテーブル自体は残っている）。
+-- （Supabase上の card_tx テーブルも 2026-10-24 に削除済み）。
 
 -- 月次支出アドバイス。GASが月1回生成してINSERTし、PWAは最新1件をSELECTして表示する
 create table if not exists ai_insights (
