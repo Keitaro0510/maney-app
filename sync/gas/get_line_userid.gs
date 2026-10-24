@@ -1,5 +1,5 @@
 /**
- * maney-app-sync / gas/get_line_userid.gs
+ * maney-app / sync/gas/get_line_userid.gs
  *
  * LINE_USER_ID（notify.gsのdailyDigestが送信先として使う、自分自身のLINEユーザーID）
  * を取得するための一時的な補助ツール。
@@ -17,8 +17,8 @@
  * 2. LINE Developersの対象チャネル →「Messaging API settings」タブ →
  *    「Webhook URL」に1のURLを貼り付けて「Update」→「Use webhook」をEnabled
  * 3. 友だち追加済みのLINE公式アカウントへ、スマホから何かメッセージを送る
- * 4. Script Propertiesの USER_ID（既存の楽天カード取り込み用）と同じ
- *    Gmailアドレス宛に「LINE userId取得」という件名でメールが届く。
+ * 4. GASを実行しているGoogleアカウントのGmailアドレス宛に
+ *    「LINE userId取得」という件名でメールが届く。
  *    本文の U から始まる文字列を LINE_USER_ID としてScript Propertiesに登録する
  * 5. 取得できたら、LINE Developersの「Use webhook」をDisabledに戻す
  *    （このアプリは送信専用で、Webhookの常時受信は不要なため）

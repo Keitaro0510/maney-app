@@ -2,6 +2,8 @@
 
 対象アプリ: [maney-app](https://github.com/Keitaro0510/maney-app)（バイト学生向け家計管理PWA）
 
+> **2026-10-24 追記**: 楽天カード明細の自動取り込み（本書の 1〜3 節・「稼働後に見つかった問題と対応」・機能A「カテゴリ自動判定」）は、利用通知メールが届かなくなったため削除した。この設計書は記録として残している。削除前のコードはこのリポジトリの PR #7 の最初のコミット `7433b75` を参照。今も残っているのは機能B（月次アドバイス）と機能C（LINE通知）のコードで、どちらも未稼働。
+
 ## Context
 
 作者は自作のPWA家計管理アプリ `maney-app`（GitHub: `Keitaro0510/maney-app`）を持っており、既に4本の個人アプリ（筋トレアプリ・家計簿アプリ・家計簿LINEボット・旅行記録アプリ）を作った経験を踏まえ、これらの技術資産を活かして「もっと便利なもの」を作りたいという相談から始まった企画。
@@ -55,13 +57,13 @@ Gmail（楽天カード確定版メール）
 
 既存の `user_data`（1レコードjsonb、`st`全体をPWAのみが書く）はそのまま維持し、追記型データだけ新テーブルに分離する。理由: `saveRemote()`（`index.html:759`）は`st`全体を無条件upsertするため、GASが`user_data.value.ledger`に直接追記すると、PWA側の次回保存で確実にLost Updateが起きる（実装を確認して検証済み）。
 
-DDLは [`sql/card_tx.sql`](../sql/card_tx.sql) を参照。
+DDLは [`sql/card_tx.sql`](https://github.com/Keitaro0510/maney-app/blob/7433b75/sync/sql/card_tx.sql)（削除済み、リンクは削除前のコミット） を参照。
 
 カテゴリ・カード紐付けは意図的にこのテーブルに持たせない。カテゴリはユーザーが育てる`st.merchantRules`（PWA側）に、カード紐付けは`st.rakutenCardIdx`（PWA側）に置く。GASは「メールを見つける・パースする・投げる」だけの役割に徹する。
 
 ### 2. GAS: 楽天カードメール取り込みジョブ
 
-実装は [`gas/main.gs`](../gas/main.gs) を参照。
+実装は [`gas/main.gs`](https://github.com/Keitaro0510/maney-app/blob/7433b75/sync/gas/main.gs)（削除済み、リンクは削除前のコミット） を参照。
 
 **検索**: `from:info@mail.rakuten-card.co.jp -label:maney/rakuten-imported newer_than:14d`
 

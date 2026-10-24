@@ -1,8 +1,7 @@
 /**
- * maney-app-sync / gas/notify.gs
+ * maney-app / sync/gas/notify.gs
  *
- * 毎朝7時頃、その日の予定・シフト・お金のイベント・未承認の楽天カード明細
- * 件数をLINEへpush通知する。詳細設計は docs/design.md「拡張: AI機能」節の
+ * 毎朝7時頃、その日の予定・シフト・お金のイベントをLINEへpush通知する。詳細設計は docs/design.md「拡張: AI機能」節の
  * 「機能C」を参照。無料のLINE Messaging API（LINE Notifyは2025年3月末で
  * 終了済み）を使う。
  *
@@ -21,7 +20,7 @@ const DAYS_JA_ = ['日', '月', '火', '水', '木', '金', '土'];
 
 /**
  * 多重登録防止のため、既存の dailyDigest トリガーを一旦全部消してから
- * 作り直す（installTrigger()と同じパターン）。GASの時間主導トリガーは
+ * 作り直す。GASの時間主導トリガーは
  * 厳密な時刻指定ができず、実際の発火は7:00〜7:15頃にばらつく点は許容する。
  */
 function installDigestTrigger(){
@@ -38,7 +37,7 @@ function installDigestTrigger(){
 }
 
 // ============================================================
-// LINE用設定（getConfig_()には混ぜない。未設定時にカード取り込みまで
+// LINE用設定（getConfig_()には混ぜない。LINE未設定時に月次アドバイスまで
 // 巻き添えで落ちるのを防ぐため、専用の設定読み込み関数にする）
 // ============================================================
 function getLineConfig_(){
@@ -66,8 +65,7 @@ function dailyDigest(){
       logFailure_('毎朝のLINE通知に失敗しました', 'user_dataが取得できませんでした（st is null）');
       return;
     }
-    const pendingCount = fetchPendingCardTxCount_(cfg);
-    const text = buildDigestText_(st, ds, pendingCount);
+    const text = buildDigestText_(st, ds);
     pushLine_(text);
   }catch(e){
     logFailure_('毎朝のLINE通知に失敗しました', `${e}\n\n${e.stack || '(stack trace なし)'}`);
@@ -87,7 +85,7 @@ function dailyDigest(){
  * ここに移植しない（PWA側を直したときに通知だけ古い数字を出す事故を
  * 避けるため）。移植するのはstにリテラルで入っている値の整形だけ。
  */
-function buildDigestText_(st, ds, pendingCount){
+function buildDigestText_(st, ds){
   const [y, mm, day] = ds.split('-').map(Number); // mmは1-indexed（表示用）
   const m0 = mm - 1; // JS Dateの月は0-indexed
   const dateObj = new Date(y, m0, day);
@@ -134,8 +132,7 @@ function buildDigestText_(st, ds, pendingCount){
   if (moneyLines.length) sections.push(`■ お金\n${moneyLines.join('\n')}`);
 
   // 全セクションが空でも毎日1通は送る（動いているかどうかの目印として）
-  let body = sections.length ? sections.join('\n\n') : '今日は特に予定なしです';
-  if (pendingCount > 0) body += `\n\n※ 未承認の楽天カード明細が${pendingCount}件あります`;
+  const body = sections.length ? sections.join('\n\n') : '今日は特に予定なしです';
 
   return `${header}\n\n${body}`;
 }
@@ -155,33 +152,6 @@ function getHolidayName_(ds){
     return events.length ? events[0].getTitle() : '';
   }catch(e){
     return '';
-  }
-}
-
-/**
- * 未承認(status='pending')のcard_tx件数を取得する。失敗時は-1（不明）を
- * 返し、呼び出し側で「本文に載せない」フェイルセーフとして扱う
- * （通知本体はここで止めたくないため、throwしない）。
- */
-function fetchPendingCardTxCount_(cfg){
-  const url = `${cfg.SUPABASE_URL}/rest/v1/card_tx?status=eq.pending&select=id`;
-  const res = UrlFetchApp.fetch(url, {
-    method: 'get',
-    headers: {
-      apikey: cfg.SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${cfg.SERVICE_ROLE_KEY}`,
-      'User-Agent': 'maney-app-sync-gas/1.0'
-    },
-    muteHttpExceptions: true
-  });
-  if (res.getResponseCode() < 200 || res.getResponseCode() >= 300) {
-    logFailure_('未承認card_tx件数の取得に失敗しました', `status:${res.getResponseCode()} body:${res.getContentText()}`);
-    return -1;
-  }
-  try {
-    return JSON.parse(res.getContentText()).length;
-  } catch (e) {
-    return -1;
   }
 }
 

@@ -189,8 +189,8 @@ alter table user_data add constraint user_data_user_id_unique unique (user_id);
 
 ## 主な機能追加の記録
 
-### 楽天カード明細の自動取り込み（2026-08-10〜）
-GAS（Google Apps Script）が楽天カードの利用通知メールを解析し、Supabaseの`card_tx`テーブル経由でアプリに取り込む。設計・実装の詳細とGASのコードは [`sync/`](sync/) フォルダを参照（元は別リポジトリ `maney-app-sync` だったものを2026-10-24に統合）。
+### 楽天カード明細の自動取り込み（2026-08-10〜2026-10-24、削除済み）
+GAS（Google Apps Script）が楽天カードの利用通知メールを解析し、Supabaseの`card_tx`テーブル経由でアプリに取り込んでいた。利用通知メールが2026-07-17以降届かなくなったため、2026-10-24にアプリ側の「未確認の明細」画面・設定とGASの取り込みコードを削除した。設計書と、残っている月次アドバイス・LINE通知のGASコードは [`sync/`](sync/) フォルダを参照（元は別リポジトリ `maney-app-sync`）。
 
 ### 予定への時刻入力 + カレンダー日/週/月表示切り替え（2026-08-10、[PR #3](https://github.com/Keitaro0510/maney-app/pull/3)）
 予定(`st.plans`)に`timeStart`/`timeEnd`（`'HH:MM'`または`''`）を追加し、カレンダーを日表示・週表示・月表示（デフォルト）で切り替えられるようにした。日/週表示はGoogleカレンダー風のタイムライングリッドではなく、時刻順のリスト表示（既存の`dayClick()`を`buildDay(ds,opts)`という収集関数に切り出し、日表示は1回・週表示は7回呼んで共有）。

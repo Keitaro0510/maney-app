@@ -1,13 +1,13 @@
--- ai_features: AI機能(カテゴリ自動判定・月次アドバイス)用の追加スキーマ
+-- ai_features: 月次アドバイス用のスキーマ
 --
 -- 設計方針（docs/design.md「拡張: AI機能」節参照）:
---   card_tx・ai_insightsとも「GASがINSERT/UPDATEし、PWAはSELECTのみ」の
---   書き手分離を踏襲する（user_dataへの直接追記はLost Updateを起こすため）。
+--   「GASがINSERTし、PWAはSELECTのみ」の書き手分離にする
+--   （user_dataへの直接追記はLost Updateを起こすため）。
 --
--- Supabase の SQL Editor で実行する（card_tx.sql適用済みが前提）。
-
--- 楽天カード明細のAI分類結果（初見の店名のみGeminiが判定して書き込む。nullable）
-alter table card_tx add column if not exists ai_suggested_cat text;
+-- Supabase の SQL Editor で実行する（実行済み）。
+-- 楽天カード取り込み用の card_tx テーブルと ai_suggested_cat カラムは、
+-- 取り込み機能の削除(2026-10-24)に合わせてこのファイルから外した
+-- （Supabase上のテーブル自体は残っている）。
 
 -- 月次支出アドバイス。GASが月1回生成してINSERTし、PWAは最新1件をSELECTして表示する
 create table if not exists ai_insights (

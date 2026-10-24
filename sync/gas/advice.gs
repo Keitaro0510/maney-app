@@ -1,5 +1,5 @@
 /**
- * maney-app-sync / gas/advice.gs
+ * maney-app / sync/gas/advice.gs
  *
  * 月次支出アドバイス。カテゴリ別の前月比などの数値計算はGAS側で決定論的に
  * 行い、Geminiにはその数値を渡して自然文の助言だけを書かせる
@@ -15,7 +15,7 @@
 
 /**
  * 多重登録防止のため、既存の monthlyAdvice トリガーを一旦全部消してから
- * 作り直す（installTrigger()と同じパターン）。
+ * 作り直す。
  */
 function installMonthlyAdviceTrigger(){
   ScriptApp.getProjectTriggers().forEach(t => {
