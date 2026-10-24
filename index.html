@@ -711,7 +711,7 @@ body{
     <div id="card-list-sec" style="margin-top:10px"></div>
   </div>
   <div class="card"><div class="st">楽天カード自動取り込み</div>
-    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">楽天カードの利用通知メールを自動で読み取り、家計簿タブの「未確認の明細」に追加します（承認するまで家計簿には反映されません）。詳細: <a href="https://github.com/Keitaro0510/maney-app-sync" target="_blank" style="color:#185FA5">maney-app-sync</a></div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">楽天カードの利用通知メールを自動で読み取り、家計簿タブの「未確認の明細」に追加します（承認するまで家計簿には反映されません）。詳細: <a href="https://github.com/Keitaro0510/maney-app/tree/main/sync" target="_blank" style="color:#185FA5">sync/</a></div>
     <div class="fg"><label>取り込み先カード</label><select id="set-rakuten-card"><option value="-1">— 使用しない —</option></select></div>
     <div class="info-box" id="rakuten-last-run">最終取り込み: 未設定</div>
     <button class="btn full" onclick="dedupeRakutenLedger()" style="margin-top:4px">自動取り込みの重複を整理する</button>
@@ -1003,16 +1003,16 @@ function fixDefaults(){
 
 // ============================================================
 // 楽天カード自動取り込み（card_tx インボックス）
-// maney-app-sync (GAS) が Supabase の card_tx テーブルに書き込んだ未確認明細を
+// sync/ フォルダの GAS が Supabase の card_tx テーブルに書き込んだ未確認明細を
 // 読み込み・承認するUI。承認後は普通の st.ledger エントリになるため、
 // monthLedger / cycle() / renderCal / renderLedger 等は一切変更していない。
-// 詳細設計: https://github.com/Keitaro0510/maney-app-sync/blob/main/docs/design.md
+// 詳細設計: sync/docs/design.md
 // ============================================================
 let cardTxInbox=[];
 
 // ============================================================
 // 月次支出アドバイス(ai_insights)
-// maney-app-sync (GAS) が月1回、カテゴリ別前月比等をGeminiで文章化して
+// sync/ フォルダの GAS が月1回、カテゴリ別前月比等をGeminiで文章化して
 // 書き込む。PWAはこのテーブルをSELECTするだけ(GASのみが書く、card_txと
 // 同じ書き手分離の原則)。
 // ============================================================
@@ -1053,7 +1053,7 @@ function guessCategory(merchantKey){
 // card_txの未確認明細だけで使うカテゴリ決定関数。guessCategory()自体は
 // 変更しない(挙動が確定しているコードに触れるリスクを避けるため)。
 // 優先順位: 学習済みルール(merchantRules) > 静的正規表現ルール
-//         > GAS側のAI示唆(ai_suggested_cat、maney-app-syncのcategorize.gsが
+//         > GAS側のAI示唆(ai_suggested_cat、sync/gas/categorize.gsが
 //           初見の店名だけをGeminiで分類して書き込む) > デフォルトカテゴリ
 // ①②に当たる限りAI示唆は一切参照されない(学習が完了した店は二度とAIを経由しない)。
 function resolveCardTxCategory_(r){
