@@ -1,7 +1,7 @@
 # DB整備の方針
 
 - 作成日: 2026-10-29
-- もとにした資料: [audit-claude.md](audit-claude.md)（2026-10-24）、[audit-codex.md](audit-codex.md)（2026-10-29）
+- もとにした資料: [audit-claude.md](../../archive/db-audit/audit-claude.md)（2026-10-24）、[audit-codex.md](../../archive/db-audit/audit-codex.md)（2026-10-29）。どちらも対応し終えたので [archive/](../../archive/) にしまった
 - 状態: **確定**（2026-10-29）。作業はイシューで進める（「方針」の各見出しを参照）
 
 ## 2つの診断の比べ方

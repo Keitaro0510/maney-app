@@ -1,62 +1,17 @@
-# user_data を前の版に戻す
+# 戻し方
 
-`user_data` が更新・削除されるたびに、前の版が `private.user_data_history` に残る（#8）。誤って上書きしたときは、ここから戻す。
+データを誤って変えた・消したときに、前の状態に戻す手順。データの構造は [SCHEMA.md](SCHEMA.md)、戻し方の設計は [TABLE_SPLIT.md](TABLE_SPLIT.md) の「戻し方」。
 
-- 中身が変わらない保存は残さない
-- ユーザーごとに直近500版まで残し、それより古い版は消える
-- `private` スキーマはアプリの公開キーからは読めない。SQL は Supabase の SQL Editor（または Supabase MCP）で実行する
-- 2026-10-29 時点の全行は `private.user_data_backup_20261029` にも複製してある
+- 関数はどれも `private` スキーマにあり、アプリの公開キーからは呼べない。SQL は Supabase の SQL Editor（または Supabase MCP）で実行する
+- 戻したあと、アプリを開いている端末は開き直す（戻した行は `updated_at` が新しくなるので、送れていない変更があれば競合として知らせる）
 
-## 1. 自分のユーザーIDを調べる
+## 自分のユーザーIDを調べる
 
 ```sql
 select id, email, last_sign_in_at from auth.users order by last_sign_in_at desc;
 ```
 
-## 2. 版の一覧を見る（新しい順）
-
-```sql
-select id, archived_at, updated_at, operation,
-       pg_column_size(value) as bytes,
-       jsonb_array_length(value->'ledger') as ledger_count,
-       jsonb_array_length(value->'plans') as plan_count
-from private.user_data_history
-where user_id = '<ユーザーID>'
-order by id desc
-limit 20;
-```
-
-- `updated_at`: その版が保存された時刻（サーバーの時刻）
-- `archived_at`: その版が上書きされた時刻
-- 件数（`ledger_count` など）が急に減っている版の直前が、戻したい版のことが多い
-
-## 3. 戻す
-
-```sql
-update public.user_data
-set value = (select value from private.user_data_history where id = <戻したい版のid>)
-where user_id = '<ユーザーID>';
-```
-
-戻す直前の版も履歴に残るので、間違えたらもう一度戻せる。
-
-戻したあと、アプリを開いている端末は再読み込みする。
-
-## 2026-10-29 のバックアップから戻す
-
-```sql
-update public.user_data u
-set value = b.value
-from private.user_data_backup_20261029 b
-where b.id = u.id and u.user_id = '<ユーザーID>';
-```
-
-## 新しいテーブル（#11）を戻す
-
-テーブル分割（#11）のあとの戻し方。関数はどれも `private` スキーマにあり、SQL Editor（または Supabase MCP）で実行する。
-設計は [TABLE_SPLIT.md](TABLE_SPLIT.md) の「戻し方」。
-
-### 1行だけ戻す
+## 1行だけ戻す
 
 行の履歴（`private.row_history`、90日分）から、ある変更の前の状態に戻す。
 
@@ -72,7 +27,7 @@ limit 20;
 select private.restore_row(<履歴の id>);
 ```
 
-### 1つの操作を取り消す
+## 1つの操作を取り消す
 
 アプリの1回の操作（例: シフトの一括登録）を、まとめて取り消す。操作 ID は履歴の `op_id`。
 
@@ -83,9 +38,9 @@ select private.undo_op('<操作 ID>');
 - その操作のあとに同じ行が変わっていたら、取り消さずに止まる。それでも戻すなら `private.undo_op('<操作 ID>', true)`
 - 取り消しも1つの操作として履歴に残る。返ってきた操作 ID で、取り消しを取り消せる
 
-### 全体を、ある時点に戻す
+## 全体を、ある時点に戻す
 
-写し（`private.snapshots`）は毎日 3:20（日本時間）に取る。切り替えのときにも取る。
+写し（`private.snapshots`）は毎日 3:20（日本時間）に取る。切り替えのとき（2026-10-29 22:10、id 5）の写しもある。
 
 ```sql
 -- 写しの一覧
@@ -104,18 +59,54 @@ select private.restore_snapshot(<写しの id>);
 - 戻す直前の状態も写し（`before_restore`）に残る。返ってきた id で、戻したのを戻せる
 - 毎日の写しと、戻す直前の写しは90日で消える。切り替えのときと、手で取った写しは残る
 
-### 旧版のアプリに戻す
+## 旧版のアプリ（切り替える前の版）に戻す
 
-テーブルの内容を今の JSON の形に戻して、`user_data` に書く。切り替えたあとに記録した分も、旧版のアプリで見られる。
+新しい版に大きな問題が見つかったときの、最後の手段。切り替えたあとに記録した分も、旧版のアプリで見られる。
+
+1. テーブルの内容を、切り替える前の JSON の形にして `user_data` に書く
+
+   ```sql
+   select private.restore_user_data_from_tables('<ユーザーID>');
+   ```
+
+2. `user_data` への書き込みを止めているトリガーを外す（旧版のアプリが保存できるように）
+
+   ```sql
+   alter table public.user_data disable trigger block_user_data_writes;
+   ```
+
+3. `index.html`・`sw.js`・`js/` を切り替える前の版に戻す。切り替えの PR（#29）を `git revert` して PR にする。`sw.js` の `CACHE_NAME` は上げる
+4. 新しいテーブルに書いている端末がないことを確かめる（戻したあとに新しいテーブルに書かれた分は、旧版のアプリには出ない）
+
+`user_data` は、片付けの2回目（問題がなければ1〜2週間後）で消す予定。消したあとは、1の前に `user_data` のテーブルを作り直す（[`supabase/migrations/20260101000000_user_data_baseline.sql`](../../supabase/migrations/20260101000000_user_data_baseline.sql)）。
+
+## 切り替える前の古い JSON
+
+切り替える前の `user_data` の複製と履歴は、`private.archive_user_data` にまとめてある（2026-10-29）。手元にも JSON のファイル（`maney-user_data-before-cutover-2026-10-29.json`）を保存した。
+
+| `source` | 中身 |
+|---|---|
+| `backup_20261029` | DB整備①（#8）で取った複製（2026-10-29 の朝） |
+| `user_data_history` | 上書き・削除される前の版（#8 から切り替えまで） |
+| `backup_cutover` | 切り替えの直前に取った複製（最後の版） |
 
 ```sql
-select private.restore_user_data_from_tables('<ユーザーID>');
+-- 版の一覧（新しい順）
+select id, source, recorded_at, updated_at,
+       jsonb_array_length(value -> 'ledger') as ledger_count,
+       jsonb_array_length(value -> 'plans') as plan_count
+from private.archive_user_data
+where user_id = '<ユーザーID>'
+order by recorded_at desc;
 ```
 
-`user_data` の前の版は `private.user_data_history` に残る。
+旧版のアプリに戻すときに、テーブルの内容ではなく、ある版の JSON を使いたいなら、`user_data` に入れる（書き込みを止めているので、そのトランザクションでだけ許す）。
 
-切り替えたあと（2026-10-29〜）は、`user_data` への書き込みをトリガーで止めている。旧版のアプリを本当に使い続けるなら、次の3つも行う。
-
-1. 書き込みを止めるトリガーを外す: `alter table public.user_data disable trigger block_user_data_writes;`
-2. `index.html`・`sw.js` を切り替える前の版に戻す（切り替えの PR を `git revert` して PR にする。`sw.js` の `CACHE_NAME` は上げる）
-3. 新しいテーブルに書いている端末がないことを確かめる（戻したあとに新しいテーブルに書かれた分は、旧版のアプリには出ない）
+```sql
+begin;
+select set_config('maney.allow_user_data_write', 'on', true);
+update public.user_data
+set value = (select value from private.archive_user_data where id = <版の id>)
+where user_id = '<ユーザーID>';
+commit;
+```
