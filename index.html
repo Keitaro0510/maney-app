@@ -552,12 +552,6 @@ body{
     <button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
   </div>
   <div id="home-status" class="home-status"></div>
-  <div class="card" id="ai-insight-card" style="display:none;border-color:#EEEDFE">
-    <div style="display:flex;align-items:flex-start;gap:8px">
-      <span style="font-size:16px">💡</span>
-      <div id="ai-insight-text" style="font-size:13px;line-height:1.5"></div>
-    </div>
-  </div>
   <div id="alerts-home"></div>
   <div class="today-row">
     <div><div style="font-size:11px;color:var(--color-text-secondary)">今日使える（引き落とし・予定控除後）</div><div style="font-size:24px;font-weight:700" id="today-use">¥0</div></div>
@@ -1070,6 +1064,8 @@ function handleLegacyLocalData(){
     if(sync && sync.dirty) legacy = localStorage.getItem('mavFinal2');
   }catch(e){}
   const forget = ()=>{ localStorage.removeItem('mavFinal2'); localStorage.removeItem('mavSync'); };
+  // 試験版（next.html。切り替えのときに消した）が端末に残したキー
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('maney:next:')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
   if(!legacy){ forget(); return; }
   showSyncBanner(
     '切り替える前の版で、サーバーに送れていなかった変更が、この端末に残っています。\n' +
@@ -1227,7 +1223,6 @@ async function startWithUser(user){
   await loadRemote();
   await flushOutbox();
   handleLegacyLocalData();
-  await loadAiInsight();
 }
 
 async function loadData(){
@@ -1271,28 +1266,6 @@ function fixDefaults(){
     if(typeof p.timeStart!=='string')p.timeStart='';
     if(typeof p.timeEnd!=='string')p.timeEnd='';
   });
-}
-
-// ============================================================
-// 月次支出アドバイス(ai_insights)
-// sync/ フォルダの GAS が月1回、カテゴリ別前月比等をGeminiで文章化して
-// 書き込む。PWAはこのテーブルをSELECTするだけ(書き込むのはGASのみ)。
-// ============================================================
-let aiInsight=null;
-async function loadAiInsight(){
-  if(!currentUser)return;
-  try{
-    const{data,error}=await supa.from('ai_insights').select('message,period').eq('kind','monthly_advice').order('created_at',{ascending:false}).limit(1);
-    if(!error&&data&&data.length)aiInsight=data[0];
-    renderAiInsightCard();
-  }catch(e){console.warn('ai_insights読み込み失敗:',e);}
-}
-function renderAiInsightCard(){
-  const el=document.getElementById('ai-insight-card');
-  if(!el)return;
-  if(!aiInsight){el.style.display='none';return;}
-  el.style.display='block';
-  document.getElementById('ai-insight-text').textContent=aiInsight.message;
 }
 
 // ============================================================
