@@ -401,7 +401,7 @@ $$;
 create function private.jsonb_diff(a jsonb, b jsonb, path text default '')
 returns table (diff_path text, expected jsonb, actual jsonb)
 language plpgsql
-immutable
+stable
 set search_path = ''
 as $$
 begin
