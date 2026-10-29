@@ -100,14 +100,14 @@ declare
   v_action text;
   v_row_id uuid;
   v_row jsonb;
-  v_seen text[] := '{}';
+  v_seen text[] := '{}'::text[];
   v_bad_columns text;
   v_columns text;
   v_server_row jsonb;
   v_server_updated_at timestamptz;
   v_updated_at timestamptz;
-  v_conflicts jsonb := '[]';
-  v_rows jsonb := '[]';
+  v_conflicts jsonb := '[]'::jsonb;
+  v_rows jsonb := '[]'::jsonb;
   v_writing bigint;
   v_constraint text;
   v_where text;
