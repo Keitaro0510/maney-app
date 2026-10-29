@@ -6,9 +6,12 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
-// 試験版（next.html）。キャッシュせず、毎回ネットワークから取る
+// 試験版（next.html と、next/ の中のファイル）。キャッシュせず、毎回ネットワークから取る
 // 取得に失敗しても本番の index.html を代わりに出さない（本番のアプリを試験版だと思って使ってしまうのを防ぐ）
-const isTestVersion = url => new URL(url).pathname.endsWith('/next.html');
+const isTestVersion = url => {
+  const path = new URL(url).pathname;
+  return path.endsWith('/next.html') || path.includes('/next/');
+};
 
 self.addEventListener('install', e => {
   e.waitUntil(
