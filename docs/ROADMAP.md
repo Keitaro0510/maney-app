@@ -6,8 +6,9 @@
 ## Phase 0: 今の状態の地図を作る
 
 - [ ] `st`（保存しているデータ全体）の構造を図にする（`cards`、`jobs`、`ledger`、`plans`、`shifts`、`fixedCosts` など）
-- [ ] 5つのタブ（ホーム・カレンダー・家計簿・シフト・設定）と、主な関数の対応表を作る
+- [x] 5つのタブ（ホーム・カレンダー・家計簿・シフト・設定）と、主な関数の対応表を作る（2026-10-29、[SCREENS.md](SCREENS.md)。どこを押すとどの画面に行くかの図も）
 - [x] 動かなくなった機能を洗い出す（楽天カードの明細の取り込みは 2026-10-24 に削除。AIアドバイス・LINE通知は 2026-10-29 に使わないと決めて消し、GAS のコードは [`archive/sync/`](../archive/sync/) にしまった）
+- [x] 外部設計・内部設計・UI を監査する（2026-10-29、Claude と Codex。[design-review/](design-review/README.md)）
 
 ## Phase 1: ブランチとPRに慣れる
 
@@ -27,6 +28,8 @@
 - [ ] 今の状態に `v1.0.0` のタグを付ける（練習6）
 
 ## Phase 3: タスク管理（最小版）
+
+タスクの前にどこまで直すか（Phase 2・4 の一部を先にするか）は [D12](DECISIONS.md) で決める。案は [design-review/README.md](design-review/README.md) の「進め方の案」。
 
 - [ ] D1〜D3 を決める
 - [ ] タスクの追加・完了・削除・期限　ブランチ: `feature/tasks-mvp`
