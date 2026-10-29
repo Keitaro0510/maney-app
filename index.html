@@ -1163,6 +1163,11 @@ function fixDefaults(){
     if(typeof p.timeStart!=='string')p.timeStart='';
     if(typeof p.timeEnd!=='string')p.timeEnd='';
   });
+  // 家計簿の金額は数値で持つ(2026-10-29〜)。文字列で保存された古い記録も数値に直す
+  (st.ledger||[]).forEach(l=>{if(typeof l.amount==='string')l.amount=parseInt(l.amount)||0;});
+  // 削除した楽天カードの取り込み(2026-10-24)の名残
+  delete st.merchantRules;
+  delete st.rakutenCardIdx;
 }
 
 // ============================================================
@@ -1885,7 +1890,7 @@ function renderPayChips(){
 }
 function selReceive(r){ldgReceive=r;renderPayChips();}
 function selPay(p,ci){ldgPay=p;ldgCardIdx=ci;renderPayChips();}
-function saveLedger(){const date=document.getElementById('ldg-date').value,amount=document.getElementById('ldg-amount').value,name=document.getElementById('ldg-name').value.trim(),memo=document.getElementById('ldg-memo').value.trim();if(!date||!amount)return;const entry={date,amount,name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;st.ledger.push(entry);save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
+function saveLedger(){const date=document.getElementById('ldg-date').value,amount=document.getElementById('ldg-amount').value,name=document.getElementById('ldg-name').value.trim(),memo=document.getElementById('ldg-memo').value.trim();if(!date||!amount)return;const entry={date,amount:parseInt(amount),name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;st.ledger.push(entry);save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
 function closeLdgModal(){document.getElementById('ldg-mbg').classList.remove('open');}
 function openLdgEdit(i){ldeIdx=i;const l=st.ledger[i];ldeType=l.type;ldeCat=l.cat;ldePay=l.pay||'現金';ldeCardIdx=l.cardIdx!==undefined?l.cardIdx:-1;ldeReceive=l.receive||'現金';document.getElementById('lde-date').value=l.date;document.getElementById('lde-amount').value=l.amount;document.getElementById('lde-name').value=l.name;document.getElementById('lde-memo').value=l.memo||'';renderLdeType();renderLdeCatChips();renderLdePayChips();document.getElementById('ldg-edit-mbg').classList.add('open');}
 function closeLdgEdit(){document.getElementById('ldg-edit-mbg').classList.remove('open');}
@@ -1916,7 +1921,7 @@ function saveLdgEdit(){
   const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();
   if(!date||!amount)return;
   const original=st.ledger[ldeIdx];
-  const entry={date,amount,name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};
+  const entry={date,amount:parseInt(amount),name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};
   if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;
   if(ldeType==='income')entry.receive=ldeReceive;
   // 元の記録が持っている src/txId（旧・楽天カード自動取り込み由来の印）は引き継ぐ
