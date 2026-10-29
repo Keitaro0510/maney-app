@@ -47,7 +47,7 @@
 
 ## Phase 5: データを正規化したテーブルに移す
 
-DB整備の方針は [DB整備方針.md](../DB整備方針.md) で確定済み（2026-10-29）。作業は Issue [#8](https://github.com/Keitaro0510/maney-app/issues/8)〜[#11](https://github.com/Keitaro0510/maney-app/issues/11) で進める。
+DB整備の方針は [db/PLAN.md](db/PLAN.md) で確定済み（2026-10-29）。作業は Issue [#8](https://github.com/Keitaro0510/maney-app/issues/8)〜[#11](https://github.com/Keitaro0510/maney-app/issues/11) で進める。
 
 - [ ] 新しいテーブルを設計する（`ledger`、`plans`、`tasks` など）
 - [ ] 移行スクリプト（JSONB → テーブル）と、元に戻す手順を用意する

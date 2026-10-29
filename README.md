@@ -62,7 +62,7 @@ flowchart LR
 - ブランチとPRの流れ・練習メニュー: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 - やること: [docs/ROADMAP.md](docs/ROADMAP.md)
 - 自分で決める設計判断: [docs/DECISIONS.md](docs/DECISIONS.md)
-- DB整備の方針（作業は Issue #8〜#11）: [DB整備方針.md](DB整備方針.md)
+- DB整備の方針（作業は Issue #8〜#11）: [docs/db/PLAN.md](docs/db/PLAN.md)
 - 月次アドバイス・LINE通知（GAS）: [sync/](sync/)
 - iOS PWA と Supabase のトラブル対応メモ: [docs/troubleshooting-ios-pwa.md](docs/troubleshooting-ios-pwa.md)
 - PWA・Supabase・Googleログインの構築ガイド: [pwa-supabase-google-full-guide.md](pwa-supabase-google-full-guide.md)
