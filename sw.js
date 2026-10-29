@@ -6,6 +6,10 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
+// 試験版（next.html）。キャッシュせず、毎回ネットワークから取る
+// 取得に失敗しても本番の index.html を代わりに出さない（本番のアプリを試験版だと思って使ってしまうのを防ぐ）
+const isTestVersion = url => new URL(url).pathname.endsWith('/next.html');
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
@@ -31,6 +35,11 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  if(isTestVersion(e.request.url)){
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if(cached) return cached;
@@ -40,7 +49,10 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match('./index.html'));
+      }).catch(() =>
+        // 通信できないときは、ページを開くときだけ本番の画面を出す（画像やスクリプトの代わりにはしない）
+        e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()
+      );
     })
   );
 });
