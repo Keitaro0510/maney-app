@@ -53,6 +53,13 @@ node --test "tests/*.test.mjs"
 docker exec -i supabase_db_maney-app psql -U postgres -q -At -v ON_ERROR_STOP=1 < tests/fixtures/compat_fixture.sql > tests/fixtures/compat-fixture.json
 ```
 
+保存の流れを、ローカルの Supabase で実際に通すテスト（2台の端末の競合など）もある。ローカルの Supabase を起動してから実行する（起動していなければ飛ばす）。
+
+```bash
+eval "$(npx supabase status -o env | sed 's/^/export MANEY_LOCAL_/')"
+node --test "tests/integration/*.test.mjs"
+```
+
 ## 本番に適用する
 
 テストが通ったマイグレーションだけを、本番に適用する。今は Supabase MCP の `apply_migration` を使っている。
