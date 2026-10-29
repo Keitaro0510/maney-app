@@ -7,7 +7,7 @@
 
 - [ ] `st`（保存しているデータ全体）の構造を図にする（`cards`、`jobs`、`ledger`、`plans`、`shifts`、`fixedCosts` など）
 - [ ] 5つのタブ（ホーム・カレンダー・家計簿・シフト・設定）と、主な関数の対応表を作る
-- [ ] 動かなくなった機能を洗い出す（楽天カードの明細の取り込みとAIアドバイスは、外部の処理をやめたので止まっている）
+- [ ] 動かなくなった機能を洗い出す（楽天カードの明細の取り込みは 2026-10-24 に削除済み。AIアドバイス・LINE通知はコードが [`sync/`](../sync/) にあるが未稼働）
 
 ## Phase 1: ブランチとPRに慣れる
 
@@ -18,8 +18,9 @@
 
 ## Phase 2: 安全網を張る
 
-- [ ] データを JSON でエクスポート・インポートする機能（改修する前の保険）　ブランチ: `feature/export-import`
-- [ ] 止まった機能（楽天カードの取り込み・AIアドバイス）の扱いを決めて片付ける（[D5](DECISIONS.md)）　ブランチ: `refactor/remove-card-sync`
+- [ ] データを JSON でエクスポート・インポートする機能（改修する前の保険。DB整備① [#8](https://github.com/Keitaro0510/maney-app/issues/8) と重なる）　ブランチ: `feature/export-import`
+- [x] 楽天カードの取り込みを片付ける（2026-10-24 に削除、[PR #7](https://github.com/Keitaro0510/maney-app/pull/7)、[D5](DECISIONS.md)）
+- [ ] AIアドバイス・LINE通知を動かすか決める（[D5](DECISIONS.md)）
 - [ ] 計算ロジック（残高の推定、カードの締め日、給与）を関数として切り出し、Vitest でテストを書く　ブランチ: `chore/add-vitest`
 - [ ] GitHub Actions で PR ごとにテストを実行する（練習5）
 - [ ] sw.js の `CACHE_NAME` を手で上げるのをやめ、デプロイのたびに自動で変わるようにする
@@ -45,6 +46,8 @@
 - [ ] 本番の前に確認できる環境を作る（練習9、D8）
 
 ## Phase 5: データを正規化したテーブルに移す
+
+DB整備の方針は [DB整備方針.md](../DB整備方針.md) で確定済み（2026-10-29）。作業は Issue [#8](https://github.com/Keitaro0510/maney-app/issues/8)〜[#11](https://github.com/Keitaro0510/maney-app/issues/11) で進める。
 
 - [ ] 新しいテーブルを設計する（`ledger`、`plans`、`tasks` など）
 - [ ] 移行スクリプト（JSONB → テーブル）と、元に戻す手順を用意する
