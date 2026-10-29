@@ -470,6 +470,25 @@ body{
   cursor:pointer;text-align:left;
 }
 .btn-logout:hover{background:#FCEBEB}
+/* ===== 同期の通知（保存の失敗・別の端末との競合） ===== */
+.sync-banner{
+  position:fixed;left:0;right:0;
+  bottom:calc(72px + var(--safe-bottom));
+  max-width:640px;margin:0 auto;
+  padding:0 .875rem;
+  z-index:150;
+  display:none;
+}
+.sync-banner.show{display:block}
+.sync-banner-box{
+  background:var(--color-background-primary);
+  border:1px solid var(--color-danger);
+  border-radius:var(--border-radius-lg);
+  padding:12px 14px;
+  box-shadow:0 4px 20px rgba(0,0,0,.15);
+}
+.sync-banner-msg{font-size:13px;line-height:1.5;white-space:pre-line}
+.sync-banner-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -711,6 +730,14 @@ body{
 </div><!-- /app -->
 
 <!-- ボトムナビ -->
+<!-- 同期の通知（保存の失敗・別の端末との競合） -->
+<div class="sync-banner" id="sync-banner" role="alert">
+  <div class="sync-banner-box">
+    <div class="sync-banner-msg" id="sync-banner-msg"></div>
+    <div class="sync-banner-actions" id="sync-banner-actions"></div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <div class="nav-item active" id="nav-home" onclick="sw('home')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
@@ -822,6 +849,7 @@ async function loginWithGoogle(){
 async function logout(){
   await supa.auth.signOut();
   localStorage.removeItem('mavFinal2');
+  localStorage.removeItem(SYNC_KEY);
   location.reload();
 }
 
@@ -864,66 +892,219 @@ function saveLocal(){
 }
 
 // ============================================================
+// サーバーとの同期の状態
+// - updatedAt: 最後に読み込んだ・保存したときのサーバーの updated_at（サーバーの時刻）
+// - dirty: この端末に、まだサーバーへ送っていない変更がある
+// st はサーバーに送るデータそのものなので、別のキーに保存する
+// ============================================================
+const SYNC_KEY = 'mavSync';
+let sync = {updatedAt: null, dirty: false};
+try{
+  const s = localStorage.getItem(SYNC_KEY);
+  if(s) sync = {...sync, ...JSON.parse(s)};
+}catch(e){}
+function saveSyncState(){
+  try{localStorage.setItem(SYNC_KEY, JSON.stringify(sync));}catch(e){}
+}
+
+let remoteReady = false;   // 読み込みに成功するまで、サーバーに保存しない
+let syncConflict = false;  // 別の端末の変更とぶつかっている間は、サーバーに保存しない
+let loadingRemote = false; // サーバーから読み込んでいる途中
+let saving = false;        // サーバーに送っている途中
+let saveAgain = false;     // 送っている間に、また保存された
+
+// ============================================================
+// 同期の通知（保存の失敗・別の端末との競合）
+// ============================================================
+function showSyncBanner(msg, actions){
+  document.getElementById('sync-banner-msg').textContent = msg;
+  const box = document.getElementById('sync-banner-actions');
+  box.innerHTML = '';
+  actions.forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'btn sm' + (a.primary ? ' primary' : '');
+    b.textContent = a.label;
+    b.onclick = a.onclick;
+    box.appendChild(b);
+  });
+  document.getElementById('sync-banner').classList.add('show');
+}
+
+function hideSyncBanner(){
+  document.getElementById('sync-banner').classList.remove('show');
+}
+
+function showConflict(note){
+  syncConflict = true;
+  showSyncBanner(
+    (note ? note + '\n' : '') +
+    '別の端末でデータが更新されたため、この端末の変更をサーバーに保存していません。\n' +
+    '・サーバーの内容にする: この端末の保存していない変更は消えます\n' +
+    '・この端末の内容で上書き: サーバーの内容は履歴に残ります',
+    [
+      {label: 'サーバーの内容にする', onclick: useRemoteVersion},
+      {label: 'この端末の内容で上書き', onclick: overwriteRemote}
+    ]
+  );
+}
+
+// 競合を解く: サーバーの内容を読み込み、この端末の変更は捨てる
+async function useRemoteVersion(){
+  syncConflict = false;
+  sync.dirty = false;
+  sync.updatedAt = null; // サーバーの内容を必ず読み込む
+  saveSyncState();
+  hideSyncBanner();
+  await loadRemote();
+}
+
+// 競合を解く: 今のサーバーの版に対して、この端末の内容で上書きする
+async function overwriteRemote(){
+  try{
+    const {data, error} = await supa
+      .from('user_data')
+      .select('updated_at')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if(error) throw error;
+    sync.updatedAt = data ? data.updated_at : null;
+    saveSyncState();
+  }catch(e){
+    console.warn('Supabase load error:', e);
+    showConflict('サーバーに接続できませんでした。もう一度選んでください。');
+    return;
+  }
+  syncConflict = false;
+  remoteReady = true;
+  hideSyncBanner();
+  saveRemote();
+}
+
+// ============================================================
 // Supabaseに保存（ユーザーIDひも付き）
+// 保存は1つずつ送る。送っている間に保存されたら、終わってから最新の内容をもう一度送る
 // ============================================================
 async function saveRemote(){
+  if(!remoteReady || syncConflict) return;
+  if(saving){ saveAgain = true; return; }
+  saving = true;
+  try{
+    do{
+      saveAgain = false;
+      if(!await pushRemote()) break;
+    }while(saveAgain);
+  }finally{
+    saving = false;
+  }
+}
+
+// サーバーに1回送る。成功したら true
+async function pushRemote(){
   const { data: { session } } = await supa.auth.getSession();
   if(!session){
-    console.warn('セッション切れ - 再ログインが必要');
-    return;
+    showSyncBanner('ログインが切れたため、サーバーに保存できませんでした。変更はこの端末に残っています。',
+      [{label: 'ログインし直す', onclick: loginWithGoogle, primary: true}]);
+    return false;
   }
   currentUser = session.user;
   try{
-    const now = new Date().toISOString();
-    st._updatedAt = new Date(now).getTime(); // 保存時刻をstに記録（新旧比較用）
-    saveLocal(); // _updatedAtをlocalStorageにも反映
-    const result = await supa.from('user_data').upsert({
-      user_id: currentUser.id,
-      value: st,
-      updated_at: now
-    }, {onConflict: 'user_id'});
-    console.log('保存結果:', result.status, result.error);
+    // 読み込んだ時点からサーバーの内容が変わっていないときだけ上書きする。updated_at はサーバーが入れる
+    const req = sync.updatedAt
+      ? supa.from('user_data').update({value: st}).eq('user_id', currentUser.id).eq('updated_at', sync.updatedAt)
+      : supa.from('user_data').insert({user_id: currentUser.id, value: st});
+    const {data, error} = await req.select('updated_at');
+    // 0件: 別の端末が先に保存した。23505: まだ行がないはずが、別の端末が先に作っていた
+    if((!error && !data.length) || (error && error.code === '23505')){
+      showConflict();
+      return false;
+    }
+    if(error) throw error;
+    sync.updatedAt = data[0].updated_at;
+    if(!saveAgain) sync.dirty = false;
+    saveSyncState();
+    hideSyncBanner();
+    return true;
   }catch(e){
     console.warn('Supabase save failed:', e);
+    showSyncBanner('サーバーに保存できませんでした。変更はこの端末に残っています。',
+      [{label: 'もう一度送る', onclick: saveRemote, primary: true}]);
+    return false;
   }
 }
 
 function save(){
   saveLocal();
+  if(!sync.dirty){ sync.dirty = true; saveSyncState(); }
   saveRemote();
 }
 
 // ============================================================
-// Supabaseからデータ読み込み
+// Supabaseからデータ読み込み（起動時と、アプリに戻ってきたとき）
 // ============================================================
 async function loadRemote(){
-  if(!currentUser) return;
+  if(!currentUser || loadingRemote) return;
+  loadingRemote = true;
+  const wasReady = remoteReady;
   try{
     const {data, error} = await supa
       .from('user_data')
       .select('value, updated_at')
       .eq('user_id', currentUser.id)
-      .single();
+      .maybeSingle();
+    if(error) throw error;
+    // 読み込んでいる間に保存が始まった。ぶつかっていないかは保存のときに確かめる
+    if(wasReady && (saving || sync.dirty)) return;
 
-    if(!error && data){
-      // SupabaseのデータがlocalStorageより新しい場合だけ上書き
-      const localTime = st._updatedAt || 0;
-      const remoteTime = new Date(data.updated_at).getTime();
-      if(remoteTime > localTime){
-        st = {...st, ...data.value};
-        fixDefaults();
-        saveLocal();
-        renderHome();
-        renderCal();
-        console.log('Supabaseからデータを読み込みました');
-      } else {
-        console.log('localStorageの方が新しいため上書きしません');
+    if(!data){
+      // サーバーにまだ行がない（初めてログインしたとき）。最初の保存で作る
+      sync.updatedAt = null;
+      saveSyncState();
+    }else if(data.updated_at !== sync.updatedAt){
+      if(sync.dirty){
+        // この端末とサーバーの両方が変わっている
+        remoteReady = true;
+        showConflict();
+        return;
       }
+      applyRemote(data);
     }
+    remoteReady = true;
+    hideSyncBanner();
+    if(sync.dirty) saveRemote(); // 読み込めなかった間の変更を送る
   }catch(e){
     console.warn('Supabase load error:', e);
+    if(!wasReady){
+      showSyncBanner('サーバーから読み込めませんでした。変更はこの端末に保存し、読み込めるまでサーバーには送りません。',
+        [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+    }
+  }finally{
+    loadingRemote = false;
   }
 }
+
+function applyRemote(data){
+  st = {...st, ...data.value};
+  fixDefaults();
+  saveLocal();
+  sync.updatedAt = data.updated_at;
+  sync.dirty = false;
+  saveSyncState();
+  const cur = document.querySelector('.sec.active');
+  sw(cur ? cur.id.replace('sec-', '') : 'home');
+  console.log('Supabaseからデータを読み込みました');
+}
+
+// アプリに戻ってきたとき・通信が戻ったときに、サーバーと合わせ直す
+function resyncRemote(){
+  if(!currentUser || syncConflict || saving) return;
+  if(remoteReady && sync.dirty){ saveRemote(); return; } // 送れていない変更を送る
+  if(document.querySelector('.mbg.open')) return;        // 入力中の画面があるときは読み込み直さない
+  loadRemote();                                          // 別の端末の変更を読み込む
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible') resyncRemote();
+});
+window.addEventListener('online', resyncRemote);
 
 // ============================================================
 // 起動
@@ -967,6 +1148,7 @@ async function loadData(){
     } else if(event === 'SIGNED_OUT'){
       currentUser = null;
       initialLoadDone = false;
+      remoteReady = false;
       showLoginScreen();
     }
   });
@@ -1911,13 +2093,11 @@ function saveSetting(){
   st.budget=parseInt(document.getElementById('set-bud').value)||0;
   st.fuyouLimit=document.getElementById('set-fuyou').value;
   st.otherIncome=parseInt(document.getElementById('set-other-inc').value)||0;
-  saveLocal();
+  save(); // サーバーに送れなかったときは、同期の通知で知らせる
   renderHome();
   renderCal();
   if(document.getElementById('sec-shift').classList.contains('active'))renderShiftSection();
-  saveRemote().then(()=>{
-    alert('設定を保存しました！');
-  });
+  alert('設定を保存しました！');
 }
 // ============================================================
 // 予定
