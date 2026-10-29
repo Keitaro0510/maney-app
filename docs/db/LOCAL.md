@@ -39,6 +39,20 @@ npx supabase stop
 - ログインしたユーザーとして動かすときは、`set local role authenticated;` と `request.jwt.claims` を設定する（`01_tables.test.sql` を参照）
 - リポジトリは公開しているので、本番のデータはテストに使わない。架空のデータを作る
 
+## 試験版のアプリ（JavaScript）のテスト
+
+`next/` の中のデータの層と互換層は、Node だけでテストできる（インストールはいらない）。
+
+```bash
+node --test "tests/*.test.mjs"
+```
+
+互換層のテストは、DB の逆の変換（`private.export_to_user_data`）の結果と比べる。DB の変換を変えたら、ローカルの Supabase でテストのデータを作り直す。
+
+```bash
+docker exec -i supabase_db_maney-app psql -U postgres -q -At -v ON_ERROR_STOP=1 < tests/fixtures/compat_fixture.sql > tests/fixtures/compat-fixture.json
+```
+
 ## 本番に適用する
 
 テストが通ったマイグレーションだけを、本番に適用する。今は Supabase MCP の `apply_migration` を使っている。
