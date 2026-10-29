@@ -6,6 +6,8 @@
 --   docker exec -i supabase_db_maney-app psql -U postgres -q -At -v ON_ERROR_STOP=1 < tests/fixtures/compat_fixture.sql > tests/fixtures/compat-fixture.json
 begin;
 set local client_min_messages = warning;
+-- 切り替え（③）のあとは user_data への書き込みが止まっているので、テストのデータを入れるときだけ許す
+select set_config('maney.allow_user_data_write', 'on', true) \g /dev/null
 
 insert into auth.users (id, email) values ('a0000000-0000-4000-8000-000000000001', 'a@example.com');
 

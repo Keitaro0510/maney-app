@@ -1,4 +1,4 @@
-// 互換層（next/compat.js）のテスト。実行: node --test tests/
+// 互換層（js/compat.js）のテスト。実行: node --test "tests/*.test.mjs"
 // tests/fixtures/compat-fixture.json は、ローカルの Supabase で作った「テーブルの行」と「DB の逆の変換の結果」
 // （作り方は tests/fixtures/compat_fixture.sql の先頭）
 import { test } from 'node:test';
@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { rowsToSt, stripMeta, createdMs } = require('../next/compat.js');
+const { rowsToSt, stripMeta, createdMs } = require('../js/compat.js');
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
 
 test('同じ行から、DB の逆の変換（private.export_to_user_data）と完全に同じ st を作る', () => {

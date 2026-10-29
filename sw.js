@@ -1,17 +1,12 @@
-const CACHE_NAME = 'money-app-v34';
+const CACHE_NAME = 'money-app-v35';
 const ASSETS = [
   './',
   './index.html',
+  './js/data.js',
+  './js/compat.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
-
-// 試験版（next.html と、next/ の中のファイル）。キャッシュせず、毎回ネットワークから取る
-// 取得に失敗しても本番の index.html を代わりに出さない（本番のアプリを試験版だと思って使ってしまうのを防ぐ）
-const isTestVersion = url => {
-  const path = new URL(url).pathname;
-  return path.endsWith('/next.html') || path.includes('/next/');
-};
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -34,11 +29,6 @@ self.addEventListener('fetch', e => {
   if(e.request.url.includes('supabase.co') ||
      e.request.url.includes('accounts.google.com') ||
      e.request.url.includes('googleapis.com')){
-    e.respondWith(fetch(e.request));
-    return;
-  }
-
-  if(isTestVersion(e.request.url)){
     e.respondWith(fetch(e.request));
     return;
   }

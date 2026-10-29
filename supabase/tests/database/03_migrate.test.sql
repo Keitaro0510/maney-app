@@ -5,6 +5,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(24);
 
+-- 切り替え（③）のあとは user_data への書き込みが止まっているので、テストのデータを入れるときだけ許す
+select set_config('maney.allow_user_data_write', 'on', true);
+
 insert into auth.users (id, email) values
   ('a0000000-0000-4000-8000-000000000001', 'a@example.com'),
   ('b0000000-0000-4000-8000-000000000001', 'b@example.com');

@@ -1,11 +1,11 @@
-// データの層（next/data.js）の読み込みのテスト。実行: node --test tests/
+// データの層（js/data.js）の読み込みのテスト。実行: node --test "tests/*.test.mjs"
 // Supabase の代わりに、ページ分けと件数を真似る偽物を使う
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { TABLES, loadTable, loadAllTables } = require('../next/data.js');
+const { TABLES, loadTable, loadAllTables } = require('../js/data.js');
 
 // tables: {テーブル名: 行の配列}。options で、件数の変化・上限・エラーを起こす
 function fakeSupabase(tables, options = {}) {
