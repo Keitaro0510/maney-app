@@ -47,7 +47,7 @@
 
 ## Phase 5: データを正規化したテーブルに移す
 
-DB整備の方針は [db/PLAN.md](db/PLAN.md) で確定済み（2026-10-29）。作業は Issue [#8](https://github.com/Keitaro0510/maney-app/issues/8)〜[#11](https://github.com/Keitaro0510/maney-app/issues/11) で進める。
+DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10-29 にすべて終えた。作業は Issue [#8](https://github.com/Keitaro0510/maney-app/issues/8)〜[#11](https://github.com/Keitaro0510/maney-app/issues/11) で進める。
 
 - [x] 新しいテーブルを設計する（[db/TABLE_SPLIT.md](db/TABLE_SPLIT.md)、#21）
 - [x] 移行スクリプト（JSONB → テーブル）と、元に戻す手順を用意する（#23・#24、[db/RESTORE.md](db/RESTORE.md)）

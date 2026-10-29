@@ -1,7 +1,8 @@
 # DB整備の方針
 
 - 作成日: 2026-10-29
-- もとにした資料: [audit-claude.md](../../archive/db-audit/audit-claude.md)（2026-10-24）、[audit-codex.md](../../archive/db-audit/audit-codex.md)（2026-10-29）。どちらも対応し終えたので [archive/](../../archive/) にしまった
+- もとにした資料: [audit-claude.md](audit-claude.md)（2026-10-24）、[audit-codex.md](audit-codex.md)（2026-10-29）
+- 2026-10-29 に、この方針の作業（#8〜#11）をすべて終えたので、診断と一緒に archive にしまった。今のデータの構造は [docs/db/SCHEMA.md](../../docs/db/SCHEMA.md)
 - 状態: **確定**（2026-10-29）。作業はイシューで進める（「方針」の各見出しを参照）
 
 ## 2つの診断の比べ方
@@ -83,7 +84,7 @@ Codex は `ai_insights` の読み取りポリシーがないことを最優先�
 
 UI や機能を作る前に DB を整えたい、という目的なので、ここまでやる。ただし1〜3が終わってから始める。
 
-設計と、そこで決めたこと（設定もテーブルにする、`src` / `txId` は捨てる、削除は「削除済み」として残す、4段階で進める など）は [TABLE_SPLIT.md](TABLE_SPLIT.md) にまとめた（2026-10-29 確定）。
+設計と、そこで決めたこと（設定もテーブルにする、`src` / `txId` は捨てる、削除は「削除済み」として残す、4段階で進める など）は [TABLE_SPLIT.md](../../docs/db/TABLE_SPLIT.md) にまとめた（2026-10-29 確定）。
 
 ### 5. GAS 関連（やらない）
 
