@@ -113,3 +113,9 @@ select private.restore_user_data_from_tables('<ユーザーID>');
 ```
 
 `user_data` の前の版は `private.user_data_history` に残る。
+
+切り替えたあと（2026-10-29〜）は、`user_data` への書き込みをトリガーで止めている。旧版のアプリを本当に使い続けるなら、次の3つも行う。
+
+1. 書き込みを止めるトリガーを外す: `alter table public.user_data disable trigger block_user_data_writes;`
+2. `index.html`・`sw.js` を切り替える前の版に戻す（切り替えの PR を `git revert` して PR にする。`sw.js` の `CACHE_NAME` は上げる）
+3. 新しいテーブルに書いている端末がないことを確かめる（戻したあとに新しいテーブルに書かれた分は、旧版のアプリには出ない）

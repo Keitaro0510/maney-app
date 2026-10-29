@@ -103,7 +103,7 @@ update public.cards set name = '変えた' where id = 'a0000000-0000-4000-8000-0
 delete from public.ledger_entries where id = 'a0000000-0000-4000-8000-000000000101';
 
 create temp table before_restore on commit drop as select private.restore_snapshot((select id from snap)) as id;
-select is((select count(*)::int from public.withdrawals), 0, '全体を戻すと、写しのあとに追加した行は消える');
+select is((select count(*)::int from public.withdrawals where user_id = 'a0000000-0000-4000-8000-000000000001'), 0, '全体を戻すと、写しのあとに追加した行は消える');
 select is((select name from public.cards where id = 'a0000000-0000-4000-8000-0000000000c1'), 'Aカード',
   '全体を戻すと、写しのあとに変えた行は元に戻る');
 select ok(
@@ -117,7 +117,7 @@ select is(
   (select jsonb_array_length(data -> 'withdrawals') from private.snapshots where id = (select id from before_restore)),
   1, '戻す直前の写しには、消えた行も入っている');
 
-select is(private.take_daily_snapshots(), 1, '毎日の写しは、新しいテーブルを使っている人の分だけ取る');
+select is(private.take_daily_snapshots(), (select count(*)::int from public.settings), '毎日の写しは、新しいテーブルを使っている人の分だけ取る');
 select is(
   (select count(*)::int from cron.job where jobname in ('daily-snapshots', 'purge-snapshots')),
   2, '毎日の写しと、古い写しを消す cron がある');

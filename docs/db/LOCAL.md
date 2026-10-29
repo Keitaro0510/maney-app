@@ -41,7 +41,7 @@ npx supabase stop
 
 ## 試験版のアプリ（JavaScript）のテスト
 
-`next/` の中のデータの層と互換層は、Node だけでテストできる（インストールはいらない）。
+`js/` の中のデータの層と互換層は、Node だけでテストできる（インストールはいらない）。
 
 ```bash
 node --test "tests/*.test.mjs"

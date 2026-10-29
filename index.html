@@ -14,6 +14,9 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 新しいテーブルを読み書きするデータの層と、今の画面のための互換層（テーブル分割 #11。docs/DECISIONS.md の D9） -->
+<script src="js/data.js"></script>
+<script src="js/compat.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -489,9 +492,21 @@ body{
 }
 .sync-banner-msg{font-size:13px;line-height:1.5;white-space:pre-line}
 .sync-banner-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+/* ===== 送信待ちの件数（送れていない変更があるときだけ出す） ===== */
+.sync-pill{
+  position:fixed;top:0;left:0;
+  margin:calc(env(safe-area-inset-top,8px) + 10px) 12px 0;
+  padding:4px 10px;border-radius:999px;
+  background:#BA7517;color:#fff;font-size:11px;font-weight:700;
+  z-index:200;
+}
+.sync-pill[hidden]{display:none}
 </style>
 </head>
 <body>
+
+<!-- 送信待ちの件数（送れていない変更があるときだけ出す） -->
+<div class="sync-pill" id="sync-pill" hidden></div>
 
 <!-- ログイン画面 -->
 <div id="login-screen">
@@ -803,7 +818,9 @@ const _now=new Date();
 const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 const TODAY=toDS(_now.getFullYear(),_now.getMonth(),_now.getDate());
 
-let st={acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[]};
+// 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
+function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[]};}
+let st=defaultSt();
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
@@ -847,9 +864,18 @@ async function loginWithGoogle(){
 }
 
 async function logout(){
+  if(outbox.length){
+    showSyncBanner(`送れていない変更が${outbox.length}件あります。ログアウトすると、この端末から消えます。`,
+      [{label: 'ログアウトする', onclick: reallyLogout}, {label: 'やめる', onclick: hideSyncBanner, primary: true}]);
+    return;
+  }
+  await reallyLogout();
+}
+
+async function reallyLogout(){
+  const userId = currentUser && currentUser.id;
   await supa.auth.signOut();
-  localStorage.removeItem('mavFinal2');
-  localStorage.removeItem(SYNC_KEY);
+  if(userId) ['server', 'outbox'].forEach(name=>localStorage.removeItem(`${STORAGE_PREFIX}${userId}:v2:${name}`));
   location.reload();
 }
 
@@ -885,36 +911,71 @@ function hideLoginScreen(user){
 }
 
 // ============================================================
-// ローカル保存
+// データ（新しいテーブル。テーブル分割 #11、2026-10-29 に切り替え）
+// - サーバーの写し（server）: 新しいテーブルから読んだ行と、その updated_at。js/data.js で読む
+// - 送信待ち（outbox）: まだ送れていない操作の列。この端末に保存し、再起動しても残す
+// - 画面のデータ（st）: サーバーの写しに送信待ちを重ねた行から、互換層（js/compat.js）で組み立てる
+// - 保存: 画面で st を変えたら、互換層で行に戻し、前の行との違いを1つの操作にして送信待ちに入れ、順に apply_op で送る
+// - 端末の保存場所のキーは maney:prod: で始める（切り替える前の版のキー mavFinal2・mavSync は使わない）
 // ============================================================
-function saveLocal(){
-  try{localStorage.setItem('mavFinal2', JSON.stringify(st));}catch(e){}
-}
-
-// ============================================================
-// サーバーとの同期の状態
-// - updatedAt: 最後に読み込んだ・保存したときのサーバーの updated_at（サーバーの時刻）
-// - dirty: この端末に、まだサーバーへ送っていない変更がある
-// st はサーバーに送るデータそのものなので、別のキーに保存する
-// ============================================================
-const SYNC_KEY = 'mavSync';
-let sync = {updatedAt: null, dirty: false};
-try{
-  const s = localStorage.getItem(SYNC_KEY);
-  if(s) sync = {...sync, ...JSON.parse(s)};
-}catch(e){}
-function saveSyncState(){
-  try{localStorage.setItem(SYNC_KEY, JSON.stringify(sync));}catch(e){}
-}
-
-let remoteReady = false;   // 読み込みに成功するまで、サーバーに保存しない
-let syncConflict = false;  // 別の端末の変更とぶつかっている間は、サーバーに保存しない
+const STORAGE_PREFIX = 'maney:prod:';
+let server = null;         // {rows, epoch, loadedAt}
+let outbox = [];           // 送信待ちの操作
+let remoteReady = false;   // サーバーから読み込めた
 let loadingRemote = false; // サーバーから読み込んでいる途中
-let saving = false;        // サーバーに送っている途中
-let saveAgain = false;     // 送っている間に、また保存された
+let sending = false;       // 送信待ちを送っている途中
+let sendBlocked = null;    // 送るのを止めている理由（'conflict'・'stale_epoch'・'error'）。選んでもらうまで送らない
+
+const TABLE_LABELS = {
+  settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',
+  shifts: 'シフト', plans: '予定', fixed_costs: '固定費', fixed_incomes: '固定収入', withdrawals: '引き出し',
+  salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績',
+};
+
+function storageKey(name){ return `${STORAGE_PREFIX}${currentUser.id}:v2:${name}`; }
+
+function loadStored(name){
+  try{
+    const s = localStorage.getItem(storageKey(name));
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+
+function store(name, value){
+  try{ localStorage.setItem(storageKey(name), JSON.stringify(value)); }
+  catch(e){
+    console.warn('端末に保存できませんでした:', e);
+    showSyncBanner('この端末に保存できませんでした（容量がいっぱいかもしれません）。送れていない変更は、アプリを閉じると消えます。',
+      [{label: '閉じる', onclick: hideSyncBanner}]);
+  }
+}
+
+// 今の行（サーバーの写しに送信待ちを重ねたもの）
+function currentRows(){ return MoneyData.applyOutbox(server.rows, outbox); }
+
+// 今の行から、画面のデータ（互換の st）を作り直す。設定の行がなければ false
+function rebuildSt(){
+  if(!server) return false;
+  st = MoneyCompat.rowsToSt(currentRows()) || defaultSt();
+  fixDefaults();
+  return true;
+}
+
+function renderCurrentSection(){
+  const cur = document.querySelector('.sec.active');
+  sw(cur ? cur.id.replace('sec-', '') : 'home');
+}
+
+// 送れていない変更があるときだけ、左上に件数を出す
+function updateSyncStatus(){
+  const pill = document.getElementById('sync-pill');
+  if(!pill) return;
+  pill.hidden = !outbox.length;
+  pill.textContent = `送信待ち ${outbox.length}件`;
+}
 
 // ============================================================
-// 同期の通知（保存の失敗・別の端末との競合）
+// 同期の通知（送れない・別の端末との競合）
 // ============================================================
 function showSyncBanner(msg, actions){
   document.getElementById('sync-banner-msg').textContent = msg;
@@ -934,172 +995,215 @@ function hideSyncBanner(){
   document.getElementById('sync-banner').classList.remove('show');
 }
 
-function showConflict(note){
-  syncConflict = true;
+// 別の端末の変更とぶつかった
+function showConflict(op, conflicts){
+  const reasons = {
+    changed: '別の端末で変更されています',
+    missing: '別の端末で削除されています',
+    exists: 'すでにあります',
+    duplicate: '同じ内容の記録が、別の端末で登録されています',
+  };
+  const lines = conflicts.map(c => `・${TABLE_LABELS[c.table] || c.table}: ${reasons[c.reason] || c.reason}`);
   showSyncBanner(
-    (note ? note + '\n' : '') +
-    '別の端末でデータが更新されたため、この端末の変更をサーバーに保存していません。\n' +
-    '・サーバーの内容にする: この端末の保存していない変更は消えます\n' +
-    '・この端末の内容で上書き: サーバーの内容は履歴に残ります',
+    '別の端末の変更とぶつかったため、この端末の変更を保存していません。\n' + lines.join('\n') + '\n\n' +
+    '・サーバーの内容にする: この端末の送れていない変更は、すべて消えます\n' +
+    '・この端末の内容で上書き: ぶつかった記録を、この端末の内容にします',
     [
-      {label: 'サーバーの内容にする', onclick: useRemoteVersion},
-      {label: 'この端末の内容で上書き', onclick: overwriteRemote}
-    ]
-  );
+      {label: 'サーバーの内容にする', onclick: useServerVersion},
+      {label: 'この端末の内容で上書き', onclick: ()=>overwriteWithMine(op, conflicts)},
+    ]);
 }
 
-// 競合を解く: サーバーの内容を読み込み、この端末の変更は捨てる
-async function useRemoteVersion(){
-  syncConflict = false;
-  sync.dirty = false;
-  sync.updatedAt = null; // サーバーの内容を必ず読み込む
-  saveSyncState();
+// 競合を解く: 送信待ちを捨てて、サーバーの内容を読み込み直す
+async function useServerVersion(){
+  outbox = [];
+  store('outbox', outbox);
+  sendBlocked = null;
   hideSyncBanner();
+  updateSyncStatus();
   await loadRemote();
 }
 
-// 競合を解く: 今のサーバーの版に対して、この端末の内容で上書きする
-async function overwriteRemote(){
-  try{
-    const {data, error} = await supa
-      .from('user_data')
-      .select('updated_at')
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-    if(error) throw error;
-    sync.updatedAt = data ? data.updated_at : null;
-    saveSyncState();
-  }catch(e){
-    console.warn('Supabase load error:', e);
-    showConflict('サーバーに接続できませんでした。もう一度選んでください。');
-    return;
-  }
-  syncConflict = false;
-  remoteReady = true;
+// 競合を解く: ぶつかった記録を、この端末の内容で上書きして送り直す
+async function overwriteWithMine(op, conflicts){
+  outbox = MoneyData.rewriteForOverwrite(outbox, op, conflicts, crypto.randomUUID());
+  store('outbox', outbox);
+  sendBlocked = null;
   hideSyncBanner();
-  saveRemote();
+  rebuildSt();
+  renderCurrentSection();
+  await flushOutbox();
+  if(!outbox.length) await loadRemote(); // 別の端末の、ほかの変更も読み込む
+}
+
+// サーバーのデータが移し直された（移行の番号が上がった）
+function showStaleEpoch(){
+  showSyncBanner(
+    `サーバーのデータが移し直されたため、この端末の送れていない変更（${outbox.length}件）は保存できません。\n` +
+    '必要なら書き出して（JSON のファイル）から、捨てて読み込み直してください。',
+    [
+      {label: '書き出す', onclick: downloadOutbox},
+      {label: '捨てて読み込み直す', onclick: useServerVersion, primary: true},
+    ]);
+}
+
+// 送信待ちを JSON のファイルにして保存する（捨てる前の退避）
+function downloadOutbox(){
+  downloadJson('maney-outbox', JSON.stringify({exportedAt: new Date().toISOString(), outbox}, null, 2));
+}
+
+function downloadJson(name, text){
+  const blob = new Blob([text], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// 切り替える前の版（user_data）が端末に残したデータ。
+// 送れていなかった変更があれば、書き出せるようにする（新しい版では保存できないため）。なければ消す
+function handleLegacyLocalData(){
+  let legacy = null;
+  try{
+    const sync = JSON.parse(localStorage.getItem('mavSync') || 'null');
+    if(sync && sync.dirty) legacy = localStorage.getItem('mavFinal2');
+  }catch(e){}
+  const forget = ()=>{ localStorage.removeItem('mavFinal2'); localStorage.removeItem('mavSync'); };
+  if(!legacy){ forget(); return; }
+  showSyncBanner(
+    '切り替える前の版で、サーバーに送れていなかった変更が、この端末に残っています。\n' +
+    '書き出して（JSON のファイル）、必要なら入れ直してください。',
+    [
+      {label: '書き出す', onclick: ()=>downloadJson('maney-before-cutover', legacy), primary: true},
+      {label: '捨てる', onclick: ()=>{ forget(); hideSyncBanner(); }},
+    ]);
+}
+
+// サーバーが受け付けなかった（制約違反など。送り直しても通らない）
+function showSendError(op, error){
+  showSyncBanner(
+    'サーバーがこの端末の変更を受け付けませんでした。\n' + ((error && (error.message || error.code)) || error) + '\n' +
+    '・この変更を捨てる: この変更と、これを前提にしたあとの変更を捨てます',
+    [
+      {label: 'この変更を捨てる', onclick: ()=>{
+        outbox = MoneyData.discardOp(outbox, op.id);
+        store('outbox', outbox);
+        sendBlocked = null;
+        hideSyncBanner();
+        rebuildSt();
+        renderCurrentSection();
+        flushOutbox();
+      }},
+      {label: 'もう一度送る', onclick: ()=>{ sendBlocked = null; hideSyncBanner(); flushOutbox(); }, primary: true},
+    ]);
 }
 
 // ============================================================
-// Supabaseに保存（ユーザーIDひも付き）
-// 保存は1つずつ送る。送っている間に保存されたら、終わってから最新の内容をもう一度送る
+// 保存: 画面で変えた st を、送信待ちの操作にする
+// UI の処理は st を変えてから save() を呼ぶ。そのあとの描画は、作り直した st で行われる
 // ============================================================
-async function saveRemote(){
-  if(!remoteReady || syncConflict) return;
-  if(saving){ saveAgain = true; return; }
-  saving = true;
-  try{
-    do{
-      saveAgain = false;
-      if(!await pushRemote()) break;
-    }while(saveAgain);
-  }finally{
-    saving = false;
-  }
-}
-
-// サーバーに1回送る。成功したら true
-async function pushRemote(){
-  const { data: { session } } = await supa.auth.getSession();
-  if(!session){
-    showSyncBanner('ログインが切れたため、サーバーに保存できませんでした。変更はこの端末に残っています。',
-      [{label: 'ログインし直す', onclick: loginWithGoogle, primary: true}]);
-    return false;
-  }
-  currentUser = session.user;
-  try{
-    // 読み込んだ時点からサーバーの内容が変わっていないときだけ上書きする。updated_at はサーバーが入れる
-    const req = sync.updatedAt
-      ? supa.from('user_data').update({value: st}).eq('user_id', currentUser.id).eq('updated_at', sync.updatedAt)
-      : supa.from('user_data').insert({user_id: currentUser.id, value: st});
-    const {data, error} = await req.select('updated_at');
-    // 0件: 別の端末が先に保存した。23505: まだ行がないはずが、別の端末が先に作っていた
-    if((!error && !data.length) || (error && error.code === '23505')){
-      showConflict();
-      return false;
-    }
-    if(error) throw error;
-    sync.updatedAt = data[0].updated_at;
-    if(!saveAgain) sync.dirty = false;
-    saveSyncState();
-    hideSyncBanner();
-    return true;
-  }catch(e){
-    console.warn('Supabase save failed:', e);
-    showSyncBanner('サーバーに保存できませんでした。変更はこの端末に残っています。',
-      [{label: 'もう一度送る', onclick: saveRemote, primary: true}]);
-    return false;
-  }
-}
+function saveLocal(){}
 
 function save(){
-  saveLocal();
-  if(!sync.dirty){ sync.dirty = true; saveSyncState(); }
-  saveRemote();
+  if(!server){
+    rebuildSt();
+    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+    return;
+  }
+  try{
+    const now = new Date().toISOString();
+    const before = currentRows();
+    const after = MoneyCompat.stToRows(st, before, {newId: ()=>crypto.randomUUID(), now});
+    const changes = MoneyData.diffRows(before, after);
+    if(changes.length){
+      const op = MoneyData.makeOp(changes, {id: crypto.randomUUID(), epoch: server.epoch, now, server, outbox});
+      outbox = [...outbox, op];
+      store('outbox', outbox);
+    }
+  }catch(e){
+    console.warn('保存できませんでした:', e);
+    rebuildSt();
+    renderCurrentSection();
+    showSyncBanner('保存できませんでした。変えた内容は取り消しました。\n' + (e.message || e),
+      [{label: '閉じる', onclick: hideSyncBanner}]);
+    return;
+  }
+  rebuildSt(); // 新しい記録にも _id が付く（続けて編集しても、同じ行の更新になる）
+  updateSyncStatus();
+  flushOutbox();
+}
+
+// 送信待ちを、古いものから1つずつ送る
+async function flushOutbox(){
+  if(!currentUser || sending || loadingRemote || sendBlocked || !outbox.length) return;
+  sending = true;
+  try{
+    while(outbox.length && !sendBlocked){
+      const op = outbox[0];
+      const res = await MoneyData.sendOp(supa, op);
+      if(res.kind === 'applied'){
+        ({server, outbox} = MoneyData.acknowledge({server, outbox}, op, res.result));
+        store('server', server);
+        store('outbox', outbox);
+      }else if(res.kind === 'conflict'){
+        sendBlocked = 'conflict';
+        showConflict(op, res.conflicts);
+      }else if(res.kind === 'stale_epoch'){
+        sendBlocked = 'stale_epoch';
+        showStaleEpoch();
+      }else if(res.kind === 'network'){
+        showSyncBanner(`通信できないため、送れていない変更が${outbox.length}件あります。この端末に残っていて、通信が戻ったら送ります。`,
+          [{label: 'もう一度送る', onclick: flushOutbox, primary: true}]);
+        break;
+      }else{
+        sendBlocked = 'error';
+        showSendError(op, res.error);
+      }
+    }
+    if(!outbox.length) hideSyncBanner();
+  }finally{
+    sending = false;
+    updateSyncStatus();
+  }
 }
 
 // ============================================================
-// Supabaseからデータ読み込み（起動時と、アプリに戻ってきたとき）
+// 新しいテーブルから読み込む（起動時と、アプリに戻ってきたとき）
+// すべてのテーブルを読み終えて件数が合ったときだけ、サーバーの写しを置き換える
+// 送信待ちは、新しい写しに重ね直す
 // ============================================================
 async function loadRemote(){
-  if(!currentUser || loadingRemote) return;
+  if(!currentUser || loadingRemote || sending) return;
   loadingRemote = true;
-  const wasReady = remoteReady;
   try{
-    const {data, error} = await supa
-      .from('user_data')
-      .select('value, updated_at')
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-    if(error) throw error;
-    // 読み込んでいる間に保存が始まった。ぶつかっていないかは保存のときに確かめる
-    if(wasReady && (saving || sync.dirty)) return;
-
-    if(!data){
-      // サーバーにまだ行がない（初めてログインしたとき）。最初の保存で作る
-      sync.updatedAt = null;
-      saveSyncState();
-    }else if(data.updated_at !== sync.updatedAt){
-      if(sync.dirty){
-        // この端末とサーバーの両方が変わっている
-        remoteReady = true;
-        showConflict();
-        return;
-      }
-      applyRemote(data);
-    }
+    server = await MoneyData.loadAllTables(supa);
+    store('server', server);
     remoteReady = true;
-    hideSyncBanner();
-    if(sync.dirty) saveRemote(); // 読み込めなかった間の変更を送る
+    rebuildSt();
+    if(!sendBlocked) hideSyncBanner();
+    renderCurrentSection();
+    console.log('サーバーから読み込みました', server.loadedAt);
   }catch(e){
-    console.warn('Supabase load error:', e);
-    if(!wasReady){
-      showSyncBanner('サーバーから読み込めませんでした。変更はこの端末に保存し、読み込めるまでサーバーには送りません。',
-        [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
-    }
+    console.warn('新しいテーブルを読み込めませんでした:', e);
+    showSyncBanner(
+      (server ? '新しいテーブルを読み込めませんでした。前に読み込んだ内容を表示しています。' : '新しいテーブルを読み込めませんでした。')
+        + '\n' + (e.message || e),
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
   }finally{
     loadingRemote = false;
   }
 }
 
-function applyRemote(data){
-  st = {...st, ...data.value};
-  fixDefaults();
-  saveLocal();
-  sync.updatedAt = data.updated_at;
-  sync.dirty = false;
-  saveSyncState();
-  const cur = document.querySelector('.sec.active');
-  sw(cur ? cur.id.replace('sec-', '') : 'home');
-  console.log('Supabaseからデータを読み込みました');
-}
-
-// アプリに戻ってきたとき・通信が戻ったときに、サーバーと合わせ直す
-function resyncRemote(){
-  if(!currentUser || syncConflict || saving) return;
-  if(remoteReady && sync.dirty){ saveRemote(); return; } // 送れていない変更を送る
-  if(document.querySelector('.mbg.open')) return;        // 入力中の画面があるときは読み込み直さない
-  loadRemote();                                          // 別の端末の変更を読み込む
+// アプリに戻ってきたとき・通信が戻ったとき: 送信待ちを送ってから、読み込み直す
+// （入力中の画面があるときは読み込まない。送るのは入力中でもよい）
+async function resyncRemote(){
+  if(!currentUser) return;
+  await flushOutbox();
+  if(outbox.length) return;
+  if(document.querySelector('.mbg.open')) return;
+  await loadRemote();
 }
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible') resyncRemote();
@@ -1109,26 +1213,32 @@ window.addEventListener('online', resyncRemote);
 // ============================================================
 // 起動
 // ============================================================
+
+// ログインした直後: 端末に保存したサーバーの写しと送信待ちをすぐ表示し、そのあとサーバーから読み込んで送る
+async function startWithUser(user){
+  currentUser = user;
+  hideLoginScreen(currentUser);
+  server = loadStored('server');
+  outbox = loadStored('outbox') || [];
+  rebuildSt();
+  updateSyncStatus();
+  renderHome();
+  renderCal();
+  await loadRemote();
+  await flushOutbox();
+  handleLegacyLocalData();
+  await loadAiInsight();
+}
+
 async function loadData(){
-  // まずローカルから読んで即表示
-  try{
-    const s = localStorage.getItem('mavFinal2');
-    if(s){ const p=JSON.parse(s); st={...st,...p}; }
-  }catch(e){}
   fixDefaults();
 
-  // 認証状態を確認
   const { data: { session } } = await supa.auth.getSession();
-  let initialLoadDone = false; // 初回loadRemote済みフラグ
+  let initialLoadDone = false;
 
   if(session){
-    currentUser = session.user;
-    hideLoginScreen(currentUser);
-    renderHome();
-    renderCal();
-    await loadRemote(); // 起動時の1回だけ読み込む
-    await loadAiInsight(); // 月次支出アドバイス
     initialLoadDone = true;
+    await startWithUser(session.user);
   } else {
     showLoginScreen();
   }
@@ -1136,19 +1246,17 @@ async function loadData(){
   // 認証状態の変化を監視（ログイン後のリダイレクト時に発火）
   supa.auth.onAuthStateChange(async (event, session) => {
     if(event === 'SIGNED_IN' && session){
-      currentUser = session.user;
-      hideLoginScreen(currentUser);
-      renderHome();
-      renderCal();
-      // 初回ログイン時だけloadRemoteを呼ぶ（アプリ復帰時の再発火を防ぐ）
+      // 初回ログイン時だけ読み込む（アプリ復帰時の再発火を防ぐ）
       if(!initialLoadDone){
-        await loadRemote();
         initialLoadDone = true;
+        await startWithUser(session.user);
       }
     } else if(event === 'SIGNED_OUT'){
       currentUser = null;
       initialLoadDone = false;
       remoteReady = false;
+      server = null;
+      outbox = [];
       showLoginScreen();
     }
   });
@@ -1163,11 +1271,6 @@ function fixDefaults(){
     if(typeof p.timeStart!=='string')p.timeStart='';
     if(typeof p.timeEnd!=='string')p.timeEnd='';
   });
-  // 家計簿の金額は数値で持つ(2026-10-29〜)。文字列で保存された古い記録も数値に直す
-  (st.ledger||[]).forEach(l=>{if(typeof l.amount==='string')l.amount=parseInt(l.amount)||0;});
-  // 削除した楽天カードの取り込み(2026-10-24)の名残
-  delete st.merchantRules;
-  delete st.rakutenCardIdx;
 }
 
 // ============================================================
@@ -1227,10 +1330,10 @@ function jobCloseDayNum(job,y,m){const cl=parseInt(job&&job.closeDay)||parseInt(
 // ============================================================
 const salaryKeyForShiftMonth=(jobName,y,m)=>{const pm=addM(y,m,1);return `${jobName}|${pm.y}-${String(pm.m+1).padStart(2,'0')}`;};
 const getActualSalary=(jobName,y,m)=>st.actualInputs.find(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKeyForShiftMonth(jobName,y,m));
-function setActualSalary(jobName,y,m,amount){const key=salaryKeyForShiftMonth(jobName,y,m),pm=addM(y,m,1),job=st.jobs.find(j=>j.name===jobName),date=toDS(pm.y,pm.m,jobPayDay(job));const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===key);const entry={type:'shift',job:jobName,salaryKey:key,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,y,m)};if(ei>=0)st.actualInputs[ei]=entry;else st.actualInputs.push(entry);}
+function setActualSalary(jobName,y,m,amount){const key=salaryKeyForShiftMonth(jobName,y,m),pm=addM(y,m,1),job=st.jobs.find(j=>j.name===jobName),date=toDS(pm.y,pm.m,jobPayDay(job));const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===key);const entry={type:'shift',job:jobName,salaryKey:key,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,y,m)};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
 const cardActualKey=(ci,bY,bM)=>`card-${ci}-${bY}-${String(bM+1).padStart(2,'0')}`;
 const getActualCard=(ci,bY,bM)=>st.actualInputs.find(a=>a.type==='card'&&a.cardKey===cardActualKey(ci,bY,bM));
-function setActualCard(ci,bY,bM,amount,estimated){const key=cardActualKey(ci,bY,bM),ei=st.actualInputs.findIndex(a=>a.type==='card'&&a.cardKey===key);const entry={type:'card',cardKey:key,cardIdx:ci,billY:bY,billM:bM,actualAmount:amount,estimatedAmount:estimated};if(ei>=0)st.actualInputs[ei]=entry;else st.actualInputs.push(entry);}
+function setActualCard(ci,bY,bM,amount,estimated){const key=cardActualKey(ci,bY,bM),ei=st.actualInputs.findIndex(a=>a.type==='card'&&a.cardKey===key);const entry={type:'card',cardKey:key,cardIdx:ci,billY:bY,billM:bM,actualAmount:amount,estimatedAmount:estimated};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
 
 // ============================================================
 // シフト計算
@@ -1368,7 +1471,7 @@ function planTimeOnDay(p, ds){
 
 function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">¥${acct.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・固定費</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>=0?'＋':''} ¥${forecast.toLocaleString()}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
 
-function renderHome(){const y=gY(),m=gM(),d=gD();const acct=estimateAcct(),fixed=upcomingFixed(),incInfo=upcomingIncome(),wd=totalWd(),dtp=daysToP();const planBudget=upcomingPlanBudget(),safe=acct-fixed-planBudget,todayUse=dtp>0?Math.floor(safe/dtp):safe;document.getElementById('acct-val').textContent='¥'+acct.toLocaleString();document.getElementById('acct-val').style.color=acct<0?'#A32D2D':'var(--color-text-primary)';document.getElementById('acct-sub').textContent='基準: '+st.baseDate;document.getElementById('ai-fixed').textContent='-¥'+fixed.toLocaleString();document.getElementById('ai-wd').textContent='-¥'+wd.toLocaleString();document.getElementById('ai-inc').textContent='+¥'+incInfo.total.toLocaleString();document.getElementById('ai-inc-detail').innerHTML=incInfo.parts.map(p=>`${p.label}: ¥${p.amount.toLocaleString()}`).join('<br>');const tuEl=document.getElementById('today-use');tuEl.textContent='¥'+Math.max(0,todayUse).toLocaleString();tuEl.style.color=todayUse<0?'#A32D2D':'#3B6D11';document.getElementById('days-pay').textContent=dtp+'日';renderBalanceChart();renderForecast();document.getElementById('h-sinc').textContent='¥'+totalShiftInc(y,m).toLocaleString();const lexp=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('h-lexp').textContent='¥'+lexp.toLocaleString();document.getElementById('h-pending').textContent='¥'+st.cards.reduce((a,card)=>a+cycle(card,1).amount,0).toLocaleString();const cbEl=document.getElementById('h-card-bills');if(!st.cards.length)cbEl.innerHTML='<div class="empty">設定タブでカードを登録するとここに表示されます</div>';else cbEl.innerHTML=st.cards.map((card,ci)=>{const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;return `<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:600;margin-bottom:6px">${card.name}</div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div></div>`;}).join('<div style="border-top:0.5px solid var(--color-border-tertiary);margin:8px 0"></div>');const bud=st.budget||0,pct=bud>0?Math.min(100,Math.round(lexp/bud*100)):0;document.getElementById('h-budlbl').textContent='予算 ¥'+bud.toLocaleString();document.getElementById('h-budused').textContent='支出 ¥'+lexp.toLocaleString();document.getElementById('h-prog').style.width=pct+'%';document.getElementById('h-prog').style.background=pct>80?'#A32D2D':pct>60?'#BA7517':'#3B6D11';let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${card.name}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else ahtml+=`<div class="abar-action"><strong>${card.name}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(parseInt(card.closeDay)===d)ahtml+=`<div class="abar neutral">今日は <strong>${card.name}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=jobPayDay(job),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${job.name}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${job.name}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${job.name}</strong> の締め日 — ${jPayD}日払い</div>`;});st.fixedCosts.filter(fc=>parseInt(fc.day)===d).forEach(fc=>{ahtml+=fc.type==='income'?`<div class="abar ok">今日 <strong>${fc.name}</strong> 入金 ¥${parseInt(fc.amount).toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${fc.name}</strong> 引き落とし ¥${parseInt(fc.amount).toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${s.job}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${p.title}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;const ups=[],todayObj=new Date(y,m,d);monthShifts(y,m).filter(s=>new Date(s.date).getDate()>=d).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3).forEach(s=>{const c=jobColorByName(s.job);const r=calcShiftInc(s);ups.push({day:new Date(s.date).getDate(),label:s.job,sub:`${s.start}〜${s.end}`,amount:'+¥'+r.total.toLocaleString(),color:'#185FA5',badgeStyle:`background:${c.bg};color:${c.fg}`});});st.jobs.forEach(job=>{const jPayD=jobPayDay(job);if(new Date(y,m,jPayD)>=todayObj){const sm=addM(y,m,-1);const act=getActualSalary(job.name,sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftIncForJob(job.name,sm.y,sm.m);if(si>0)ups.push({day:jPayD,label:`${job.name}給料（${sm.m+1}月分）`,sub:'口座に入金',amount:'+¥'+si.toLocaleString(),color:'#3B6D11',cls:'binc'});}});st.fixedIncs.filter(fi=>parseInt(fi.day)>=d).forEach(fi=>ups.push({day:parseInt(fi.day),label:fi.name,sub:'口座に入金',amount:'+¥'+parseInt(fi.amount).toLocaleString(),color:'#3B6D11',cls:'binc'}));st.fixedCosts.filter(fc=>parseInt(fc.day)>=d).forEach(fc=>ups.push({day:parseInt(fc.day),label:fc.name,sub:fc.type==='income'?'入金':'引き落とし',amount:(fc.type==='income'?'+':'-')+'¥'+parseInt(fc.amount).toLocaleString(),color:fc.type==='income'?'#3B6D11':'#C45000',cls:fc.type==='income'?'binc':'bfixcost'}));const mEnd=toDS(y,m,new Date(y,m+1,0).getDate());st.plans.filter(p=>{if(p.done)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return e>=todayDS&&s<=mEnd;}).sort((a,b)=>(a.dateStart||a.date).localeCompare(b.dateStart||b.date)).forEach(p=>{const c=planColor(p.color);ups.push({day:ds2d(p.dateStart||p.date).getDate(),label:p.title,sub:p.dateEnd&&p.dateEnd!==p.date?`〜${ds2d(p.dateEnd).getDate()}日`:'予定',amount:p.budget>0?'-¥'+p.budget.toLocaleString():'',color:c.fg,cls:'bplan'});});ups.sort((a,b)=>a.day-b.day);document.getElementById('upcoming-home').innerHTML=!ups.length?'<div class="empty">今後のイベントなし</div>':ups.slice(0,8).map(u=>`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-secondary);min-width:32px">${u.day}日</span><span class="badge${u.cls?` ${u.cls}`:''}" style="${u.badgeStyle||''}">${u.label}</span><span style="font-size:13px;color:var(--color-text-secondary)">${u.sub}</span></div><span style="font-size:14px;font-weight:600;color:${u.color}">${u.amount}</span></div>`).join('');}
+function renderHome(){const y=gY(),m=gM(),d=gD();const acct=estimateAcct(),fixed=upcomingFixed(),incInfo=upcomingIncome(),wd=totalWd(),dtp=daysToP();const planBudget=upcomingPlanBudget(),safe=acct-fixed-planBudget,todayUse=dtp>0?Math.floor(safe/dtp):safe;document.getElementById('acct-val').textContent='¥'+acct.toLocaleString();document.getElementById('acct-val').style.color=acct<0?'#A32D2D':'var(--color-text-primary)';document.getElementById('acct-sub').textContent='基準: '+st.baseDate;document.getElementById('ai-fixed').textContent='-¥'+fixed.toLocaleString();document.getElementById('ai-wd').textContent='-¥'+wd.toLocaleString();document.getElementById('ai-inc').textContent='+¥'+incInfo.total.toLocaleString();document.getElementById('ai-inc-detail').innerHTML=incInfo.parts.map(p=>`${p.label}: ¥${p.amount.toLocaleString()}`).join('<br>');const tuEl=document.getElementById('today-use');tuEl.textContent='¥'+Math.max(0,todayUse).toLocaleString();tuEl.style.color=todayUse<0?'#A32D2D':'#3B6D11';document.getElementById('days-pay').textContent=dtp+'日';renderBalanceChart();renderForecast();document.getElementById('h-sinc').textContent='¥'+totalShiftInc(y,m).toLocaleString();const lexp=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('h-lexp').textContent='¥'+lexp.toLocaleString();document.getElementById('h-pending').textContent='¥'+st.cards.reduce((a,card)=>a+cycle(card,1).amount,0).toLocaleString();const cbEl=document.getElementById('h-card-bills');if(!st.cards.length)cbEl.innerHTML='<div class="empty">設定タブでカードを登録するとここに表示されます</div>';else cbEl.innerHTML=st.cards.map((card,ci)=>{const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;if(card._deleted&&!fAmt&&!c.amount)return'';return `<div style="margin-bottom:10px"><div style="font-size:14px;font-weight:600;margin-bottom:6px">${card.name}</div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div></div>`;}).join('<div style="border-top:0.5px solid var(--color-border-tertiary);margin:8px 0"></div>');const bud=st.budget||0,pct=bud>0?Math.min(100,Math.round(lexp/bud*100)):0;document.getElementById('h-budlbl').textContent='予算 ¥'+bud.toLocaleString();document.getElementById('h-budused').textContent='支出 ¥'+lexp.toLocaleString();document.getElementById('h-prog').style.width=pct+'%';document.getElementById('h-prog').style.background=pct>80?'#A32D2D':pct>60?'#BA7517':'#3B6D11';let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(parseInt(card.billDay)===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${card.name}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else ahtml+=`<div class="abar-action"><strong>${card.name}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(parseInt(card.closeDay)===d)ahtml+=`<div class="abar neutral">今日は <strong>${card.name}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=jobPayDay(job),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${job.name}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${job.name}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${job.name}</strong> の締め日 — ${jPayD}日払い</div>`;});st.fixedCosts.filter(fc=>parseInt(fc.day)===d).forEach(fc=>{ahtml+=fc.type==='income'?`<div class="abar ok">今日 <strong>${fc.name}</strong> 入金 ¥${parseInt(fc.amount).toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${fc.name}</strong> 引き落とし ¥${parseInt(fc.amount).toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${s.job}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${p.title}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;const ups=[],todayObj=new Date(y,m,d);monthShifts(y,m).filter(s=>new Date(s.date).getDate()>=d).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3).forEach(s=>{const c=jobColorByName(s.job);const r=calcShiftInc(s);ups.push({day:new Date(s.date).getDate(),label:s.job,sub:`${s.start}〜${s.end}`,amount:'+¥'+r.total.toLocaleString(),color:'#185FA5',badgeStyle:`background:${c.bg};color:${c.fg}`});});st.jobs.forEach(job=>{const jPayD=jobPayDay(job);if(new Date(y,m,jPayD)>=todayObj){const sm=addM(y,m,-1);const act=getActualSalary(job.name,sm.y,sm.m);const si=act?parseInt(act.actualAmount):totalShiftIncForJob(job.name,sm.y,sm.m);if(si>0)ups.push({day:jPayD,label:`${job.name}給料（${sm.m+1}月分）`,sub:'口座に入金',amount:'+¥'+si.toLocaleString(),color:'#3B6D11',cls:'binc'});}});st.fixedIncs.filter(fi=>parseInt(fi.day)>=d).forEach(fi=>ups.push({day:parseInt(fi.day),label:fi.name,sub:'口座に入金',amount:'+¥'+parseInt(fi.amount).toLocaleString(),color:'#3B6D11',cls:'binc'}));st.fixedCosts.filter(fc=>parseInt(fc.day)>=d).forEach(fc=>ups.push({day:parseInt(fc.day),label:fc.name,sub:fc.type==='income'?'入金':'引き落とし',amount:(fc.type==='income'?'+':'-')+'¥'+parseInt(fc.amount).toLocaleString(),color:fc.type==='income'?'#3B6D11':'#C45000',cls:fc.type==='income'?'binc':'bfixcost'}));const mEnd=toDS(y,m,new Date(y,m+1,0).getDate());st.plans.filter(p=>{if(p.done)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return e>=todayDS&&s<=mEnd;}).sort((a,b)=>(a.dateStart||a.date).localeCompare(b.dateStart||b.date)).forEach(p=>{const c=planColor(p.color);ups.push({day:ds2d(p.dateStart||p.date).getDate(),label:p.title,sub:p.dateEnd&&p.dateEnd!==p.date?`〜${ds2d(p.dateEnd).getDate()}日`:'予定',amount:p.budget>0?'-¥'+p.budget.toLocaleString():'',color:c.fg,cls:'bplan'});});ups.sort((a,b)=>a.day-b.day);document.getElementById('upcoming-home').innerHTML=!ups.length?'<div class="empty">今後のイベントなし</div>':ups.slice(0,8).map(u=>`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:var(--color-text-secondary);min-width:32px">${u.day}日</span><span class="badge${u.cls?` ${u.cls}`:''}" style="${u.badgeStyle||''}">${u.label}</span><span style="font-size:13px;color:var(--color-text-secondary)">${u.sub}</span></div><span style="font-size:14px;font-weight:600;color:${u.color}">${u.amount}</span></div>`).join('');}
 
 // ============================================================
 // 祝日（Google Calendar API）
@@ -1707,8 +1810,8 @@ function addCard(){
 }
 function renderCardBillHistory(ci,card){const billDay=parseInt(card.billDay),today=new Date(gY(),gM(),gD());let rows='';for(let i=5;i>=0;i--){const bm=addM(gY(),gM(),-i),billDate=new Date(bm.y,bm.m,billDay);if(billDate>today)continue;const estimated=cardBillForDate(card,bm.y,bm.m),actual=getActualCard(ci,bm.y,bm.m),dispActual=actual?parseInt(actual.actualAmount):null;rows+=`<div class="salary-row"><span class="salary-month">${bm.y}/${bm.m+1}月</span><span class="salary-est">推定 ¥${estimated.toLocaleString()}<br><span style="font-size:10px">${bm.m+1}月${billDay}日引き落とし</span></span><div style="display:flex;align-items:center;gap:6px"><input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="${dispActual||''}" onchange="onCardBillChange(${ci},${bm.y},${bm.m},${estimated},this.value)"/>${dispActual?'<span class="act-badge">入力済</span>':''}</div></div>`;}return rows||'<div class="empty" style="font-size:12px">まだ引き落とし実績なし</div>';}
 function onCardBillChange(ci,bY,bM,estimated,val){const amount=parseInt(val)||0;if(amount>0){setActualCard(ci,bY,bM,amount,estimated);save();renderHome();renderCardList();}else{const key=cardActualKey(ci,bY,bM);st.actualInputs=st.actualInputs.filter(a=>!(a.type==='card'&&a.cardKey===key));save();renderHome();renderCardList();}}
-function renderCardList(){const el=document.getElementById('card-list-sec');if(!st.cards.length){el.innerHTML='';return;}el.innerHTML=st.cards.map((card,ci)=>{const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;const closeDayLabel=parseInt(card.closeDay)>=28?'末日':`${card.closeDay}日`;return `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:15px;font-weight:600">${card.name}</span><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openCardEdit(${ci})">編集</button><button class="btn sm del" onclick="delCard(${ci})">削除</button></div></div><div class="fgr" style="margin-bottom:10px"><div><div style="font-size:11px;color:var(--color-text-secondary)">締め日</div><div style="font-size:14px;font-weight:600">毎月${closeDayLabel}</div></div><div><div style="font-size:11px;color:var(--color-text-secondary)">引き落とし日</div><div style="font-size:14px;font-weight:600">毎月${card.billDay}日</div></div></div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div><div style="margin-top:10px"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">引き落とし実績入力</div>${renderCardBillHistory(ci,card)}</div></div>`;}).join('');}
-function delCard(i){st.cards.splice(i,1);st.fixedCosts.forEach(fc=>{if(fc.pay===`card-${i}`)fc.pay='bank';});save();updateFcPaySelect();renderCardList();renderHome();}
+function renderCardList(){const el=document.getElementById('card-list-sec');if(!st.cards.some(c=>!c._deleted)){el.innerHTML='';return;}el.innerHTML=st.cards.map((card,ci)=>{if(card._deleted)return'';const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;const closeDayLabel=parseInt(card.closeDay)>=28?'末日':`${card.closeDay}日`;return `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:15px;font-weight:600">${card.name}</span><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openCardEdit(${ci})">編集</button><button class="btn sm del" onclick="delCard(${ci})">削除</button></div></div><div class="fgr" style="margin-bottom:10px"><div><div style="font-size:11px;color:var(--color-text-secondary)">締め日</div><div style="font-size:14px;font-weight:600">毎月${closeDayLabel}</div></div><div><div style="font-size:11px;color:var(--color-text-secondary)">引き落とし日</div><div style="font-size:14px;font-weight:600">毎月${card.billDay}日</div></div></div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div><div style="margin-top:10px"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">引き落とし実績入力</div>${renderCardBillHistory(ci,card)}</div></div>`;}).join('');}
+function delCard(i){st.cards[i]._deleted=true;/* 削除済みにする（配列から消すと、記録のカードの番号がずれる） */st.fixedCosts.forEach(fc=>{if(fc.pay===`card-${i}`)fc.pay='bank';});save();updateFcPaySelect();renderCardList();renderHome();}
 function openCardEdit(i){
   cardEditIdx=i;const card=st.cards[i];
   const isEom=parseInt(card.closeDay)>=28;
@@ -1745,7 +1848,7 @@ function delWd(i){st.wds.splice(i,1);save();renderHome();renderWdHist();}
 // ============================================================
 // シフト
 // ============================================================
-function openShiftModal(ds){document.getElementById('m-job').innerHTML=!st.jobs.length?'<option value="">先にバイト先を登録</option>':st.jobs.map(j=>`<option value="${j.name}">${j.name}</option>`).join('');selShiftDays.clear();if(ds){selShiftDays.add(ds);shiftCalY=ds2d(ds).getFullYear();shiftCalM=ds2d(ds).getMonth();}else{shiftCalY=shiftListY;shiftCalM=shiftListM;}document.getElementById('m-start').value='09:00';document.getElementById('m-end').value='17:00';document.getElementById('m-rest').value='0';renderRestChips();document.getElementById('shift-cal-dow').innerHTML=DAYS.map(d=>`<div style="font-size:11px;color:var(--color-text-secondary);text-align:center;font-weight:500">${d}</div>`).join('');updateShiftPreview();renderShiftCal();document.getElementById('m-job').onchange=updateShiftPreview;document.getElementById('m-start').oninput=updateShiftPreview;document.getElementById('m-end').oninput=updateShiftPreview;document.getElementById('m-rest').oninput=()=>{renderRestChips();updateShiftPreview();};document.getElementById('shift-mbg').classList.add('open');}
+function openShiftModal(ds){document.getElementById('m-job').innerHTML=!st.jobs.some(j=>!j._deleted)?'<option value="">先にバイト先を登録</option>':st.jobs.filter(j=>!j._deleted).map(j=>`<option value="${j.name}">${j.name}</option>`).join('');selShiftDays.clear();if(ds){selShiftDays.add(ds);shiftCalY=ds2d(ds).getFullYear();shiftCalM=ds2d(ds).getMonth();}else{shiftCalY=shiftListY;shiftCalM=shiftListM;}document.getElementById('m-start').value='09:00';document.getElementById('m-end').value='17:00';document.getElementById('m-rest').value='0';renderRestChips();document.getElementById('shift-cal-dow').innerHTML=DAYS.map(d=>`<div style="font-size:11px;color:var(--color-text-secondary);text-align:center;font-weight:500">${d}</div>`).join('');updateShiftPreview();renderShiftCal();document.getElementById('m-job').onchange=updateShiftPreview;document.getElementById('m-start').oninput=updateShiftPreview;document.getElementById('m-end').oninput=updateShiftPreview;document.getElementById('m-rest').oninput=()=>{renderRestChips();updateShiftPreview();};document.getElementById('shift-mbg').classList.add('open');}
 function renderRestChips(){const el=document.getElementById('m-rest-chips');if(!el)return;const cur=parseInt(document.getElementById('m-rest').value)||0;const opts=[0,45,60,90];el.innerHTML=opts.map(v=>`<div class="pay-chip${cur===v?' sel':''}" onclick="setRestMin(${v})">${v===0?'なし':v+'分'}</div>`).join('');}
 function setRestMin(v){document.getElementById('m-rest').value=v;renderRestChips();updateShiftPreview();}
 function updateShiftPreview(){const jobName=document.getElementById('m-job').value,job=st.jobs.find(j=>j.name===jobName),start=document.getElementById('m-start').value,end=document.getElementById('m-end').value,rest=parseInt(document.getElementById('m-rest').value)||0;if(!job||!start||!end){['m-prev','m-transport','m-prev-total','m-total-all'].forEach(id=>document.getElementById(id).textContent='¥0');document.getElementById('m-night').textContent='0h';document.getElementById('m-rest-lbl').textContent=rest+'分';return;}const r=calcShiftInc({job:jobName,start,end,rest});document.getElementById('m-prev').textContent='¥'+(r.wage+r.nightWage).toLocaleString();document.getElementById('m-night').textContent=r.nightH.toFixed(1)+'h';document.getElementById('m-rest-lbl').textContent=r.restMin+'分';document.getElementById('m-transport').textContent='¥'+r.transport.toLocaleString();document.getElementById('m-prev-total').textContent='¥'+r.total.toLocaleString();document.getElementById('m-total-all').textContent='¥'+(r.total*selShiftDays.size).toLocaleString();}
@@ -1807,7 +1910,7 @@ function onSalaryChangeByPayMonth(jobName,payY,payM,shiftY,shiftM,val){
     const date=toDS(payY,payM-1,pay);
     const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKey);
     const entry={type:'shift',job:jobName,salaryKey,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,shiftY,shiftM)};
-    if(ei>=0)st.actualInputs[ei]=entry;else st.actualInputs.push(entry);
+    if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);
   }else{
     st.actualInputs=st.actualInputs.filter(a=>!(a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKey));
   }
@@ -1851,15 +1954,15 @@ let jobAddColorSel=null;
 function ensureJobAddColor(){if(!jobAddColorSel)jobAddColorSel=PLAN_COLORS[st.jobs.length%PLAN_COLORS.length].key;renderJobAddColorSwatches();}
 function renderJobAddColorSwatches(){const el=document.getElementById('job-color-swatches');if(!el)return;el.innerHTML=PLAN_COLORS.map(c=>`<div class="color-swatch${jobAddColorSel===c.key?' sel':''}" style="background:${c.dot}" onclick="selJobAddColor('${c.key}')"></div>`).join('');}
 function selJobAddColor(key){jobAddColorSel=key;renderJobAddColorSwatches();}
-function renderJobList(){ensureJobAddColor();const el=document.getElementById('job-list');el.innerHTML=!st.jobs.length?'<div class="empty">バイト先未登録</div>':st.jobs.map((j,i)=>{const c=jobColorObj(j);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px"><div class="dot" style="background:${c.dot}"></div><div><div style="font-size:14px">${j.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">時給 ¥${j.wage} / 深夜 ${j.nightStart||'22:00'}〜+${j.nightRate||25}% / 交通費 ¥${(j.transport||0)*2}/回</div><div style="font-size:11px;color:var(--color-text-secondary)">締め日 ${(parseInt(j.closeDay)||31)>=28?'月末':(parseInt(j.closeDay)||31)+'日'} / 給料日 翌月${jobPayDay(j)}日</div></div></div><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openJobEdit(${i})">編集</button><button class="btn sm del" onclick="delJob(${i})">削除</button></div></div>`;}).join('');}
+function renderJobList(){ensureJobAddColor();const el=document.getElementById('job-list');el.innerHTML=!st.jobs.some(j=>!j._deleted)?'<div class="empty">バイト先未登録</div>':st.jobs.map((j,i)=>{if(j._deleted)return'';const c=jobColorObj(j);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px"><div class="dot" style="background:${c.dot}"></div><div><div style="font-size:14px">${j.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">時給 ¥${j.wage} / 深夜 ${j.nightStart||'22:00'}〜+${j.nightRate||25}% / 交通費 ¥${(j.transport||0)*2}/回</div><div style="font-size:11px;color:var(--color-text-secondary)">締め日 ${(parseInt(j.closeDay)||31)>=28?'月末':(parseInt(j.closeDay)||31)+'日'} / 給料日 翌月${jobPayDay(j)}日</div></div></div><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openJobEdit(${i})">編集</button><button class="btn sm del" onclick="delJob(${i})">削除</button></div></div>`;}).join('');}
 function addJob(){const name=document.getElementById('job-name').value.trim(),wage=parseInt(document.getElementById('job-wage').value)||0;if(!name||!wage)return;const nightStart=document.getElementById('job-night-start').value||'22:00',nightRate=parseInt(document.getElementById('job-night-rate').value)||25,transport=parseInt(document.getElementById('job-transport').value)||0,closeDayVal=parseInt(document.getElementById('job-close-day').value)||parseInt(st.shiftCloseDay)||31,payDayVal=parseInt(document.getElementById('job-pay-day').value)||parseInt(st.shiftPayDay)||10,color=jobAddColorSel||PLAN_COLORS[st.jobs.length%PLAN_COLORS.length].key;st.jobs.push({name,wage,nightStart,nightRate,transport,closeDay:closeDayVal,payDay:payDayVal,color});save();document.getElementById('job-name').value='';document.getElementById('job-wage').value='';document.getElementById('job-transport').value='';document.getElementById('job-close-day').value='';document.getElementById('job-pay-day').value='';jobAddColorSel=null;renderJobList();renderShiftSection();renderCal();}
 let jobEditIdx=-1,jobEditColorSel='blue';
 function openJobEdit(i){jobEditIdx=i;const j=st.jobs[i];document.getElementById('je-name').value=j.name;document.getElementById('je-wage').value=j.wage;document.getElementById('je-night-start').value=j.nightStart||'22:00';document.getElementById('je-night-rate').value=j.nightRate||25;document.getElementById('je-transport').value=j.transport||'';document.getElementById('je-close-day').value=j.closeDay||st.shiftCloseDay||31;document.getElementById('je-pay-day').value=j.payDay||st.shiftPayDay||10;jobEditColorSel=jobColorObj(j).key;renderJobEditColorSwatches();document.getElementById('job-edit-mbg').classList.add('open');}
 function closeJobEdit(){document.getElementById('job-edit-mbg').classList.remove('open');}
 function renderJobEditColorSwatches(){document.getElementById('je-color-swatches').innerHTML=PLAN_COLORS.map(c=>`<div class="color-swatch${jobEditColorSel===c.key?' sel':''}" style="background:${c.dot}" onclick="selJobEditColor('${c.key}')"></div>`).join('');}
 function selJobEditColor(key){jobEditColorSel=key;renderJobEditColorSwatches();}
-function saveJobEdit(){const name=document.getElementById('je-name').value.trim(),wage=parseInt(document.getElementById('je-wage').value)||0;if(!name||!wage||jobEditIdx<0)return;const oldName=st.jobs[jobEditIdx].name;const nightStart=document.getElementById('je-night-start').value||'22:00',nightRate=parseInt(document.getElementById('je-night-rate').value)||25,transport=parseInt(document.getElementById('je-transport').value)||0,closeDayVal=parseInt(document.getElementById('je-close-day').value)||parseInt(st.shiftCloseDay)||31,payDayVal=parseInt(document.getElementById('je-pay-day').value)||parseInt(st.shiftPayDay)||10;st.jobs[jobEditIdx]={name,wage,nightStart,nightRate,transport,closeDay:closeDayVal,payDay:payDayVal,color:jobEditColorSel};if(oldName!==name){st.shifts.forEach(s=>{if(s.job===oldName)s.job=name;});st.actualInputs.forEach(a=>{if(a.type==='shift'&&a.job===oldName){a.job=name;a.salaryKey=a.salaryKey.replace(`${oldName}|`,`${name}|`);}});}save();closeJobEdit();renderJobList();renderShiftSection();renderCal();renderHome();}
-function delJob(i){st.jobs.splice(i,1);save();renderJobList();}
+function saveJobEdit(){const name=document.getElementById('je-name').value.trim(),wage=parseInt(document.getElementById('je-wage').value)||0;if(!name||!wage||jobEditIdx<0)return;const oldName=st.jobs[jobEditIdx].name;const nightStart=document.getElementById('je-night-start').value||'22:00',nightRate=parseInt(document.getElementById('je-night-rate').value)||25,transport=parseInt(document.getElementById('je-transport').value)||0,closeDayVal=parseInt(document.getElementById('je-close-day').value)||parseInt(st.shiftCloseDay)||31,payDayVal=parseInt(document.getElementById('je-pay-day').value)||parseInt(st.shiftPayDay)||10;st.jobs[jobEditIdx]={_id:st.jobs[jobEditIdx]._id,name,wage,nightStart,nightRate,transport,closeDay:closeDayVal,payDay:payDayVal,color:jobEditColorSel};if(oldName!==name){st.shifts.forEach(s=>{if(s.job===oldName)s.job=name;});st.actualInputs.forEach(a=>{if(a.type==='shift'&&a.job===oldName){a.job=name;a.salaryKey=a.salaryKey.replace(`${oldName}|`,`${name}|`);}});}save();closeJobEdit();renderJobList();renderShiftSection();renderCal();renderHome();}
+function delJob(i){st.jobs[i]._deleted=true;/* 削除済みにする */save();renderJobList();}
 function delShift(i){st.shifts.splice(i,1);save();renderShiftList();renderShiftSection();renderCal();renderHome();}
 
 // ============================================================
@@ -1886,7 +1989,7 @@ function renderPayChips(){
   rw.style.display='none';
   pw.style.display='block';
   const opts=['現金',...st.cards.map(c=>c.name)];
-  document.getElementById('ldg-pay-chips').innerHTML=opts.map((o,i)=>`<div class="pay-chip${(i===0&&ldgCardIdx===-1)||(i>0&&ldgCardIdx===i-1)?' sel':''}" onclick="selPay('${o}',${i-1})">${o}</div>`).join('');
+  document.getElementById('ldg-pay-chips').innerHTML=opts.map((o,i)=>i>0&&st.cards[i-1]._deleted&&ldgCardIdx!==i-1?'':`<div class="pay-chip${(i===0&&ldgCardIdx===-1)||(i>0&&ldgCardIdx===i-1)?' sel':''}" onclick="selPay('${o}',${i-1})">${o}</div>`).join('');
 }
 function selReceive(r){ldgReceive=r;renderPayChips();}
 function selPay(p,ci){ldgPay=p;ldgCardIdx=ci;renderPayChips();}
@@ -1913,7 +2016,7 @@ function renderLdePayChips(){
   rw.style.display='none';
   pw.style.display='block';
   const opts=['現金',...st.cards.map(c=>c.name)];
-  document.getElementById('lde-pay-chips').innerHTML=opts.map((o,i)=>`<div class="pay-chip${(i===0&&ldeCardIdx===-1)||(i>0&&ldeCardIdx===i-1)?' sel':''}" onclick="selLdePay('${o}',${i-1})">${o}</div>`).join('');
+  document.getElementById('lde-pay-chips').innerHTML=opts.map((o,i)=>i>0&&st.cards[i-1]._deleted&&ldeCardIdx!==i-1?'':`<div class="pay-chip${(i===0&&ldeCardIdx===-1)||(i>0&&ldeCardIdx===i-1)?' sel':''}" onclick="selLdePay('${o}',${i-1})">${o}</div>`).join('');
 }
 function selLdeReceive(r){ldeReceive=r;renderLdePayChips();}
 function selLdePay(p,ci){ldePay=p;ldeCardIdx=ci;renderLdePayChips();}
@@ -1924,9 +2027,8 @@ function saveLdgEdit(){
   const entry={date,amount:parseInt(amount),name:name||ldeCat,cat:ldeCat,type:ldeType,pay:ldePay,memo};
   if(ldeType==='expense'&&ldeCardIdx>=0)entry.cardIdx=ldeCardIdx;
   if(ldeType==='income')entry.receive=ldeReceive;
-  // 元の記録が持っている src/txId（旧・楽天カード自動取り込み由来の印）は引き継ぐ
-  if(original&&original.src)entry.src=original.src;
-  if(original&&original.txId)entry.txId=original.txId;
+  // 元の記録の ID を引き継ぐ（同じ行の更新にする）
+  if(original&&original._id)entry._id=original._id;
   st.ledger[ldeIdx]=entry;
   save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
 }
@@ -2076,7 +2178,7 @@ function renderCharts(){ldgGraphMode==='year'?renderChartsYear_():renderChartsMo
 // ============================================================
 function onFcTypeChange(){document.getElementById('fc-pay-wrap').style.display=document.getElementById('fc-type').value==='expense'?'block':'none';}
 function onFcPayChange(){const v=document.getElementById('fc-pay').value,h=document.getElementById('fc-pay-hint');if(v==='bank')h.textContent='口座から直接引き落とし：口座残高の推定に自動反映されます';else if(v==='cash')h.textContent='現金払い：口座残高には影響しません';else if(v.startsWith('card-')){const ci=parseInt(v.replace('card-',''));h.textContent=`${st.cards[ci]?.name||'カード'}払い：そのカードの集計に加算されます`;}}
-function updateFcPaySelect(){const sel=document.getElementById('fc-pay');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="bank">口座引き落とし（直接）</option><option value="cash">現金</option>'+st.cards.map((c,i)=>`<option value="card-${i}">${c.name}（カード払い）</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur;onFcPayChange();}
+function updateFcPaySelect(){const sel=document.getElementById('fc-pay');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="bank">口座引き落とし（直接）</option><option value="cash">現金</option>'+st.cards.map((c,i)=>c._deleted?'':`<option value="card-${i}">${c.name}（カード払い）</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur;onFcPayChange();}
 function addFixedCost(){const name=document.getElementById('fc-name').value.trim(),amount=parseInt(document.getElementById('fc-amount').value)||0,day=parseInt(document.getElementById('fc-day').value)||0;const type=document.getElementById('fc-type').value,pay=type==='income'?'income':document.getElementById('fc-pay').value;if(!name||!amount||!day)return;st.fixedCosts.push({id:Date.now(),name,amount,day,type,pay});save();document.getElementById('fc-name').value='';document.getElementById('fc-amount').value='';document.getElementById('fc-day').value='';renderFcList();renderHome();}
 function delFixedCost(i){st.fixedCosts.splice(i,1);save();renderFcList();renderHome();}
 function renderFcList(){const el=document.getElementById('fc-list');if(!el)return;if(!st.fixedCosts.length){el.innerHTML='<div class="empty">固定費なし</div>';return;}el.innerHTML=st.fixedCosts.map((fc,i)=>{let pl=fc.type==='income'?'毎月入金':fc.pay==='bank'?'口座直接':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';return `<div class="ri"><div><div style="font-size:14px">${fc.name} <span class="badge ${fc.type==='income'?'binc':'bfixcost'}">${fc.type==='income'?'毎月入金':'毎月引き落とし'}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">毎月${fc.day}日　${pl}</div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${fc.amount.toLocaleString()}</span><button class="btn sm del" onclick="delFixedCost(${i})">削除</button></div></div>`;}).join('');}
@@ -2116,7 +2218,7 @@ let planCardIdx=-1; // -1=現金、0以上=カードインデックス
 function renderPlanPayChips(){
   if(!document.getElementById('plan-pay-chips'))return;
   const opts=['現金',...st.cards.map(c=>c.name)];
-  document.getElementById('plan-pay-chips').innerHTML=opts.map((o,i)=>`<div class="pay-chip${(i===0&&planCardIdx===-1)||(i>0&&planCardIdx===i-1)?' sel':''}" onclick="selPlanPay(${i-1})">${o}</div>`).join('');
+  document.getElementById('plan-pay-chips').innerHTML=opts.map((o,i)=>i>0&&st.cards[i-1]._deleted&&planCardIdx!==i-1?'':`<div class="pay-chip${(i===0&&planCardIdx===-1)||(i>0&&planCardIdx===i-1)?' sel':''}" onclick="selPlanPay(${i-1})">${o}</div>`).join('');
   const hint=document.getElementById('plan-pay-hint');
   if(hint){
     if(planCardIdx>=0&&st.cards[planCardIdx]){
@@ -2222,7 +2324,7 @@ function savePlan(){
   const obj={id:planEditIdx>=0?st.plans[planEditIdx].id:Date.now(),title,date:dateStart,dateStart,dateEnd,timeStart,timeEnd,budget,memo,color,done:false};
   // カード払いの場合planCardIdxを保存
   if(planCardIdx>=0) obj.planCardIdx=planCardIdx;
-  if(planEditIdx>=0){obj.done=st.plans[planEditIdx].done;st.plans[planEditIdx]=obj;}
+  if(planEditIdx>=0){obj.done=st.plans[planEditIdx].done;obj._id=st.plans[planEditIdx]._id;st.plans[planEditIdx]=obj;}
   else st.plans.push(obj);
   save();closePlanModal();renderCal();refreshDayViews();renderHome();
 }

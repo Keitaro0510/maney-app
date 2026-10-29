@@ -10,8 +10,8 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { rowsToSt, stToRows, stripMeta } = require('../../next/compat.js');
-const { loadAllTables, diffRows, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp } = require('../../next/data.js');
+const { rowsToSt, stToRows, stripMeta } = require('../../js/compat.js');
+const { loadAllTables, diffRows, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp } = require('../../js/data.js');
 
 const URL_ = process.env.MANEY_LOCAL_API_URL;
 const ANON = process.env.MANEY_LOCAL_PUBLISHABLE_KEY || process.env.MANEY_LOCAL_ANON_KEY;

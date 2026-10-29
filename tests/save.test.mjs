@@ -5,10 +5,10 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { rowsToSt, stToRows, createdMs } = require('../next/compat.js');
+const { rowsToSt, stToRows, createdMs } = require('../js/compat.js');
 const {
   diffRows, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, discardOp, sendOp,
-} = require('../next/data.js');
+} = require('../js/data.js');
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
 const NOW = '2026-10-30T00:00:00.000Z';
