@@ -41,4 +41,8 @@ npx supabase stop
 
 ## 本番に適用する
 
-テストが通ったマイグレーションだけを、PR をマージしたあとに本番に適用する（Supabase MCP の `apply_migration`、または `npx supabase db push`）。
+テストが通ったマイグレーションだけを、本番に適用する。今は Supabase MCP の `apply_migration` を使っている。
+
+- `apply_migration` は、実行した時刻をバージョンとして記録する。適用したら、`supabase_migrations.schema_migrations` の `version` をファイル名の数字に直す（リポジトリと本番の記録を合わせる）
+- 本番に適用したマイグレーションのファイルは、あとから書き換えない。直すときは新しいマイグレーションを足す
+- 適用したら、Supabase の Advisors（セキュリティ・パフォーマンス）を確かめる
