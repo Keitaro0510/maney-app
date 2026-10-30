@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-app-v43';
+const CACHE_NAME = 'money-app-v44';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const ASSETS = [
   './js/compat.js',
   './js/clock.js',
   './js/ui.js',
+  './js/tasks.js',
+  './js/tasks-ui.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];

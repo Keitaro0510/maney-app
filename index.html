@@ -19,6 +19,8 @@
 <script src="js/compat.js"></script>
 <script src="js/clock.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/tasks-ui.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -355,6 +357,45 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .toast.show{display:flex}
 .toast-msg{padding:10px 0}
 .toast .toast-action{color:#9CC8F2;border:none;flex:none}
+/* ===== タスク（D3・D10。画面の動きは js/tasks-ui.js）===== */
+.task-add{display:flex;gap:8px}
+.task-add-input{
+  flex:1;min-width:0;min-height:44px;padding:0 12px;
+  border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);
+  background:var(--color-background-primary);color:var(--color-text-primary);
+  font:inherit;font-size:16px; /* 16px より小さいと、iPhone で入力のときに画面が拡大される */
+}
+.task-add-input:focus{outline:2px solid rgba(24,95,165,.2);border-color:var(--color-brand)}
+.task-due-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0 14px}
+.task-due-label{font-size:12px;color:var(--color-text-secondary);margin-right:2px}
+.task-chip{
+  position:relative;min-height:44px;padding:0 14px;border-radius:22px;
+  border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);
+  color:var(--color-text-primary);font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;
+}
+.task-chip[aria-pressed="true"]{background:var(--color-brand-soft);color:var(--color-brand);border-color:var(--color-brand)}
+.task-chip input[type=date]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.task-section{padding:4px 12px 4px 4px}
+.task-section-title{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 2px 10px;font-size:13px;font-weight:700;color:var(--color-text-secondary)}
+.task-count{font-size:12px;font-weight:600}
+.task-overdue .task-section-title{color:var(--color-danger)}
+.check-row.overdue .check-sub{color:var(--color-danger);font-weight:600}
+.task-section .check-row:last-child,.task-folded .check-row:last-child{border-bottom:none}
+.task-edit svg{width:18px;height:18px;color:var(--color-text-secondary)}
+.task-folded{padding:4px 12px 4px 4px}
+.task-folded summary{min-height:44px;display:flex;align-items:center;padding-left:10px;cursor:pointer;font-size:13px;font-weight:700;color:var(--color-text-secondary)}
+.task-folded-note{font-size:12px;color:var(--color-text-secondary);padding:0 0 4px 10px}
+.task-empty{font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.task-empty-title{font-size:15px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px}
+.task-sheet-due{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.task-sheet-actions{display:flex;gap:8px;align-items:center;margin-top:16px}
+.task-sheet-actions .spacer{flex:1}
+.task-field-err{font-size:12px;color:var(--color-danger);margin-top:4px}
+.task-startup-date{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.task-startup-group{font-size:13px;font-weight:700;color:var(--color-text-secondary);padding:12px 0 2px}
+.task-startup-group.task-overdue{color:var(--color-danger)}
+.task-startup-all{width:100%;margin-top:16px}
 /* ===== アラートバー ===== */
 .abar{border-radius:var(--border-radius-md);padding:10px 13px;font-size:13px;margin-bottom:8px;font-weight:500}
 .abar.ok{background:#EAF3DE;color:#3B6D11}
@@ -729,6 +770,23 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 </div>
 
 <!-- SETTINGS -->
+<!-- TASKS（D10。動きは js/tasks-ui.js） -->
+<div id="sec-task" class="sec">
+  <div class="page-title">タスク</div>
+  <form class="task-add" onsubmit="event.preventDefault();addTaskQuick()">
+    <input id="task-add-title" class="task-add-input" placeholder="やることを入れる" aria-label="新しいタスクの名前" enterkeyhint="done" autocomplete="off"/>
+    <button type="submit" class="ui-btn primary">追加</button>
+  </form>
+  <div class="task-due-chips" id="task-add-due" role="group" aria-label="新しいタスクの期限">
+    <span class="task-due-label">期限</span>
+    <button type="button" class="task-chip" data-due="none" onclick="setTaskAddDue('none')">なし</button>
+    <button type="button" class="task-chip" data-due="today" onclick="setTaskAddDue('today')">今日</button>
+    <button type="button" class="task-chip" data-due="tomorrow" onclick="setTaskAddDue('tomorrow')">明日</button>
+    <label class="task-chip" data-due="pick">日付…<input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)"/></label>
+  </div>
+  <div id="task-list"></div>
+</div>
+
 <div id="sec-set" class="sec">
   <div class="page-title">設定</div>
   <div class="card"><div class="st">口座・残高設定</div>
@@ -811,7 +869,44 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>シフト</span>
   </div>
+  <div class="nav-item" id="nav-task" onclick="sw('task')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>
+    <span>タスク</span>
+  </div>
 </nav>
+
+<!-- タスクの編集（D3） -->
+<dialog class="sheet" id="task-sheet" aria-labelledby="task-sheet-title">
+  <div class="sheet-head">
+    <h2 id="task-sheet-title">タスクを編集</h2>
+    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeTaskSheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="fg"><label for="task-title">やること</label><input id="task-title" autocomplete="off" aria-describedby="task-title-err" style="font-size:16px"/>
+    <div class="task-field-err" id="task-title-err" role="alert" hidden>やることを入れてください</div></div>
+  <div class="fg"><label for="task-due">期限（なくてもよい）</label><input id="task-due" type="date" style="font-size:16px"/>
+    <div class="task-sheet-due">
+      <button type="button" class="task-chip" onclick="setTaskSheetDue('none')">期限なし</button>
+      <button type="button" class="task-chip" onclick="setTaskSheetDue('today')">今日</button>
+      <button type="button" class="task-chip" onclick="setTaskSheetDue('tomorrow')">明日</button>
+    </div></div>
+  <div class="fg"><label for="task-memo">メモ</label><textarea id="task-memo" rows="3" style="height:auto;font-size:16px"></textarea></div>
+  <div class="task-sheet-actions">
+    <button type="button" class="ui-btn danger" onclick="deleteTaskFromSheet()">削除</button>
+    <span class="spacer"></span>
+    <button type="button" class="ui-btn" onclick="closeTaskSheet()">キャンセル</button>
+    <button type="button" class="ui-btn primary" onclick="saveTaskSheet()">保存</button>
+  </div>
+</dialog>
+
+<!-- その日はじめて開いたときの一覧（D10）。×で閉じるだけ -->
+<dialog class="sheet" id="task-startup" aria-labelledby="task-startup-title">
+  <div class="sheet-head">
+    <div><h2 id="task-startup-title">今日のタスク</h2><div class="task-startup-date" id="task-startup-date"></div></div>
+    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeStartupTasks()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div id="task-startup-list"></div>
+  <button type="button" class="ui-btn task-startup-all" onclick="openTaskTabFromStartup()">すべてのタスクを見る</button>
+</dialog>
 
 <!-- MODALS -->
 <div class="mbg" id="wd-mbg"><div class="modal"><div class="modal-handle"></div><h3>ATMで現金を引き出す</h3><div class="amount-display" id="wd-display">¥0</div><div class="numpad"><button class="numkey" onclick="nk('1')">1</button><button class="numkey" onclick="nk('2')">2</button><button class="numkey" onclick="nk('3')">3</button><button class="numkey" onclick="nk('4')">4</button><button class="numkey" onclick="nk('5')">5</button><button class="numkey" onclick="nk('6')">6</button><button class="numkey" onclick="nk('7')">7</button><button class="numkey" onclick="nk('8')">8</button><button class="numkey" onclick="nk('9')">9</button><button class="numkey" onclick="nk('000')">000</button><button class="numkey" onclick="nk('0')">0</button><button class="numkey" onclick="nd()">⌫</button></div><div style="display:flex;gap:8px"><button class="btn full" style="margin-top:0;flex:1" onclick="closeWd()">キャンセル</button><button class="btn primary full" style="margin-top:0;flex:2" onclick="doWd()">引き出す</button></div></div></div>
@@ -1268,7 +1363,7 @@ function onDayChange(now, prevKey){
   ({y:shiftListY,m:shiftListM}=follow(shiftListY,shiftListM));
   ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
   if(calAnchor===prevKey) calAnchor=TODAY;
-  if(currentUser) renderCurrentSection();
+  if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
 }
 const todayWatcher=MoneyClock.createDayWatcher(()=>new Date(), onDayChange);
 
@@ -1301,6 +1396,7 @@ async function startWithUser(user){
   renderHome();
   renderCal();
   await loadRemote();
+  maybeShowStartupTasks(); // その日はじめて開いたときのタスクの一覧（D10）
   await flushOutbox();
   handleLegacyLocalData();
 }
@@ -1352,7 +1448,7 @@ function fixDefaults(){
 // ナビゲーション
 // ============================================================
 function sw(t){
-  ['home','cal','ledger','shift','set'].forEach(x=>{
+  ['home','cal','ledger','shift','task','set'].forEach(x=>{
     document.getElementById('sec-'+x).classList.toggle('active',x===t);
     const n=document.getElementById('nav-'+x);
     if(n)n.classList.toggle('active',x===t);
@@ -1364,6 +1460,7 @@ function sw(t){
   else if(t==='cal')renderCal();
   else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();}
   else if(t==='shift')renderShiftSection();
+  else if(t==='task')renderTaskTab();
   else if(t==='set')initSettingTab();
 }
 
