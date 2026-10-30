@@ -45,7 +45,8 @@ git commit -m "Add task list to home"
 git push -u origin feature/tasks-mvp
 gh pr create --fill # GitHub の画面から作ってもよい
 
-# 5. PR の差分を自分で見直し、（CI を入れたら）テストが通るのを確かめてからマージする
+# 5. PR の差分を自分で見直し、CI のテストが通る（PR の画面に緑のチェックが付く）のを確かめてからマージする
+gh pr checks         # CI の結果を見る
 gh pr merge --squash --delete-branch
 
 # 6. 手元を片付ける
@@ -78,6 +79,8 @@ git branch -d feature/tasks-mvp
    - a を先にマージすると、b の PR でコンフリクトが出る → 手で直してマージする（終わったら両方消す）
 4. [ ] main を保護する（GitHub の Settings → Rules → Rulesets で、「main への直接の push を禁止」「マージには PR を必須」にする）
 5. [ ] CI を入れて、テストが通らないとマージできないようにする（Phase 2）
+   - CI は 2026-10-31 に入れた（`.github/workflows/test.yml`）。PR を出すと、GitHub が自動でテストを動かす
+   - 残り: 4 の Ruleset で「テストが通ること」（`Node のテスト`）をマージの条件にする
 6. [ ] 動いているバージョンにタグを付ける（`git tag v1.0.0`、`git push origin v1.0.0`）。GitHub の Releases に変更点を書く
 7. [ ] マージした変更で不具合が出たら、`git revert` で打ち消す PR を作って戻す（履歴を消さずに戻す方法）
 8. [ ] 長く続く作業（Phase 4 のファイル分割）の途中で main に入った変更を取り込む。`git merge main` と `git rebase main` の違いを試す

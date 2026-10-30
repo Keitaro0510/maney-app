@@ -47,6 +47,8 @@ npx supabase stop
 node --test "tests/*.test.mjs"
 ```
 
+このテストは、PR を出したときと main に入ったときに、GitHub Actions でも自動で動く（[`.github/workflows/test.yml`](../../.github/workflows/test.yml)）。ローカルの Supabase が要るテストは、まだ CI では動かさない。
+
 互換層のテストは、DB の逆の変換（`private.export_to_user_data`）の結果と比べる。DB の変換を変えたら、ローカルの Supabase でテストのデータを作り直す。
 
 ```bash
