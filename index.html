@@ -18,6 +18,7 @@
 <script src="js/data.js"></script>
 <script src="js/compat.js"></script>
 <script src="js/clock.js"></script>
+<script src="js/ui.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -295,6 +296,65 @@ body{
 }
 .modal-handle{width:36px;height:4px;background:var(--color-border-secondary);border-radius:2px;margin:0 auto 16px}
 .modal h3{font-size:17px;font-weight:700;margin-bottom:.875rem}
+/* ===== 画面の部品（js/ui.js。D12 の手順6）=====
+   新しい画面（タスク）はこれで作る。今ある画面はあとで1つずつ直す。押せる所は 44px 以上 */
+.ui-btn{
+  min-height:44px;padding:0 16px;
+  border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);
+  background:transparent;color:var(--color-text-primary);
+  font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.ui-btn.primary{background:var(--color-brand);color:#fff;border-color:transparent}
+.ui-btn.danger{color:var(--color-danger);border-color:rgba(163,45,45,.35)}
+.ui-btn:active{transform:scale(.98)}
+.ui-btn:disabled{opacity:.45;cursor:default;transform:none}
+/* アイコンだけのボタン（44px の丸）。読み上げ用の名前（aria-label）を必ず付ける */
+.icon-btn{
+  width:44px;height:44px;flex:none;border:none;border-radius:50%;
+  background:transparent;color:var(--color-text-primary);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.icon-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+.icon-btn:active{background:var(--color-background-secondary)}
+/* キーボードで動かしたときに、どこにいるかわかるように */
+.ui-btn:focus-visible,.icon-btn:focus-visible,.check-row input:focus-visible+.check-box{outline:2px solid var(--color-brand);outline-offset:2px}
+/* チェックのある行（タスクの一覧の1行）。左の 44px がチェックの押せる所。完了すると横線で薄くなる（D3） */
+.check-row{display:flex;align-items:center;gap:4px;min-height:52px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.check-row .check{position:relative;width:44px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.check-row .check input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.check-box{width:22px;height:22px;border-radius:50%;border:2px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center}
+.check-row input:checked+.check-box{background:var(--color-brand);border-color:var(--color-brand)}
+.check-row input:checked+.check-box::after{content:'';width:6px;height:11px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.check-body{flex:1;min-width:0;padding:6px 0}
+.check-title{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.check-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.check-row.done .check-title{text-decoration:line-through;color:var(--color-text-secondary)}
+.check-row.done .check-sub{opacity:.7}
+/* 下からせり上がる画面（<dialog class="sheet">）。開いている間は後ろを触れない。Esc で閉じる */
+dialog.sheet{
+  margin:auto auto 0;width:100%;max-width:640px;max-height:90vh;
+  padding:1rem 1.25rem calc(1.25rem + var(--safe-bottom));
+  border:0.5px solid var(--color-border-tertiary);border-bottom:none;border-radius:20px 20px 0 0;
+  background:var(--color-background-primary);color:var(--color-text-primary);
+  overflow-y:auto;
+}
+dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.sheet-head h2{font-size:17px;font-weight:700}
+/* 短い知らせ（「元に戻す」など）。画面の下に数秒だけ出す */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(76px + var(--safe-bottom));
+  width:calc(100% - 32px);max-width:480px;z-index:400;
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  padding:6px 6px 6px 16px;border-radius:var(--border-radius-lg);
+  background:#122033;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.25);
+  font-size:14px;
+}
+.toast.show{display:flex}
+.toast-msg{padding:10px 0}
+.toast .toast-action{color:#9CC8F2;border:none;flex:none}
 /* ===== アラートバー ===== */
 .abar{border-radius:var(--border-radius-md);padding:10px 13px;font-size:13px;margin-bottom:8px;font-weight:500}
 .abar.ok{background:#EAF3DE;color:#3B6D11}
