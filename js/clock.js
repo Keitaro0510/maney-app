@@ -2,6 +2,7 @@
 // - 「今日」: iPhone のホーム画面アプリは閉じずに裏に残るので、起動したときの日付のままにすると、
 //   翌朝に開いても「今日」が昨日のままになる。日付が変わったかを見張り、変わったら知らせる
 // - 「毎月○日」: 固定費・給料日・引き落とし日の「31日」などを、その月にある日にする
+// - 時刻: シフトの退勤が出勤より後か（日をまたぐシフトは登録しない）
 // 日付は、その端末の時刻で決める。月（m）は 0 が1月。
 (function (root) {
   'use strict';
@@ -58,7 +59,23 @@
     return Math.min(day, daysInMonth(y, m));
   }
 
-  const MoneyClock = { dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay };
+  // 'HH:MM'（'HH:MM:SS' でもよい）を、0時からの分にする。形が違えば NaN
+  function minutesOf(time) {
+    const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(time));
+    if (!m) return NaN;
+    const h = Number(m[1]), min = Number(m[2]);
+    if (h > 23 || min > 59) return NaN;
+    return h * 60 + min;
+  }
+
+  // シフトの退勤が出勤より後か。同じ時刻・日をまたぐ（退勤が出勤より前）は false
+  function endsAfterStart(start, end) {
+    return minutesOf(end) > minutesOf(start);
+  }
+
+  const MoneyClock = {
+    dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay, minutesOf, endsAfterStart,
+  };
   root.MoneyClock = MoneyClock;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyClock;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

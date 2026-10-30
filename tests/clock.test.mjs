@@ -5,7 +5,9 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay } = require('../js/clock.js');
+const {
+  dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay, minutesOf, endsAfterStart,
+} = require('../js/clock.js');
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -100,4 +102,30 @@ test('月にある日は、そのまま', () => {
   assert.equal(monthDay(2026, 10, 15), 15);
   assert.equal(monthDay(2026, 1, 28), 28);
   assert.equal(monthDay(2026, 10, 1), 1);
+});
+
+test('時刻を、0時からの分にする', () => {
+  assert.equal(minutesOf('00:00'), 0);
+  assert.equal(minutesOf('09:00'), 540);
+  assert.equal(minutesOf('23:59'), 1439);
+  assert.equal(minutesOf('17:30:00'), 1050);
+});
+
+test('時刻の形が違えば NaN', () => {
+  assert.ok(Number.isNaN(minutesOf('')));
+  assert.ok(Number.isNaN(minutesOf('24:00')));
+  assert.ok(Number.isNaN(minutesOf('9時')));
+  assert.ok(Number.isNaN(minutesOf(undefined)));
+});
+
+test('退勤が出勤より後なら、登録できる', () => {
+  assert.equal(endsAfterStart('09:00', '17:00'), true);
+  assert.equal(endsAfterStart('18:00', '23:59'), true);
+});
+
+test('日をまたぐシフトと、出勤と退勤が同じ時刻は、登録しない', () => {
+  assert.equal(endsAfterStart('22:00', '02:00'), false);
+  assert.equal(endsAfterStart('18:00', '00:00'), false);
+  assert.equal(endsAfterStart('10:00', '10:00'), false);
+  assert.equal(endsAfterStart('', '17:00'), false);
 });
