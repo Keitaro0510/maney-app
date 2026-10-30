@@ -7,8 +7,12 @@
   // 参照される側が先
   const TABLES = [
     'settings', 'cards', 'jobs', 'categories', 'ledger_entries', 'shifts', 'plans',
-    'fixed_costs', 'fixed_incomes', 'withdrawals', 'salary_actuals', 'card_bill_actuals',
+    'fixed_costs', 'fixed_incomes', 'withdrawals', 'salary_actuals', 'card_bill_actuals', 'tasks',
   ];
+  // 互換の st を通さず、画面が行を直接読み書きするテーブル（D1）。保存は saveRows の入り口から
+  const DIRECT_TABLES = ['tasks'];
+  // 互換の st（js/compat.js）が持つテーブル。今の画面の save() は、これだけを比べる
+  const COMPAT_TABLES = TABLES.filter(t => !DIRECT_TABLES.includes(t));
 
   // Supabase が1回に返す件数には上限（既定は1,000件）があるので、それより小さく分けて読む
   const PAGE_SIZE = 500;
@@ -80,11 +84,13 @@
   }
 
   // 2つの行の集まりを比べて、変更の列にする。
-  // 削除を先に（参照する側から）、追加と更新はあとに（参照される側から）並べる
-  function diffRows(before, after) {
+  // 削除を先に（参照する側から）、追加と更新はあとに（参照される側から）並べる。
+  // tables: 比べるテーブル。互換の st から保存するときは COMPAT_TABLES にする
+  // （st にないテーブル、たとえば tasks を比べると、after にないので行を全部「消えた」と見なしてしまう）
+  function diffRows(before, after, tables = TABLES) {
     const deletes = [];
     const upserts = [];
-    for (const table of TABLES) {
+    for (const table of TABLES.filter(t => tables.includes(t))) {
       const old = new Map((before[table] || []).map(r => [r.id, r]));
       const now = new Map((after[table] || []).map(r => [r.id, r]));
       for (const [id, row] of now) {
@@ -95,6 +101,27 @@
       for (const id of old.keys()) if (!now.has(id)) deletes.push({ table, action: 'delete', id });
     }
     return [...deletes.reverse(), ...upserts];
+  }
+
+  // 画面が直接保存する変更の列（saveRows の入り口）を確かめる。正しくなければエラーにする（送信待ちに積まない）
+  // - テーブルは DIRECT_TABLES だけ（互換の st が持つテーブルは save() から保存する。混ぜると st と食い違う）
+  // - id があり、追加と更新には行の中身（row）がある。サーバーが決める列は入れない
+  function checkDirectChanges(changes) {
+    if (!Array.isArray(changes) || changes.length === 0) throw new Error('保存する変更がありません');
+    const seen = new Set();
+    for (const c of changes) {
+      if (!DIRECT_TABLES.includes(c.table)) throw new Error(`${c.table} は、この入り口からは保存できません`);
+      if (!['insert', 'update', 'delete'].includes(c.action)) throw new Error(`action が正しくありません: ${c.action}`);
+      if (!c.id) throw new Error(`${c.table} の行の id がありません`);
+      if (seen.has(keyOf(c.table, c.id))) throw new Error(`${c.table} の行 ${c.id} を1つの操作で2回変えています`);
+      seen.add(keyOf(c.table, c.id));
+      if (c.action !== 'delete') {
+        if (!c.row || typeof c.row !== 'object') throw new Error(`${c.table} の行 ${c.id} の中身がありません`);
+        const bad = Object.keys(c.row).filter(k => SERVER_COLUMNS.includes(k));
+        if (bad.length) throw new Error(`サーバーが決める列は送れません: ${bad.join(', ')}`);
+      }
+    }
+    return changes;
   }
 
   // 変更の列を、送信待ちの操作にする（base を付ける）
@@ -246,8 +273,8 @@
   }
 
   const MoneyData = {
-    TABLES, PAGE_SIZE, loadTable, loadAllTables,
-    diffRows, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, remapId, discardOp, sendOp,
+    TABLES, DIRECT_TABLES, COMPAT_TABLES, PAGE_SIZE, loadTable, loadAllTables,
+    diffRows, checkDirectChanges, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, remapId, discardOp, sendOp,
   };
   root.MoneyData = MoneyData;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyData;

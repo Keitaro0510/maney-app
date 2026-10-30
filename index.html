@@ -927,7 +927,7 @@ let sendBlocked = null;    // 送るのを止めている理由（'conflict'・'
 const TABLE_LABELS = {
   settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',
   shifts: 'シフト', plans: '予定', fixed_costs: '固定費', fixed_incomes: '固定収入', withdrawals: '引き出し',
-  salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績',
+  salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績', tasks: 'タスク',
 };
 
 function storageKey(name){ return `${STORAGE_PREFIX}${currentUser.id}:v2:${name}`; }
@@ -1116,12 +1116,8 @@ function save(){
     const now = new Date().toISOString();
     const before = currentRows();
     const after = MoneyCompat.stToRows(st, before, {newId: ()=>crypto.randomUUID(), now});
-    const changes = MoneyData.diffRows(before, after);
-    if(changes.length){
-      const op = MoneyData.makeOp(changes, {id: crypto.randomUUID(), epoch: server.epoch, now, server, outbox});
-      outbox = [...outbox, op];
-      store('outbox', outbox);
-    }
+    // 互換の st が持つテーブルだけを比べる（tasks などは st にないので、比べると全部「消えた」と見なしてしまう。D1）
+    queueChanges(MoneyData.diffRows(before, after, MoneyData.COMPAT_TABLES), now);
   }catch(e){
     console.warn('保存できませんでした:', e);
     rebuildSt();
@@ -1133,6 +1129,36 @@ function save(){
   rebuildSt(); // 新しい記録にも _id が付く（続けて編集しても、同じ行の更新になる）
   updateSyncStatus();
   flushOutbox();
+}
+
+// 変更の列を1つの操作にして、送信待ちに積む（端末にも保存する）
+function queueChanges(changes, now){
+  if(!changes.length) return;
+  const op = MoneyData.makeOp(changes, {id: crypto.randomUUID(), epoch: server.epoch, now, server, outbox});
+  outbox = [...outbox, op];
+  store('outbox', outbox);
+}
+
+// 互換の st を通さずに、行を直接保存する入り口（tasks など。D1）。1回の呼び出しが1つの操作になる。
+// changes: [{table, action: 'insert'|'update'|'delete', id, row}]。row にはサーバーが決める列（id・user_id・日時）を入れない。
+// base（読み込んだときの updated_at）は makeOp が付ける。保存した行は currentRows()[table] で読める。
+// 保存できたら true。できなければ知らせを出して false（送信待ちには積まない）
+function saveRows(changes){
+  if(!server){
+    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+    return false;
+  }
+  try{
+    queueChanges(MoneyData.checkDirectChanges(changes), new Date().toISOString());
+  }catch(e){
+    console.warn('保存できませんでした:', e);
+    showSyncBanner('保存できませんでした。\n' + (e.message || e), [{label: '閉じる', onclick: hideSyncBanner}]);
+    return false;
+  }
+  updateSyncStatus();
+  flushOutbox();
+  return true;
 }
 
 // 送信待ちを、古いものから1つずつ送る

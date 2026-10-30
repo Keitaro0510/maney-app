@@ -1,6 +1,6 @@
 # データの構造
 
-Supabase（PostgreSQL）のリレーショナルデータベース。2026-10-29 に、全データを1行の JSON（`user_data`）に入れていた形から、12のテーブルに分けた形に切り替えた（テーブル分割 #11。経緯と設計は [TABLE_SPLIT.md](TABLE_SPLIT.md)）。
+Supabase（PostgreSQL）のリレーショナルデータベース。2026-10-29 に、全データを1行の JSON（`user_data`）に入れていた形から、12のテーブルに分けた形に切り替えた（テーブル分割 #11。経緯と設計は [TABLE_SPLIT.md](TABLE_SPLIT.md)）。2026-10-31 に、タスクの `tasks` を足して13になった（D1・D3）。
 
 - 定義はすべて [`supabase/migrations/`](../../supabase/migrations/) にある。テストは [`supabase/tests/`](../../supabase/tests/)
 - どのテーブルにも `id`（uuid）・`user_id`（`auth.users` を指す）・`created_at`・`updated_at`（サーバーの時刻）がある。一覧のテーブルには並び順の `position` もある（下の図では省いた）
@@ -125,9 +125,16 @@ erDiagram
     date date
     integer amount
   }
+  tasks {
+    uuid id PK
+    text title
+    date due_date "期限（空なら期限なし）"
+    timestamptz completed_at "終えた日時（空なら未完了）"
+    text memo
+  }
 ```
 
-`settings`（1人1行）・`fixed_incomes`（固定収入）・`withdrawals`（ATM の引き出し）は、ほかのテーブルとつながらない。
+`settings`（1人1行）・`fixed_incomes`（固定収入）・`withdrawals`（ATM の引き出し）・`tasks`（タスク）は、ほかのテーブルとつながらない。タスクと予定のひもづけ（`plan_id`）は Phase 6 で足す（D2）。
 
 ## DB が見張っていること
 
@@ -147,10 +154,12 @@ erDiagram
 
 アプリ（`index.html`）の画面と計算のコードは、切り替える前と同じ形のデータ（`st`）を読む。テーブルと `st` のあいだは、互換層（[`js/compat.js`](../../js/compat.js)）が変換する。互換層は移行のためだけのもので、画面を作り直すとき（ROADMAP の Phase 4）に消す（[DECISIONS.md の D9](../DECISIONS.md)）。
 
+新しい機能のテーブル（今は `tasks`）は、互換層を通さない（D1）。画面は `currentRows().tasks` で行を直接読み、`saveRows([...])` で直接保存する。今の画面の `save()` は、互換の `st` が持つ12のテーブル（`MoneyData.COMPAT_TABLES`）だけを比べるので、`tasks` を消したと見なすことはない。
+
 ```mermaid
 flowchart LR
   subgraph app["アプリ（端末）"]
-    UI["画面と計算<br>st を読む・変える"]
+    UI["画面と計算<br>st を読む・変える<br>tasks は saveRows で直接"]
     C["互換層<br>js/compat.js"]
     D["データの層<br>js/data.js"]
     Q[("送信待ち<br>端末に保存")]
@@ -158,7 +167,7 @@ flowchart LR
   end
   subgraph db["Supabase"]
     A["apply_op<br>1つの操作を1つのトランザクションで"]
-    T[("12のテーブル")]
+    T[("13のテーブル")]
     H[("行の履歴<br>private.row_history")]
   end
   UI -- "save()" --> C

@@ -7,7 +7,8 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { rowsToSt, stToRows, createdMs } = require('../js/compat.js');
 const {
-  diffRows, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, discardOp, sendOp,
+  TABLES, DIRECT_TABLES, COMPAT_TABLES,
+  diffRows, checkDirectChanges, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, discardOp, sendOp,
 } = require('../js/data.js');
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
@@ -300,4 +301,94 @@ test('apply_op の結果を種類に分ける', async () => {
 test('base が決まっていない操作は送らない', async () => {
   const op = { ...readyOp, changes: [{ table: 'withdrawals', action: 'delete', id: 'w', base: 'pending:op0' }] };
   await assert.rejects(sendOp(fakeRpc({}), op), /まだ保存できていません/);
+});
+
+// ============================================================
+// 互換の st を通さないテーブル（tasks。D1）
+// ============================================================
+
+const task = {
+  id: 'a0000000-0000-4000-8000-0000000007a1', title: 'レポートを出す', due_date: '2026-11-05', completed_at: null,
+  memo: '', position: 0, created_at: '2026-10-30T00:00:00+00:00', updated_at: '2026-10-30T00:00:00+00:00',
+};
+const withTasks = { ...fixture.rows, tasks: [task] };
+
+test('tasks は互換の st を通さないテーブル。互換のテーブルとあわせて全部になる', () => {
+  assert.deepStrictEqual(DIRECT_TABLES, ['tasks']);
+  assert.ok(TABLES.includes('tasks'));
+  assert.ok(!COMPAT_TABLES.includes('tasks'));
+  assert.deepStrictEqual([...COMPAT_TABLES, ...DIRECT_TABLES].sort(), [...TABLES].sort());
+});
+
+test('互換の st から保存しても、タスクは消えない（互換のテーブルだけを比べる）', () => {
+  const st = rowsToSt(withTasks);
+  st.ledger.push({ date: '2026-10-30', amount: 300, name: 'お茶', cat: '食費', type: 'expense', pay: '現金', memo: '' });
+  const after = stToRows(st, withTasks, options());
+  assert.ok(!('tasks' in after), '互換の st は tasks を持たない');
+
+  const changes = diffRows(withTasks, after, COMPAT_TABLES);
+  assert.deepStrictEqual(changes.map(c => `${c.table}:${c.action}`), ['ledger_entries:insert']);
+
+  // すべてのテーブルを比べると、タスクを「消えた」と見なしてしまう（だから COMPAT_TABLES で比べる）
+  const all = diffRows(withTasks, after);
+  assert.ok(all.some(c => c.table === 'tasks' && c.action === 'delete'));
+});
+
+test('タスクを直接保存する変更: 追加・更新・削除を受け付ける', () => {
+  const changes = [
+    { table: 'tasks', action: 'insert', id: 't-new', row: { title: '部屋の片付け', due_date: null, memo: '' } },
+    { table: 'tasks', action: 'update', id: task.id, row: { completed_at: '2026-11-04T01:00:00.000Z' } },
+  ];
+  assert.equal(checkDirectChanges(changes), changes);
+  assert.doesNotThrow(() => checkDirectChanges([{ table: 'tasks', action: 'delete', id: task.id }]));
+});
+
+test('タスクを直接保存する変更: 正しくなければ送信待ちに積まない', () => {
+  assert.throws(() => checkDirectChanges([]), /変更がありません/);
+  assert.throws(() => checkDirectChanges([{ table: 'ledger_entries', action: 'delete', id: 'x' }]),
+    /この入り口からは保存できません/, '互換の st が持つテーブルは save() から保存する');
+  assert.throws(() => checkDirectChanges([{ table: 'tasks', action: 'upsert', id: 'x', row: {} }]), /action/);
+  assert.throws(() => checkDirectChanges([{ table: 'tasks', action: 'insert', row: { title: 'x' } }]), /id がありません/);
+  assert.throws(() => checkDirectChanges([{ table: 'tasks', action: 'insert', id: 'x' }]), /中身がありません/);
+  assert.throws(() => checkDirectChanges([{ table: 'tasks', action: 'insert', id: 'x', row: { title: 'x', user_id: 'u' } }]),
+    /サーバーが決める列/);
+  assert.throws(() => checkDirectChanges([
+    { table: 'tasks', action: 'update', id: 'x', row: { title: 'a' } },
+    { table: 'tasks', action: 'delete', id: 'x' },
+  ]), /2回変えています/);
+});
+
+test('タスクの操作も、ほかのテーブルと同じ送信待ちの仕組みに乗る', () => {
+  const srv = { rows: withTasks, epoch: 2 };
+  const op = makeOp(checkDirectChanges([
+    { table: 'tasks', action: 'update', id: task.id, row: { completed_at: '2026-11-04T01:00:00.000Z' } },
+    { table: 'tasks', action: 'insert', id: 't-new', row: { title: '部屋の片付け', due_date: null, memo: '', position: 1 } },
+  ]), { id: 'op-task', epoch: 2, now: NOW, server: srv, outbox: [] });
+  assert.equal(op.changes[0].base, task.updated_at, '更新の base は、サーバーの写しの updated_at');
+  assert.equal(op.changes[1].base, undefined, '追加には base がない');
+
+  const rows = applyOutbox(withTasks, [op]);
+  assert.equal(rows.tasks.length, 2);
+  assert.equal(rows.tasks.find(t => t.id === task.id).completed_at, '2026-11-04T01:00:00.000Z');
+  assert.ok(rows.tasks.some(t => t.id === 't-new' && t.title === '部屋の片付け'));
+
+  const after = acknowledge({ server: srv, outbox: [op] }, op, {
+    status: 'applied', rows: [
+      { table: 'tasks', id: task.id, action: 'update', updated_at: '2026-11-04T01:00:01+00:00' },
+      { table: 'tasks', id: 't-new', action: 'insert', updated_at: '2026-11-04T01:00:01+00:00' },
+    ],
+  });
+  assert.equal(after.outbox.length, 0);
+  assert.equal(after.server.rows.tasks.length, 2);
+  assert.equal(after.server.rows.tasks.find(t => t.id === task.id).updated_at, '2026-11-04T01:00:01+00:00');
+});
+
+test('読み込みの写しに tasks がなくても（tasks を足す前の端末の写し）、保存できる', () => {
+  const st = rowsToSt(fixture.rows);
+  st.ledger.push({ date: '2026-10-30', amount: 300, name: 'お茶', cat: '食費', type: 'expense', pay: '現金', memo: '' });
+  const changes = diffRows(fixture.rows, stToRows(st, fixture.rows, options()), COMPAT_TABLES);
+  assert.equal(changes.length, 1);
+  const op = makeOp(checkDirectChanges([{ table: 'tasks', action: 'insert', id: 't1', row: { title: 'x' } }]),
+    { id: 'op-t', epoch: 2, now: NOW, server: { rows: fixture.rows, epoch: 2 }, outbox: [] });
+  assert.equal(applyOutbox(fixture.rows, [op]).tasks.length, 1);
 });

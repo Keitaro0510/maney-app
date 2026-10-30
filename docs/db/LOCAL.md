@@ -33,7 +33,19 @@ npx supabase stop
 
 `start` のあとに表示される `Studio URL`（http://127.0.0.1:54323）をブラウザで開くと、テーブルの中身を見られる。
 
-## テストの書き方
+## CLI が動かないとき（Docker だけで DB のテストを流す）
+
+2026-10-31 に、Windows のアプリケーション制御（スマート アプリ コントロールなど）が `supabase.exe` を止めるようになり、`npx supabase start` が `spawn UNKNOWN` で失敗した（PowerShell では「アプリケーション制御ポリシーによってこのファイルがブロックされました」）。パソコンのセキュリティの設定なので、変えずに次のやり方を使う。
+
+```bash
+# Docker Desktop が動いている状態で（Git Bash などの bash から）
+bash scripts/db-test-docker.sh            # 全部のマイグレーションを流してから、全部のテストを流す
+bash scripts/db-test-docker.sh 05_tasks   # 名前に 05_tasks を含むテストだけ
+```
+
+- Supabase と同じ Postgres のイメージ（`public.ecr.aws/supabase/postgres`）を Docker で立て、`supabase/migrations/` を古い順に流し、`supabase/tests/database/` のテストを `psql` で流す。終わったらコンテナを消す
+- イメージの `auth.uid()` は古い書き方なので、本物の Supabase（認証のサービスが作り直したあと）と同じ形に置き換えてから流す
+- DB の中だけを試すので、API（PostgREST・認証）が要る `tests/integration` は流せない
 
 - `supabase/tests/database/*.test.sql` に pgTAP で書く。1つのファイルは `begin;` で始めて `rollback;` で終わるので、テストのデータは残らない
 - ログインしたユーザーとして動かすときは、`set local role authenticated;` と `request.jwt.claims` を設定する（`01_tables.test.sql` を参照）
