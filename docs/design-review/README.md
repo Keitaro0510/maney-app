@@ -5,7 +5,7 @@ DB を整えたあと、画面と計算の側（`index.html` など）を監査�
 - [audit-claude.md](audit-claude.md): Claude の監査。架空のデータを入れて、iPhone と同じ幅で画面も撮って確かめた
 - [audit-codex.md](audit-codex.md): Codex の監査（コードを読んだだけ）
 - [../SCREENS.md](../SCREENS.md): 今の画面の構成と遷移（どこを押すとどこに行くか）
-- 状態: **案**。決めることは [DECISIONS.md](../DECISIONS.md) の D10〜D12 に書いた。決めるのはユーザー
+- 状態: **案**。決めることは [DECISIONS.md](../DECISIONS.md) の D10〜D12 に書いた。決めるのはユーザー。D12 は 2026-10-31 に (b)（最小限の土台を直してからタスク）に決めた
 
 ## 2つの監査の比べ方
 
@@ -73,3 +73,5 @@ DB を整えたあと、画面と計算の側（`index.html` など）を監査�
 | 6. その先 | 予定と支出、月ごとの推移、通知、ほかの画面を1つずつ新しい作りに移す（Phase 4・6） | D6 |
 
 ROADMAP は今「Phase 2 → 3（タスク）→ 4（ファイルの分割）」の順。この案では、Phase 2 と Phase 4 の一部をタスクの前に移す。順番を変えるかは D12 で決める。
+
+→ D12 で決めた順番は、この表と少し違う。バグを直す前に、画面の構成（D10）と D1〜D3 を決める。タスクの前に CI と `v1.0.0` のタグをやる。JSON の入出力はタスクのあと。決めた順番は [DECISIONS.md](../DECISIONS.md) の D12 と [ROADMAP.md](../ROADMAP.md) の「進める順番」を見る。
