@@ -1,11 +1,11 @@
-// 「今日」を扱う部品（js/clock.js）のテスト。実行: node --test "tests/*.test.mjs"
-// 日付は、その端末の時刻（new Date(年, 月, 日, 時, 分)）で作る
+// 日付を扱う部品（js/clock.js）のテスト。実行: node --test "tests/*.test.mjs"
+// 日付は、その端末の時刻（new Date(年, 月, 日, 時, 分)）で作る。月は 0 が1月
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { dayKey, msUntilNextDay, createDayWatcher, followMonth } = require('../js/clock.js');
+const { dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay } = require('../js/clock.js');
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -79,4 +79,25 @@ test('年をまたいでも、今月を見ていたら新しい年の1月にす�
   const prev = new Date(2026, 11, 31, 23, 0);
   const now = new Date(2027, 0, 1, 7, 0);
   assert.deepEqual(followMonth({ y: 2026, m: 11 }, prev, now), { y: 2027, m: 0 });
+});
+
+test('月の日数（うるう年の2月も）', () => {
+  assert.equal(daysInMonth(2026, 0), 31);
+  assert.equal(daysInMonth(2026, 1), 28);
+  assert.equal(daysInMonth(2028, 1), 29);
+  assert.equal(daysInMonth(2026, 10), 30);
+  assert.equal(daysInMonth(2026, 11), 31);
+});
+
+test('「毎月31日」は、30日までの月では月末にする', () => {
+  assert.equal(monthDay(2026, 9, 31), 31);
+  assert.equal(monthDay(2026, 10, 31), 30);
+  assert.equal(monthDay(2026, 1, 31), 28);
+  assert.equal(monthDay(2028, 1, 30), 29);
+});
+
+test('月にある日は、そのまま', () => {
+  assert.equal(monthDay(2026, 10, 15), 15);
+  assert.equal(monthDay(2026, 1, 28), 28);
+  assert.equal(monthDay(2026, 10, 1), 1);
 });

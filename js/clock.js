@@ -1,7 +1,8 @@
-// 「今日」を扱う部品。
-// iPhone のホーム画面アプリは閉じずに裏に残るので、起動したときの日付のままにすると、
-// 翌朝に開いても「今日」が昨日のままになる。日付が変わったかを見張り、変わったら知らせる。
-// 日付は、その端末の時刻で決める。
+// 日付を扱う部品。
+// - 「今日」: iPhone のホーム画面アプリは閉じずに裏に残るので、起動したときの日付のままにすると、
+//   翌朝に開いても「今日」が昨日のままになる。日付が変わったかを見張り、変わったら知らせる
+// - 「毎月○日」: 固定費・給料日・引き落とし日の「31日」などを、その月にある日にする
+// 日付は、その端末の時刻で決める。月（m）は 0 が1月。
 (function (root) {
   'use strict';
 
@@ -46,7 +47,18 @@
     return view;
   }
 
-  const MoneyClock = { dayKey, msUntilNextDay, createDayWatcher, followMonth };
+  // その月の日数
+  function daysInMonth(y, m) {
+    return new Date(y, m + 1, 0).getDate();
+  }
+
+  // 「毎月○日」の日を、その月にある日にする。月にない日（30日までの月の31日など）は月末にする。
+  // new Date(y, m, 31) のままだと、30日までの月では翌月1日になってしまう
+  function monthDay(y, m, day) {
+    return Math.min(day, daysInMonth(y, m));
+  }
+
+  const MoneyClock = { dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay };
   root.MoneyClock = MoneyClock;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyClock;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
