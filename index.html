@@ -506,36 +506,17 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 }
 .btn-google:hover{background:#f8f8f8}
 .login-note{font-size:11px;color:var(--color-text-secondary);margin-top:1.5rem;line-height:1.6}
-/* ===== ユーザーメニュー ===== */
-.user-menu{
+/* ===== 右上の設定ボタン（D10。ログイン後に表示）===== */
+.top-actions{
   position:fixed;top:0;right:0;
-  padding:calc(env(safe-area-inset-top,8px) + 8px) 12px 8px;
+  padding:calc(env(safe-area-inset-top,8px) + 4px) 8px 4px;
   z-index:200;
 }
-.user-avatar{
-  width:32px;height:32px;border-radius:50%;
-  background:#185FA5;color:#fff;
-  font-size:13px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;border:none;
-}
-.user-dropdown{
-  position:absolute;right:0;top:100%;
-  background:var(--color-background-primary);
-  border:0.5px solid var(--color-border-tertiary);
-  border-radius:12px;padding:8px;
-  min-width:180px;display:none;
-  box-shadow:0 4px 20px rgba(0,0,0,.15);
-}
-.user-dropdown.open{display:block}
-.user-email{font-size:11px;color:var(--color-text-secondary);padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px}
-.btn-logout{
-  width:100%;padding:8px;border-radius:8px;
-  background:transparent;color:#A32D2D;
-  border:none;font-size:13px;font-weight:500;
-  cursor:pointer;text-align:left;
-}
-.btn-logout:hover{background:#FCEBEB}
+/* 画面を下に動かしても見えるように、白い丸の上に出す */
+.top-actions .icon-btn{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.top-actions .icon-btn.active{background:var(--color-brand-soft);color:var(--color-brand);border-color:transparent}
+/* ===== 設定のいちばん下のアカウント（D10）===== */
+.account-email{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;overflow-wrap:anywhere}
 /* ===== 同期の通知（保存の失敗・別の端末との競合） ===== */
 .sync-banner{
   position:fixed;left:0;right:0;
@@ -585,13 +566,11 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   </div>
 </div>
 
-<!-- ユーザーメニュー（ログイン後に表示） -->
-<div class="user-menu" id="user-menu" style="display:none">
-  <button class="user-avatar" id="user-avatar" onclick="toggleUserMenu()">？</button>
-  <div class="user-dropdown" id="user-dropdown">
-    <div class="user-email" id="user-email"></div>
-    <button class="btn-logout" onclick="logout()">ログアウト</button>
-  </div>
+<!-- 右上: 設定を開くボタン（ログイン後に表示。D10）。ログイン中のアカウントとログアウトは、設定のいちばん下 -->
+<div class="top-actions" id="top-actions" hidden>
+  <button type="button" class="icon-btn" id="settings-btn" aria-label="設定" onclick="sw('set')">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+  </button>
 </div>
 
 <!-- ページコンテンツ -->
@@ -797,6 +776,11 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   </div>
   <button class="btn primary full" onclick="saveSetting()" style="margin-top:4px;background:#185FA5">設定を保存</button>
   <div class="card" style="margin-top:10px"><div class="st">ATM引き出し履歴</div><div id="wd-hist"></div></div>
+  <!-- アカウント（いちばん下。D10） -->
+  <div class="card"><div class="st">アカウント</div>
+    <div class="account-email">ログイン中: <span id="account-email"></span></div>
+    <button type="button" class="ui-btn danger" onclick="logout()">ログアウト</button>
+  </div>
 </div>
 
 </div><!-- /app -->
@@ -826,10 +810,6 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   <div class="nav-item" id="nav-shift" onclick="sw('shift')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>シフト</span>
-  </div>
-  <div class="nav-item" id="nav-set" onclick="sw('set')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    <span>設定</span>
   </div>
 </nav>
 
@@ -937,35 +917,20 @@ async function reallyLogout(){
   location.reload();
 }
 
-function toggleUserMenu(){
-  document.getElementById('user-dropdown').classList.toggle('open');
-}
-
-// 画面外クリックでメニューを閉じる
-document.addEventListener('click', e=>{
-  const menu = document.getElementById('user-menu');
-  if(menu && !menu.contains(e.target)){
-    document.getElementById('user-dropdown').classList.remove('open');
-  }
-});
-
 function showLoginScreen(){
   document.getElementById('login-screen').style.display = 'flex';
   document.querySelector('.app').style.display = 'none';
   document.querySelector('.bottom-nav').style.display = 'none';
-  document.getElementById('user-menu').style.display = 'none';
+  document.getElementById('top-actions').hidden = true;
 }
 
 function hideLoginScreen(user){
   document.getElementById('login-screen').style.display = 'none';
   document.querySelector('.app').style.display = 'block';
   document.querySelector('.bottom-nav').style.display = 'flex';
-  document.getElementById('user-menu').style.display = 'block';
-  // アバター（名前の頭文字）を設定
-  const email = user.email || '';
-  const initial = (user.user_metadata?.name || email).charAt(0).toUpperCase();
-  document.getElementById('user-avatar').textContent = initial;
-  document.getElementById('user-email').textContent = email;
+  document.getElementById('top-actions').hidden = false;
+  // ログイン中のアカウント（設定のいちばん下）
+  document.getElementById('account-email').textContent = user.email || '';
 }
 
 // ============================================================
@@ -1392,6 +1357,9 @@ function sw(t){
     const n=document.getElementById('nav-'+x);
     if(n)n.classList.toggle('active',x===t);
   });
+  // 設定は右上のボタンから開く（D10）。開いている間はボタンを色付きにする
+  const sb=document.getElementById('settings-btn');
+  if(sb){sb.classList.toggle('active',t==='set');if(t==='set')sb.setAttribute('aria-current','page');else sb.removeAttribute('aria-current');}
   if(t==='home')renderHome();
   else if(t==='cal')renderCal();
   else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();}
