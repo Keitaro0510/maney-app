@@ -62,6 +62,8 @@ flowchart LR
 - ブランチとPRの流れ・練習メニュー: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 - やること: [docs/ROADMAP.md](docs/ROADMAP.md)
 - 自分で決める設計判断: [docs/DECISIONS.md](docs/DECISIONS.md)
+- 画面の構成と遷移（どこを押すとどの画面に行くか）: [docs/SCREENS.md](docs/SCREENS.md)
+- 外部設計・内部設計・UI の監査（Claude・Codex、2026-10-29）: [docs/design-review/](docs/design-review/README.md)
 - データの構造（ER 図・保存の流れ）: [docs/db/SCHEMA.md](docs/db/SCHEMA.md)
 - データを戻す手順: [docs/db/RESTORE.md](docs/db/RESTORE.md)
 - テーブル分割の設計と記録（#11）: [docs/db/TABLE_SPLIT.md](docs/db/TABLE_SPLIT.md)
