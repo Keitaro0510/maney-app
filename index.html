@@ -17,6 +17,7 @@
 <!-- 新しいテーブルを読み書きするデータの層と、今の画面のための互換層（テーブル分割 #11。docs/DECISIONS.md の D9） -->
 <script src="js/data.js"></script>
 <script src="js/compat.js"></script>
+<script src="js/clock.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -808,9 +809,10 @@ const DEF_EXP=['食費','交通費','外食','娯楽','日用品','通信費','�
 const DEF_INC=['給与','バイト','仕送り','その他'];
 const CAT_COL={'食費':'#185FA5','交通費':'#3B6D11','外食':'#993556','娯楽':'#BA7517','日用品':'#3C3089','通信費':'#0F6E56','固定費':'#C45000','その他':'#5F5E5A','給与':'#3B6D11','バイト':'#185FA5','仕送り':'#BA7517'};
 
-const _now=new Date();
+// 今の日時と、今日の日付 'YYYY-MM-DD'。日付が変わったら onDayChange で新しくする
+let _now=new Date();
 const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-const TODAY=toDS(_now.getFullYear(),_now.getMonth(),_now.getDate());
+let TODAY=MoneyClock.dayKey(_now);
 
 // 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
 function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[]};}
@@ -1201,9 +1203,34 @@ async function resyncRemote(){
   if(document.querySelector('.mbg.open')) return;
   await loadRemote();
 }
+// 日付が変わったとき（裏に置いたまま日をまたいだ・開いたまま0時をまたいだ）: 「今日」を新しくして描き直す。
+// 「今月」「今日」を見ていた画面は新しい今月・今日に合わせる。ほかの月・日を見ていたら、そのままにする
+function onDayChange(now, prevKey){
+  const prev=_now;
+  _now=now;
+  TODAY=MoneyClock.dayKey(now);
+  const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
+  ({y:calY,m:calM}=follow(calY,calM));
+  ({y:shiftCalY,m:shiftCalM}=follow(shiftCalY,shiftCalM));
+  ({y:shiftListY,m:shiftListM}=follow(shiftListY,shiftListM));
+  ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
+  if(calAnchor===prevKey) calAnchor=TODAY;
+  if(currentUser) renderCurrentSection();
+}
+const todayWatcher=MoneyClock.createDayWatcher(()=>new Date(), onDayChange);
+
+// 0時を過ぎたら確かめる（開いたまま日をまたいだとき）。裏にいる間は止まるが、戻ったときに下で確かめる
+function scheduleDayCheck(){
+  setTimeout(()=>{ todayWatcher.check(); scheduleDayCheck(); }, MoneyClock.msUntilNextDay(new Date())+1000);
+}
+scheduleDayCheck();
+
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible') resyncRemote();
+  if(document.visibilityState !== 'visible') return;
+  todayWatcher.check();
+  resyncRemote();
 });
+window.addEventListener('focus', ()=>todayWatcher.check());
 window.addEventListener('online', resyncRemote);
 
 // ============================================================
