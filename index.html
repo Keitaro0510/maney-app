@@ -1530,7 +1530,11 @@ async function renderCal(){
   document.getElementById('cal-month-wrap').style.display=isMonth?'block':'none';
   document.getElementById('cal-list').style.display=isMonth?'none':'block';
   if(!isMonth) document.getElementById('day-detail').style.display='none';
-  if(isMonth) await renderCalMonth(seq);
+  if(isMonth){
+    await renderCalMonth(seq);
+    // 日の詳細が開いていれば、今のデータで描き直す（読み込み直したあとに、古い番号のボタンを残さない）
+    if(seq===calRenderSeq && selDay && document.getElementById('day-detail').style.display==='block') dayClick(selDay);
+  }
   else if(calView==='week') await renderCalWeek(seq);
   else await renderCalDay(seq);
 }
@@ -1705,8 +1709,10 @@ function buildDay(ds, opts={}){
     const isMultiDay=p.dateEnd&&p.dateEnd!==p.date;
     const t=planTimeOnDay(p,ds);
     const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
-    const actionsHtml=actions?`<button class="btn sm edit" onclick="openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="deletePlan(${pidx})">削除</button>`:'';
-    push(t.min,timeLabel,`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:8px"><input type="checkbox" ${p.done?'checked':''} onchange="togglePlanDone(${pidx})" style="cursor:pointer;width:18px;height:18px"><div><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${p.title}</span>${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart).getDate()}〜${ds2d(p.dateEnd).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${p.memo}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${p.budget>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${p.budget.toLocaleString()}</span>`:''}${actionsHtml}</div></div>`);
+    // ボタンには番号と ID を埋め込み、押したときに同じ記録かを確かめる（sameRecord）
+    const guard=`sameRecord(st.plans,${pidx},'${p._id}')`;
+    const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="${guard}&&deletePlan(${pidx})">削除</button>`:'';
+    push(t.min,timeLabel,`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:8px"><input type="checkbox" ${p.done?'checked':''} onchange="${guard}&&togglePlanDone(${pidx})" style="cursor:pointer;width:18px;height:18px"><div><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${p.title}</span>${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart).getDate()}〜${ds2d(p.dateEnd).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${p.memo}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${p.budget>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${p.budget.toLocaleString()}</span>`:''}${actionsHtml}</div></div>`);
   });
   shifts.forEach(s=>{
     const c=jobColorByName(s.job),r=calcShiftInc(s);
@@ -1717,7 +1723,8 @@ function buildDay(ds, opts={}){
     const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;
     const amt=parseInt(l.amount);
     if(l.type==='income')inc+=amt; else exp+=amt;
-    const actionsHtml=actions?`<button class="btn sm edit" onclick="openLdgEdit(${st.ledger.indexOf(l)})">編集</button><button class="btn sm del" onclick="delLedger(${st.ledger.indexOf(l)})">削除</button>`:'';
+    const lidx=st.ledger.indexOf(l),guard=`sameRecord(st.ledger,${lidx},'${l._id}')`;
+    const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openLdgEdit(${lidx})">編集</button><button class="btn sm del" onclick="${guard}&&delLedger(${lidx})">削除</button>`:'';
     push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
   });
 
@@ -1726,6 +1733,16 @@ function buildDay(ds, opts={}){
 }
 
 function closeDayDetail(){ document.getElementById('day-detail').style.display='none'; selDay=null; }
+
+// 日の詳細のボタンが指す記録（list の idx 番目）が、描いたときと同じ記録（id）かを確かめる。
+// 画面が古いと、番号が別の記録を指していることがある（別の端末で消した・読み込み直した）。
+// 違えば何もせず、日の詳細を描き直す
+function sameRecord(list, idx, id){
+  if(list[idx] && list[idx]._id===id) return true;
+  console.warn('日の詳細が古かったので、描き直しました');
+  refreshDayViews();
+  return false;
+}
 
 // 月表示タップ時の日詳細（#day-detail、常設カード）。時刻ガターは出さず現行の見た目を維持
 function dayClick(ds){
