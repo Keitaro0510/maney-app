@@ -81,7 +81,9 @@ git branch -d feature/tasks-mvp
 5. [ ] CI を入れて、テストが通らないとマージできないようにする（Phase 2）
    - CI は 2026-10-31 に入れた（`.github/workflows/test.yml`）。PR を出すと、GitHub が自動でテストを動かす
    - 残り: 4 の Ruleset で「テストが通ること」（`Node のテスト`）をマージの条件にする
-6. [ ] 動いているバージョンにタグを付ける（`git tag v1.0.0`、`git push origin v1.0.0`）。GitHub の Releases に変更点を書く
+6. [x] 動いているバージョンにタグを付ける（`git tag v1.0.0`、`git push origin v1.0.0`）。GitHub の Releases に変更点を書く
+   - 2026-10-31 に `v1.0.0` を付けた（Claude が実行）。`git tag -a v1.0.0 -m "…"` の注釈付きタグにした（メッセージ・付けた人・日時が残る）。Releases は `gh release create v1.0.0 --notes-file …`
+   - 付けたタグは動かさない。直したら、新しい番号（`v1.0.1` など）を付ける
 7. [ ] マージした変更で不具合が出たら、`git revert` で打ち消す PR を作って戻す（履歴を消さずに戻す方法）
 8. [ ] 長く続く作業（Phase 4 のファイル分割）の途中で main に入った変更を取り込む。`git merge main` と `git rebase main` の違いを試す
 9. [ ] 本番の前に確認できる環境を作る（[D8](DECISIONS.md)）
