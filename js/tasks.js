@@ -95,9 +95,26 @@
   // 新しいタスクの並び（position）。今の最後のあと
   const nextPosition = tasks => tasks.reduce((max, t) => Math.max(max, t.position || 0), -1) + 1;
 
+  // カレンダー用（D10）: その日が期限のタスク（並べ方は sortTasks と同じ）
+  function tasksOnDay(tasks, day) {
+    return sortTasks(tasks.filter(t => t.due_date === day));
+  }
+
+  // カレンダーのセル用（D10）: 期限の日ごとの件数。open は終えていないもの、done は終えたもの
+  function countByDay(tasks) {
+    const counts = new Map();
+    for (const t of tasks) {
+      if (!t.due_date) continue;
+      const c = counts.get(t.due_date) || { open: 0, done: 0 };
+      if (t.completed_at) c.done++; else c.open++;
+      counts.set(t.due_date, c);
+    }
+    return counts;
+  }
+
   const MoneyTasks = {
     FOLD_DAYS, SOON_DAYS, SECTIONS, daysBetween, sortTasks, isFolded, sectionOf, groupForTab, startupGroups,
-    shouldShowStartup, dueLabel, nextPosition,
+    shouldShowStartup, dueLabel, nextPosition, tasksOnDay, countByDay,
   };
   root.MoneyTasks = MoneyTasks;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyTasks;

@@ -200,6 +200,8 @@ body{
 .pill.s4{background:#EEEDFE;color:#3C3489}.pill.payday{background:#E6F1FB;color:#185FA5;font-weight:700}
 .pill.shime{background:#FAEEDA;color:#BA7517}.pill.hikiotoshi{background:#FCEBEB;color:#A32D2D}
 .pill.wd{background:#EEEDFE;color:#3C3489}.pill.fixedcost{background:#FFF0E0;color:#C45000}
+/* タスクの印と件数（D10）。期限が過ぎた日に残っていれば赤、全部済んでいれば薄く */
+.pill.task{background:#E8F0FE;color:#185FA5}.pill.task.overdue{background:#FCEBEB;color:#A32D2D}.pill.task.done{opacity:.45}
 /* ===== リストアイテム ===== */
 .ri{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 .ri:last-child{border-bottom:none}
@@ -227,6 +229,10 @@ body{
 .bfixed{background:#FCEBEB;color:#A32D2D}.bpending{background:#FAEEDA;color:#BA7517}
 .bwd{background:#EEEDFE;color:#3C3489}.bplan{background:#FBEAF0;color:#993556}
 .bfixcost{background:#FFF0E0;color:#C45000}
+.btask{background:#E8F0FE;color:#185FA5;flex:none}
+.task-ri-title{font-size:14px;overflow-wrap:anywhere}
+.task-ri.done .task-ri-title{text-decoration:line-through;color:var(--color-text-secondary)}
+.task-ri-count{font-size:13px;color:var(--color-text-secondary)}
 /* ===== フォーム ===== */
 .fg{margin-bottom:12px}
 .fg label{font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:5px;font-weight:500}
@@ -1703,6 +1709,7 @@ async function renderCalMonth(seq){
   const byDay={};
   monthShifts(calY,calM).forEach(s=>{const d=new Date(s.date).getDate();(byDay[d]=byDay[d]||[]).push(s);});
   const shimeD=st.jobs.map(j=>jobCloseDayNum(j,calY,calM)),payD=(st.jobs.length?st.jobs.map(jobPayDay):[parseInt(st.shiftPayDay)||10]).map(p=>monthDay(calY,calM,p));
+  const taskCount=MoneyTasks.countByDay(taskRows()); // タスクの件数（期限の日ごと。D10）
   let html='';
   for(let i=0;i<total;i++){
     let day,y2=calY,m2=calM,other=false;
@@ -1725,6 +1732,9 @@ async function renderCalMonth(seq){
 
     let pills='';
     if(holiday&&!other) pills+=`<div class="pill" style="background:#FCEBEB;color:#A32D2D;font-size:8px">${holiday.slice(0,6)}</div>`;
+    // タスク（D10）: 印と件数だけ。期限が過ぎた日に残っていれば赤、全部済んでいれば薄く
+    const tc=other?null:taskCount.get(ds);
+    if(tc) pills+=tc.open?`<div class="pill task${ds<TODAY?' overdue':''}">タスク${tc.open}</div>`:'<div class="pill task done">タスク済</div>';
     if(isPay) pills+='<div class="pill payday">給料日</div>';
     if(isShime&&!isPay) pills+='<div class="pill shime">締め日</div>';
     if(isClose&&!isShime) pills+='<div class="pill shime">締め日</div>';
@@ -1820,6 +1830,17 @@ function buildDay(ds, opts={}){
   const items=[]; let inc=0, exp=0;
   const push=(sort,time,html)=>items.push({sort,time,html:showTime?`<div class="ri-with-time"><span class="ri-time">${time||''}</span>${html}</div>`:html});
 
+  // タスク（D10）: 日の詳細（opts.tasks='names'）は名前を出す（見るだけ。完了はタスクのタブで）。日・週の表示は件数だけ
+  const dayTasks=MoneyTasks.tasksOnDay(taskRows(),ds);
+  if(dayTasks.length){
+    if(opts.tasks==='names'){
+      dayTasks.forEach(t=>push(-1,'',`<div class="ri task-ri${t.completed_at?' done':''}"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge btask">タスク</span><span class="task-ri-title">${MoneyUI.escapeHtml(t.title)}</span></div></div>`));
+    }else{
+      const left=dayTasks.filter(t=>!t.completed_at).length;
+      push(-1,'',`<div class="ri"><span class="badge btask">タスク</span><span class="task-ri-count">${left?`${left}件`:'すべて済み'}</span></div>`);
+    }
+  }
+
   st.jobs.forEach(job=>{
     const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);
     if(day===jPayD){
@@ -1896,7 +1917,7 @@ function sameRecord(list, idx, id){
 function dayClick(ds){
   selDay=ds;
   const d=ds2d(ds), hd=getHoliday(ds);
-  const {items}=buildDay(ds,{actions:true, showTime:false});
+  const {items}=buildDay(ds,{actions:true, showTime:false, tasks:'names'});
   let html=`<div class="st" style="display:flex;align-items:center;justify-content:space-between"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span><span onclick="jumpToDay('${ds}')" style="cursor:pointer;color:#185FA5;font-size:12px;font-weight:500;margin-right:12px">詳しく見る →</span><span onclick="closeDayDetail()" style="cursor:pointer;color:var(--color-text-secondary);font-size:18px;line-height:1">×</span></span></div>`;
   html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
   document.getElementById('day-detail-content').innerHTML=html;

@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const {
   daysBetween, sortTasks, isFolded, groupForTab, startupGroups, shouldShowStartup, dueLabel, nextPosition,
+  tasksOnDay, countByDay,
 } = require('../js/tasks.js');
 
 const TODAY = '2026-11-02';                       // 月曜
@@ -105,4 +106,28 @@ test('期限の説明', () => {
 test('新しいタスクの並びは、今の最後のあと', () => {
   assert.equal(nextPosition([]), 0);
   assert.equal(nextPosition([{ position: 3 }, { position: 7 }]), 8);
+});
+
+test('カレンダー: その日が期限のタスクだけを、期限の並べ方で出す', () => {
+  const list = [
+    task({ title: '後に作った', due_date: '2026-11-02', created_at: '2026-10-20T00:00:00Z' }),
+    task({ title: '先に作った', due_date: '2026-11-02', created_at: '2026-10-01T00:00:00Z' }),
+    task({ title: '次の日', due_date: '2026-11-03' }),
+    task({ title: '期限なし' }),
+  ];
+  assert.deepEqual(titles(tasksOnDay(list, '2026-11-02')), ['先に作った', '後に作った']);
+  assert.deepEqual(tasksOnDay(list, '2026-11-05'), []);
+});
+
+test('カレンダー: 期限の日ごとに、終えていないものと終えたものを数える', () => {
+  const counts = countByDay([
+    task({ due_date: '2026-11-02' }),
+    task({ due_date: '2026-11-02', completed_at: '2026-11-01T00:00:00Z' }),
+    task({ due_date: '2026-11-02' }),
+    task({ due_date: '2026-11-03', completed_at: '2026-11-01T00:00:00Z' }),
+    task({}),
+  ]);
+  assert.deepEqual(counts.get('2026-11-02'), { open: 2, done: 1 });
+  assert.deepEqual(counts.get('2026-11-03'), { open: 0, done: 1 });
+  assert.equal(counts.size, 2, '期限のないタスクは数えない');
 });
