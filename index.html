@@ -221,7 +221,9 @@ body{
 .day-detail-close{padding:0;font-size:22px;line-height:1;color:var(--color-text-secondary)}
 .day-detail-open:focus-visible,.day-detail-close:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 /* ===== ピル ===== */
-.pill{font-size:8.5px;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.pill{font-size:8.5px;padding:1px;letter-spacing:-.02em;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+/* 祝日の名前は切らずに2行まで折り返す（「スポーツの日」など。#71） */
+.pill.holiday{background:#FCEBEB;color:#A32D2D;font-size:8px;white-space:normal;line-height:1.2;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .pill.s0{background:#E6F1FB;color:#185FA5}.pill.s1{background:#EAF3DE;color:#3B6D11}
 .pill.s2{background:#FBEAF0;color:#993556}.pill.s3{background:#FAEEDA;color:#BA7517}
 .pill.s4{background:#EEEDFE;color:#3C3489}.pill.payday{background:#E6F1FB;color:#185FA5;font-weight:700}
@@ -991,7 +993,7 @@ button.color-swatch.sel{transform:none}
     <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeHomeMore()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="st">残高推移（今後90日）</div>
-  <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">給料・カード・固定費・予定（カード払い以外）を入れた見込み</div>
+  <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">給料・カード・毎月のお金・予定（カード払い以外）を入れた見込み</div>
   <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
   <div class="graph-legend">
     <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>口座残高</div>
@@ -1758,7 +1760,7 @@ function planTimeOnDay(p, ds){
   return {start:'',end:'',min:-1};
 }
 
-function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">${yenSigned(acct)}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・固定費</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>0?'+':''}${yenSigned(forecast)}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
+function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">${yenSigned(acct)}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・毎月のお金</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>0?'+':''}${yenSigned(forecast)}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
 
 // お金を「-¥1,200」「¥3,400」の形にする（マイナスはそのまま出す。D11）
 const yenSigned=v=>(v<0?'-':'')+'¥'+Math.abs(v).toLocaleString();
@@ -1905,15 +1907,15 @@ async function renderCalMonth(seq){
     const dnumColor=holiday||isSun?'#A32D2D':isSat?'#185FA5':'var(--color-text-secondary)';
 
     let pills='';
-    if(holiday&&!other) pills+=`<div class="pill" style="background:#FCEBEB;color:#A32D2D;font-size:8px">${holiday.slice(0,6)}</div>`;
+    if(holiday&&!other) pills+=`<div class="pill holiday">${MoneyUI.escapeHtml(holiday)}</div>`;
     // タスク（D10）: 印と件数だけ。期限が過ぎた日に残っていれば赤、全部済んでいれば薄く
     const tc=other?null:taskCount.get(ds);
-    if(tc) pills+=tc.open?`<div class="pill task${ds<TODAY?' overdue':''}">タスク${tc.open}</div>`:'<div class="pill task done">タスク済</div>';
+    if(tc) pills+=tc.open?`<div class="pill task${ds<TODAY?' overdue':''}">タスク${tc.open}</div>`:'<div class="pill task done" title="タスク（済み）">タスク</div>';
     if(isPay) pills+='<div class="pill payday">給料日</div>';
     if(isShime&&!isPay) pills+='<div class="pill shime">締め日</div>';
     if(isClose&&!isShime) pills+='<div class="pill shime">締め日</div>';
-    if(isBill) pills+='<div class="pill hikiotoshi">引き落とし</div>';
-    if(hasFc) pills+='<div class="pill fixedcost">固定費</div>';
+    if(isBill) pills+='<div class="pill hikiotoshi">引落</div>';
+    if(hasFc) pills+='<div class="pill fixedcost">毎月</div>';
     if(wdT.length) pills+='<div class="pill wd">ATM</div>';
     shifts.forEach(s=>{const c=jobColorByName(s.job);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg}">${s.start.slice(0,5)}</div>`;});
     // 予定は時刻順に並べ、時刻があれば先頭に表示する。.pillはoverflow:hidden+ellipsisがあるので
@@ -1923,7 +1925,7 @@ async function renderCalMonth(seq){
     // 支出・収入の金額はセルに出さない（D10。セルを整理する。日の詳細・週表示・家計簿では見られる）
 
     const selected=ds===selDay;
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayClick('${ds}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayClick('${ds}')}"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('${ds}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('${ds}')}"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
   }
   document.getElementById('cal-body').innerHTML=html;
 }
@@ -2110,6 +2112,17 @@ function dayClick(ds){
   html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
   document.getElementById('day-detail-content').innerHTML=html;
   document.getElementById('day-detail').style.display='block';
+}
+// 月表示の日を押したとき: 詳細を出し、詳細が画面の下のほうに隠れていれば、見えるところまで動かす（#71）。
+// カレンダーの下のほうは残すため、詳細の上の端が画面の 35% の高さに来るまでにとどめる
+function dayCellClick(ds){
+  dayClick(ds);
+  const detail=document.getElementById('day-detail');
+  const top=detail.getBoundingClientRect().top;
+  if(top>window.innerHeight*0.6){
+    const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({top:top-window.innerHeight*0.35,behavior:reduce?'auto':'smooth'});
+  }
 }
 // dir: -1|+1。月ビューは月単位、週ビューは7日単位、日ビューは1日単位でcalAnchorを動かす
 function calShift(dir){
