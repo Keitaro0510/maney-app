@@ -649,12 +649,13 @@ button.color-swatch.sel{transform:none}
 .btn-google:hover{background:#f8f8f8}
 .login-note{font-size:11px;color:var(--color-text-secondary);margin-top:1.5rem;line-height:1.6}
 /* ===== 右上の設定ボタン（D10。ログイン後に表示）===== */
+/* 右上の歯車（D10）。ページのいちばん上に置き、下に動かすとページと一緒に流れる（固定すると中身に重なるため。#71） */
 .top-actions{
-  position:fixed;top:0;right:0;
+  position:absolute;top:0;right:0;
   padding:calc(env(safe-area-inset-top,8px) + 4px) 8px 4px;
   z-index:200;
 }
-/* 画面を下に動かしても見えるように、白い丸の上に出す */
+/* 見出しの横で目立つように、白い丸にする */
 .top-actions .icon-btn{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .top-actions .icon-btn.active{background:var(--color-brand-soft);color:var(--color-brand);border-color:transparent}
 /* ===== 設定のいちばん下のアカウント（D10）===== */

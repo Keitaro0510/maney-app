@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-app-v61';
+const CACHE_NAME = 'money-app-v62';
 const ASSETS = [
   './',
   './index.html',
