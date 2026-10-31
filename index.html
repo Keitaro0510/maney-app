@@ -1717,7 +1717,9 @@ function renderHomeBudget(){
 // ============================================================
 // 祝日（Google Calendar API）
 // ============================================================
-const GCAL_API_KEY = 'AIzaSyAoPkTweOLPp4rhjQ8EAPXX1KKdPOB77ws';
+// 祝日を読むための Google のキー（ブラウザで使うので公開される）。Google Cloud で、使えるサイト（keitaro0510.github.io・手元の 127.0.0.1:8765）と
+// 使える API（Google Calendar API だけ）に制限している。キーを替えたら、古いキーは Google Cloud で消す
+const GCAL_API_KEY = 'AIzaSyA23lyUb631P_fKLEa1LXDGtGTx8ARkj3o';
 const HOLIDAY_CAL_ID = 'ja.japanese%23holiday%40group.v.calendar.google.com';
 let holidayCache = {}; // { 'YYYY-MM-DD': '祝日名' }
 
