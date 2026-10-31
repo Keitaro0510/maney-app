@@ -82,17 +82,23 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
+  justify-content:center;
+  min-height:44px;
   gap:3px;
   cursor:pointer;
   padding:5px 2px;
+  border:0;
   border-radius:10px;
+  background:transparent;
   color:var(--color-text-secondary);
+  font:inherit;
   font-size:10px;
   transition:color .15s;
   user-select:none;
 }
 .nav-item.active{color:var(--color-brand);background:var(--color-brand-soft);font-weight:700}
 .nav-item svg{width:22px;height:22px;stroke-width:1.8}
+.nav-item:focus-visible{outline:2px solid var(--color-brand);outline-offset:-2px}
 /* ===== メインコンテンツ ===== */
 .app{
   max-width:640px;
@@ -911,27 +917,27 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   </div>
 </div>
 
-<nav class="bottom-nav">
-  <div class="nav-item active" id="nav-home" onclick="sw('home')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+<nav class="bottom-nav" aria-label="主要メニュー">
+  <button type="button" class="nav-item active" id="nav-home" aria-current="page" onclick="sw('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
     <span>ホーム</span>
-  </div>
-  <div class="nav-item" id="nav-cal" onclick="sw('cal')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+  </button>
+  <button type="button" class="nav-item" id="nav-cal" onclick="sw('cal')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     <span>カレンダー</span>
-  </div>
-  <div class="nav-item" id="nav-ledger" onclick="sw('ledger')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+  </button>
+  <button type="button" class="nav-item" id="nav-ledger" onclick="sw('ledger')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
     <span>家計簿</span>
-  </div>
-  <div class="nav-item" id="nav-shift" onclick="sw('shift')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+  </button>
+  <button type="button" class="nav-item" id="nav-shift" onclick="sw('shift')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>シフト</span>
-  </div>
-  <div class="nav-item" id="nav-task" onclick="sw('task')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>
+  </button>
+  <button type="button" class="nav-item" id="nav-task" onclick="sw('task')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>
     <span>タスク</span>
-  </div>
+  </button>
 </nav>
 
 <!-- タスクの編集（D3） -->
@@ -1542,7 +1548,7 @@ function sw(t){
   ['home','cal','ledger','shift','task','set'].forEach(x=>{
     document.getElementById('sec-'+x).classList.toggle('active',x===t);
     const n=document.getElementById('nav-'+x);
-    if(n)n.classList.toggle('active',x===t);
+    if(n){n.classList.toggle('active',x===t);if(x===t)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');}
   });
   // 設定は右上のボタンから開く（D10）。開いている間はボタンを色付きにする
   const sb=document.getElementById('settings-btn');
