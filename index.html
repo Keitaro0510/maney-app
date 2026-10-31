@@ -541,8 +541,9 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .wd-hist-item:last-child{border-bottom:none}
 /* ===== タブ切り替え（ページ内） ===== */
 .tab2{display:flex;gap:2px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px;margin-bottom:1rem}
-.tb2{flex:1;padding:7px 0;text-align:center;font-size:13px;border-radius:7px;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
+.tb2{flex:1;min-height:44px;padding:7px 0;text-align:center;font:inherit;font-size:13px;border:0;border-radius:7px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
 .tb2.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
+.tb2:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 /* ===== 家計簿 日付グループ ===== */
 .ldg-day-group{margin-bottom:8px}
 .ldg-day-header{
@@ -756,7 +757,11 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 <!-- LEDGER -->
 <div id="sec-ledger" class="sec">
   <div class="page-title">家計簿</div>
-  <div class="tab2" id="ldg-main-tabs"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div><div class="tb2" onclick="ldgTab('monthly')">毎月のお金</div></div>
+  <div class="tab2" id="ldg-main-tabs" role="group" aria-label="家計簿の表示">
+    <button type="button" class="tb2 active" aria-pressed="true" onclick="ldgTab('list')">記録一覧</button>
+    <button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('graph')">グラフ</button>
+    <button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('monthly')">毎月のお金</button>
+  </div>
   <div class="month-nav" id="ldg-month-nav">
     <button class="btn sm" onclick="ldgMonthPrev()">&#8592;</button>
     <div style="text-align:center"><div class="month-nav-label" id="ldg-month-label"></div></div>
@@ -777,7 +782,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <div id="ldg-list"></div>
   </div>
   <div id="ldg-graph-sec" style="display:none">
-    <div class="tab2"><div class="tb2 active" onclick="setLdgGraphMode('month')">月</div><div class="tb2" onclick="setLdgGraphMode('year')">年</div></div>
+    <div class="tab2" id="ldg-graph-mode-tabs" role="group" aria-label="グラフの期間"><button type="button" class="tb2 active" aria-pressed="true" onclick="setLdgGraphMode('month')">月</button><button type="button" class="tb2" aria-pressed="false" onclick="setLdgGraphMode('year')">年</button></div>
     <div class="card"><div class="st" id="cat-chart-title">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
     <div class="card"><div class="st" id="day-chart-title">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
   </div>
@@ -2334,7 +2339,7 @@ function saveLdgEdit(){
   st.ledger[ldeIdx]=entry;
   save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
 }
-function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph','monthly'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';document.getElementById('ldg-monthly-sec').style.display=t==='monthly'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();if(t==='monthly')renderMonthlyTab();}
+function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>{const selected=['list','graph','monthly'][i]===t;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected));});document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';document.getElementById('ldg-monthly-sec').style.display=t==='monthly'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();if(t==='monthly')renderMonthlyTab();}
 
 // ============================================================
 // 家計簿の対象年月ナビゲーション（記録一覧・グラフで共有）
@@ -2355,7 +2360,7 @@ function ldgYearPrev(){ldgListY--;renderLedgerAll_();}
 function ldgYearNext(){ldgListY++;renderLedgerAll_();}
 function setLdgGraphMode(mode){
   ldgGraphMode=mode;
-  document.querySelectorAll('#ldg-graph-sec .tab2 .tb2').forEach((el,i)=>el.classList.toggle('active',['month','year'][i]===mode));
+  document.querySelectorAll('#ldg-graph-mode-tabs .tb2').forEach((el,i)=>{const selected=['month','year'][i]===mode;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected));});
   updateLdgNav_();
   renderCharts();
 }
