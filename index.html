@@ -199,8 +199,11 @@ body{
 }
 .cday.today{border-color:#185FA5;border-width:2px}
 .cday.otherm{opacity:.25}
+.cday.selected{border:2px solid var(--color-brand);background:#E6F1FB;box-shadow:0 0 0 1px rgba(24,95,165,.12)}
+.cday:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .dnum{font-size:11px;font-weight:600;color:var(--color-text-secondary);margin-bottom:1px}
 .cday.today .dnum{color:#185FA5}
+.cal-detail-hint{margin:8px 2px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.45}
 /* ===== ピル ===== */
 .pill{font-size:8.5px;padding:1px 4px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .pill.s0{background:#E6F1FB;color:#185FA5}.pill.s1{background:#EAF3DE;color:#3B6D11}
@@ -726,6 +729,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <div id="cal-month-wrap">
       <div class="cal-grid" id="cal-hdr"></div>
       <div class="cal-grid" id="cal-body" style="margin-top:3px"></div>
+      <p class="cal-detail-hint" id="cal-detail-hint">日付を押すと、下にその日の予定・シフト・記録が表示されます。</p>
     </div>
     <div id="cal-list" style="display:none"></div>
   </div>
@@ -1800,7 +1804,8 @@ async function renderCalMonth(seq){
     plans.forEach(p=>{const c=planColor(p.color),t=planTimeOnDay(p,ds);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${t.start?t.start+' ':''}${p.title}</div>`;});
     // 支出・収入の金額はセルに出さない（D10。セルを整理する。日の詳細・週表示・家計簿では見られる）
 
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}')"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+    const selected=ds===selDay;
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayClick('${ds}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayClick('${ds}')}"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
   }
   document.getElementById('cal-body').innerHTML=html;
 }
@@ -1955,7 +1960,13 @@ function buildDay(ds, opts={}){
   return {items, inc, exp};
 }
 
-function closeDayDetail(){ document.getElementById('day-detail').style.display='none'; selDay=null; }
+function closeDayDetail(){
+  document.getElementById('day-detail').style.display='none';
+  document.querySelectorAll('#cal-body .cday.selected').forEach(cell=>{
+    cell.classList.remove('selected');cell.setAttribute('aria-expanded','false');
+  });
+  selDay=null;
+}
 
 // 日の詳細のボタンが指す記録（list の idx 番目）が、描いたときと同じ記録（id）かを確かめる。
 // 画面が古いと、番号が別の記録を指していることがある（別の端末で消した・読み込み直した）。
@@ -1970,6 +1981,11 @@ function sameRecord(list, idx, id){
 // 月表示タップ時の日詳細（#day-detail、常設カード）。時刻ガターは出さず現行の見た目を維持
 function dayClick(ds){
   selDay=ds;
+  document.querySelectorAll('#cal-body .cday').forEach(cell=>{
+    const selected=cell.dataset.day===ds;
+    cell.classList.toggle('selected',selected);
+    cell.setAttribute('aria-expanded',String(selected));
+  });
   const d=ds2d(ds), hd=getHoliday(ds);
   const {items}=buildDay(ds,{actions:true, showTime:false, tasks:'names'});
   let html=`<div class="st" style="display:flex;align-items:center;justify-content:space-between"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span><span onclick="jumpToDay('${ds}')" style="cursor:pointer;color:#185FA5;font-size:12px;font-weight:500;margin-right:12px">詳しく見る →</span><span onclick="closeDayDetail()" style="cursor:pointer;color:var(--color-text-secondary);font-size:18px;line-height:1">×</span></span></div>`;
