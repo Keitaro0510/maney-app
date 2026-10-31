@@ -87,7 +87,8 @@
         const card = l.card_id ? cardById.get(l.card_id) : null;
         return withMeta(stripNulls({
           date: l.date, amount: l.amount, name: l.name, cat: categoryById.get(l.category_id).name, type: l.kind,
-          pay: l.payment_method === 'card' ? card.name : '現金',
+          // 口座から直接払う支出（D11）は「口座」。収入は今までどおり「現金」（受け取り方は receive）
+          pay: l.payment_method === 'card' ? card.name : (l.kind === 'expense' && l.payment_method === 'bank') ? '口座' : '現金',
           memo: l.memo,
           cardIdx: card ? cardIndex.get(card.id) : null,
           receive: l.kind === 'income' ? (l.payment_method === 'bank' ? '口座振込' : '現金') : null,
@@ -108,14 +109,8 @@
         planCardIdx: p.card_id ? cardIndex.get(p.card_id) : null,
       }), p)),
 
-      fixedCosts: sorted(rows.fixed_costs).map(f => withMeta({
-        id: f.legacy_id != null ? f.legacy_id : createdMs(f.created_at),
-        name: f.name, amount: f.amount, day: f.day, type: f.kind,
-        pay: f.kind === 'income' ? 'income' : f.payment_method === 'card' ? `card-${cardIndex.get(f.card_id)}` : f.payment_method,
-      }, f)),
-
-      // 今のアプリは固定収入の金額と日を文字列で保存している
-      fixedIncs: sorted(rows.fixed_incomes).map(f => withMeta({ name: f.name, amount: String(f.amount), day: String(f.day) }, f)),
+      // 固定費（毎月のお金）は st に入れない。画面が行を直接読み書きする（D14。js/monthly-ui.js）。
+      // 固定収入（fixed_incomes）は固定費の「収入」にまとめた
 
       wds: sorted(rows.withdrawals).map(w => withMeta({ date: w.date, amount: w.amount }, w)),
 
@@ -312,7 +307,7 @@
         date: l.date, kind, amount: toInt(l.amount, '金額'), name: l.name, memo: l.memo ?? '',
         category_id: categoryIdFor(kind, l.cat, row.category_id),
         // 収入で受け取り方法がないものは、今のアプリの残高の計算と同じく口座
-        payment_method: kind === 'expense' ? (byCard ? 'card' : 'cash') : (l.receive === '現金' ? 'cash' : 'bank'),
+        payment_method: kind === 'expense' ? (byCard ? 'card' : l.pay === '口座' ? 'bank' : 'cash') : (l.receive === '現金' ? 'cash' : 'bank'),
         card_id: byCard ? cardIdAt(l.cardIdx, '家計簿') : null,
       };
     });
@@ -347,29 +342,7 @@
       };
     });
 
-    // ---------- 固定費（pay: bank・cash・card-<番号>・income） ----------
-    const fixedRows = byId(base.fixed_costs);
-    let fixedPosition = nextPosition(base.fixed_costs);
-    out.fixed_costs = (st.fixedCosts || []).map(f => {
-      const row = existing(fixedRows, f) || newRow(fixedPosition++);
-      const card = /^card-(\d+)$/.exec(f.pay || '');
-      return {
-        ...row,
-        name: f.name, amount: toInt(f.amount, '固定費の金額'), day: toInt(f.day, '固定費の日'), kind: f.type,
-        payment_method: f.type === 'income' ? null : card ? 'card' : f.pay,
-        card_id: f.type !== 'income' && card ? cardIdAt(Number(card[1]), '固定費') : null,
-        legacy_id: row.legacy_id ?? null,
-      };
-    });
-
-    // ---------- 固定収入・引き出し ----------
-    const incomeRows = byId(base.fixed_incomes);
-    let incomePosition = nextPosition(base.fixed_incomes);
-    out.fixed_incomes = (st.fixedIncs || []).map(f => ({
-      ...(existing(incomeRows, f) || newRow(incomePosition++)),
-      name: f.name, amount: toInt(f.amount, '固定収入の金額'), day: toInt(f.day, '固定収入の日'),
-    }));
-
+    // ---------- 引き出し（固定費は st を通さない。D14） ----------
     const withdrawalRows = byId(base.withdrawals);
     let withdrawalPosition = nextPosition(base.withdrawals);
     out.withdrawals = (st.wds || []).map(w => ({

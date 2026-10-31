@@ -4,13 +4,15 @@
 (function (root) {
   'use strict';
 
-  // 参照される側が先
+  // 参照される側が先。
+  // 固定収入（fixed_incomes）は、固定費の「収入」にまとめたので読まない（D14。DB の表は、新しいアプリが行き渡ってから消す）
   const TABLES = [
     'settings', 'cards', 'jobs', 'categories', 'ledger_entries', 'shifts', 'plans',
-    'fixed_costs', 'fixed_incomes', 'withdrawals', 'salary_actuals', 'card_bill_actuals', 'tasks',
+    'fixed_costs', 'withdrawals', 'salary_actuals', 'card_bill_actuals', 'tasks',
   ];
-  // 互換の st を通さず、画面が行を直接読み書きするテーブル（D1）。保存は saveRows の入り口から
-  const DIRECT_TABLES = ['tasks'];
+  // 互換の st を通さず、画面が行を直接読み書きするテーブル（D1）。保存は saveRows の入り口から。
+  // 固定費は「毎月のお金」の画面（D14。js/monthly-ui.js）から
+  const DIRECT_TABLES = ['fixed_costs', 'tasks'];
   // 互換の st（js/compat.js）が持つテーブル。今の画面の save() は、これだけを比べる
   const COMPAT_TABLES = TABLES.filter(t => !DIRECT_TABLES.includes(t));
 

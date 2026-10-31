@@ -3,7 +3,7 @@
 //
 // 数え方（D11）:
 // - 口座の残高だけを見る。現金の支出は口座から引かない（ATM で引き出したときに引く）
-// - 口座に入る: 給料（実績があれば実績、なければシフトからの見込み）・固定収入・固定費の「収入」・家計簿の口座振込の収入
+// - 口座に入る: 給料（実績があれば実績、なければシフトからの見込み）・毎月のお金（固定費）の「収入」・家計簿の口座振込の収入
 // - 口座から出る: 口座払いの固定費・カードの引き落とし（実績があれば実績、なければ集計）・ATM の引き出し・家計簿の口座払いの支出
 // - 予定の予算: カード払いはそのカードの集計に入れる。それ以外は予定の日に出ていくお金として、これから先の見込みにだけ数える。「済み」は数えない
 // - 固定費は「いつから・いつまで」の外の月を数えない（D14）
@@ -48,7 +48,6 @@
       shifts: rows.shifts || [],
       plans: rows.plans || [],
       fixedCosts: [...(rows.fixed_costs || [])].sort(byPosition),
-      fixedIncomes: [...(rows.fixed_incomes || [])].sort(byPosition),
       withdrawals: rows.withdrawals || [],
       salaryActuals: new Map((rows.salary_actuals || []).map(a => [`${a.job_id}|${a.pay_month.slice(0, 7)}`, a])),
       cardActuals: new Map((rows.card_bill_actuals || []).map(a => [`${a.card_id}|${a.bill_month.slice(0, 7)}`, a])),
@@ -167,9 +166,6 @@
     const add = (date, amount, kind, label, ref) => { if (amount) events.push({ date, amount, kind, label, ref }); };
     const months = monthsBetween(fromKey, toKey);
 
-    for (const fi of mdl.fixedIncomes) {
-      for (const { y, m } of months) { const d = monthKey(y, m, fi.day); if (inRange(d)) add(d, fi.amount, 'fixed_income', fi.name, fi.id); }
-    }
     for (const fc of mdl.fixedCosts) {
       const sign = fc.kind === 'income' ? 1 : fc.payment_method === 'bank' ? -1 : 0;
       if (!sign) continue; // 現金払いは口座の外、カード払いはカードの集計に入る

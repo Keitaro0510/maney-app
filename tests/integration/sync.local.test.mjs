@@ -11,7 +11,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { rowsToSt, stToRows, stripMeta } = require('../../js/compat.js');
-const { loadAllTables, diffRows, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp } = require('../../js/data.js');
+const { loadAllTables, diffRows, checkDirectChanges, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp, COMPAT_TABLES } = require('../../js/data.js');
 
 const URL_ = process.env.MANEY_LOCAL_API_URL;
 const ANON = process.env.MANEY_LOCAL_PUBLISHABLE_KEY || process.env.MANEY_LOCAL_ANON_KEY;
@@ -76,10 +76,17 @@ function device(supa) {
       edit(d.st);
       const now = new Date().toISOString();
       const before = d.rows();
-      const changes = diffRows(before, stToRows(d.st, before, { newId: () => crypto.randomUUID(), now }));
+      // index.html の save() と同じく、互換の st が持つテーブルだけを比べる（固定費・タスクは直接保存。D1・D14）
+      const changes = diffRows(before, stToRows(d.st, before, { newId: () => crypto.randomUUID(), now }), COMPAT_TABLES);
       if (changes.length) d.outbox.push(makeOp(changes, { id: crypto.randomUUID(), epoch: d.server.epoch, now, server: d.server, outbox: d.outbox }));
       d.rebuild();
       return changes;
+    },
+    // index.html の saveRows() と同じ（st を通さないテーブル）
+    saveRows(changes) {
+      const now = new Date().toISOString();
+      d.outbox.push(makeOp(checkDirectChanges(changes), { id: crypto.randomUUID(), epoch: d.server.epoch, now, server: d.server, outbox: d.outbox }));
+      d.rebuild();
     },
     // 送信待ちを送る。最初に止まった結果（競合など）を返す
     async flush() {
@@ -97,16 +104,15 @@ function device(supa) {
 
 // 新しいユーザーの st（index.html の st の初期値と同じ）
 const emptySt = () => ({
-  acctBase: 0, baseDate: '2026-10-01', shiftCloseDay: 31, shiftPayDay: 10, budget: 0, fixedIncs: [], jobs: [], shifts: [],
+  acctBase: 0, baseDate: '2026-10-01', shiftCloseDay: 31, shiftPayDay: 10, budget: 0, jobs: [], shifts: [],
   ledger: [], cards: [], wds: [], actualInputs: [], fuyouLimit: '1300000', otherIncome: 0, plans: [],
-  catExp: ['食費', '交通費', 'その他'], catInc: ['給与', 'その他'], fixedCosts: [],
+  catExp: ['食費', '交通費', 'その他'], catInc: ['給与', 'その他'],
 });
 
-// 新しい予定・固定費の st の id は登録日時から作るので、端末とサーバーで少し違う。それ以外を比べる
+// 新しい予定の st の id は登録日時から作るので、端末とサーバーで少し違う。それ以外を比べる
 const comparable = st => {
   const s = stripMeta(st);
   s.plans.forEach(p => delete p.id);
-  s.fixedCosts.forEach(f => delete f.id);
   return s;
 };
 
@@ -135,14 +141,18 @@ test('新しいユーザーが一通り記録し、読み込み直しても同�
   });
   a.save(st => {
     st.plans.push({ id: Date.now(), title: '旅行', date: '2026-11-01', dateStart: '2026-11-01', dateEnd: '2026-11-02', timeStart: '', timeEnd: '', budget: 30000, memo: '', color: 'green', done: false, planCardIdx: 0 });
-    st.fixedCosts.push({ id: Date.now(), name: '家賃', amount: 50000, day: 27, type: 'expense', pay: 'bank' });
-    st.fixedCosts.push({ id: Date.now(), name: '音楽', amount: 980, day: 2, type: 'expense', pay: 'card-0' });
-    st.fixedIncs.push({ name: '仕送り', amount: '30000', day: '25' });
     st.wds.push({ date: '2026-10-05', amount: 3000 });
     st.actualInputs.push({ type: 'card', cardKey: 'card-0-2026-10', cardIdx: 0, billY: 2026, billM: 9, actualAmount: 1200, estimatedAmount: 1200 });
     st.actualInputs.push({ type: 'shift', job: 'カフェ', salaryKey: 'カフェ|2026-11', date: '2026-11-25', actualAmount: 13000, estimatedAmount: 13000 });
   });
-  assert.equal(a.outbox.length, 5, '5つの操作が送信待ち');
+  // 毎月のお金（固定費）は st を通さずに保存する（D14）
+  const cardId = a.rows().cards[0].id;
+  a.saveRows([
+    { table: 'fixed_costs', action: 'insert', id: crypto.randomUUID(), row: { name: '家賃', amount: 50000, day: 27, kind: 'expense', payment_method: 'bank', card_id: null, start_month: '2026-10-01', end_month: null, position: 0 } },
+    { table: 'fixed_costs', action: 'insert', id: crypto.randomUUID(), row: { name: '音楽', amount: 980, day: 2, kind: 'expense', payment_method: 'card', card_id: cardId, start_month: null, end_month: null, position: 1 } },
+    { table: 'fixed_costs', action: 'insert', id: crypto.randomUUID(), row: { name: '仕送り', amount: 30000, day: 25, kind: 'income', payment_method: null, card_id: null, start_month: null, end_month: null, position: 2 } },
+  ]);
+  assert.equal(a.outbox.length, 6, '6つの操作が送信待ち');
   assert.equal((await a.flush()).kind, 'done');
   assert.equal(a.outbox.length, 0);
 
