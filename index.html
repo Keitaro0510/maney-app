@@ -548,7 +548,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .ldg-day-group{margin-bottom:8px}
 .ldg-day-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:8px 12px;
+  min-height:44px;padding:8px 12px;
   background:var(--color-background-primary);
   border:0.5px solid var(--color-border-tertiary);
   border-radius:var(--border-radius-md);
@@ -556,6 +556,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   user-select:none;
 }
 .ldg-day-header:active{opacity:.7}
+.ldg-day-header:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .ldg-day-header-left{display:flex;align-items:center;gap:10px}
 .ldg-day-date{font-size:14px;font-weight:600;min-width:60px}
 .ldg-day-summary{font-size:12px;color:var(--color-text-secondary)}
@@ -2427,17 +2428,17 @@ function renderLedger(){
 
     const groupId=`ldg-group-${date}`;
     return `<div class="ldg-day-group">
-      <div class="ldg-day-header" onclick="toggleLdgGroup('${groupId}')">
+      <div class="ldg-day-header" id="${groupId}-header" role="button" tabindex="0" aria-expanded="false" aria-controls="${groupId}" onclick="toggleLdgGroup('${groupId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('${groupId}')}">
         <div class="ldg-day-header-left">
           <span class="ldg-day-date">${dateStr}</span>
           <span class="ldg-day-summary">${summary}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="ldg-day-total">${totalHtml}</div>
-          <span class="ldg-day-arrow" id="${groupId}-arrow">▼</span>
+          <span class="ldg-day-arrow" id="${groupId}-arrow" aria-hidden="true">▼</span>
         </div>
       </div>
-      <div class="ldg-day-detail" id="${groupId}">${detailItems}</div>
+      <div class="ldg-day-detail" id="${groupId}" role="region" aria-labelledby="${groupId}-header">${detailItems}</div>
     </div>`;
   }).join('');
 
@@ -2447,9 +2448,11 @@ function renderLedger(){
 function toggleLdgGroup(id){
   const detail=document.getElementById(id);
   const arrow=document.getElementById(id+'-arrow');
+  const header=document.getElementById(id+'-header');
   const isOpen=detail.classList.contains('open');
   detail.classList.toggle('open',!isOpen);
   arrow.classList.toggle('open',!isOpen);
+  header.setAttribute('aria-expanded',String(!isOpen));
 }
 function delLedger(i){st.ledger.splice(i,1);save();renderLedger();renderLedgerMetrics();renderCal();refreshDayViews();renderHome();renderCardList();}
 function renderCatChart_(ml){
