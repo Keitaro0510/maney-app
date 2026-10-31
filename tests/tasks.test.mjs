@@ -86,13 +86,25 @@ test('開いたときの一覧: 期限切れ → 今日 → 2週間以内。期�
   ]);
 });
 
-test('開いたときの一覧を出すのは、その日にまだ出しておらず、出すタスクがあるとき', () => {
-  const list = [task({ due_date: '2026-11-02' })];
-  assert.equal(shouldShowStartup(null, TODAY, list), true, 'はじめて');
-  assert.equal(shouldShowStartup('2026-11-01', TODAY, list), true, '前の日に出した');
-  assert.equal(shouldShowStartup(TODAY, TODAY, list), false, '今日はもう出した');
-  assert.equal(shouldShowStartup(null, TODAY, [task()]), false, '期限のないタスクだけなら出さない');
-  assert.equal(shouldShowStartup(null, TODAY, []), false, 'タスクがなければ出さない');
+test('開いたときの一覧は、開くたびに出す。「今日は表示しない」の日と、出すタスクがないときは出さない', () => {
+  const tasks = [task({ due_date: '2026-11-02' })];
+  const now = NOW.getTime();
+  assert.equal(shouldShowStartup({ tasks, today: TODAY, now }), true, 'はじめて');
+  assert.equal(shouldShowStartup({ tasks, today: TODAY, lastShownAt: now - 60 * 1000, now }), true, '起動したときは、さっき出していても出す');
+  assert.equal(shouldShowStartup({ tasks, today: TODAY, hideDay: TODAY, now }), false, '今日は表示しない');
+  assert.equal(shouldShowStartup({ tasks, today: TODAY, hideDay: '2026-11-01', now }), true, '前の日に「今日は表示しない」にしても、次の日は出す');
+  assert.equal(shouldShowStartup({ tasks: [task()], today: TODAY, now }), false, '期限のないタスクだけなら出さない');
+  assert.equal(shouldShowStartup({ tasks: [], today: TODAY, now }), false, 'タスクがなければ出さない');
+});
+
+test('ほかのアプリから戻ってきたときは、前に出してから1時間以上たっていれば出す', () => {
+  const tasks = [task({ due_date: '2026-11-03' })];
+  const now = NOW.getTime();
+  const at = min => ({ tasks, today: TODAY, resume: true, lastShownAt: now - min * 60 * 1000, now });
+  assert.equal(shouldShowStartup(at(59)), false, '59分前に出した');
+  assert.equal(shouldShowStartup(at(60)), true, '1時間前に出した');
+  assert.equal(shouldShowStartup({ tasks, today: TODAY, resume: true, now }), true, 'まだ出していない');
+  assert.equal(shouldShowStartup({ ...at(120), hideDay: TODAY }), false, '今日は表示しないにしていれば、戻ってきても出さない');
 });
 
 test('期限の説明', () => {

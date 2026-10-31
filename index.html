@@ -470,6 +470,10 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .task-startup-group{font-size:13px;font-weight:700;color:var(--color-text-secondary);padding:12px 0 2px}
 .task-startup-group.task-overdue{color:var(--color-danger)}
 .task-startup-all{width:100%;margin-top:16px}
+/* 「今日は表示しない」（自動で出したときだけ。D10） */
+.task-startup-hide{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:6px;font-size:14px;color:var(--color-text-secondary);cursor:pointer}
+.task-startup-hide[hidden]{display:none}
+.task-startup-hide input{width:22px;height:22px;accent-color:var(--color-brand);margin:0}
 /* ===== アラートバー ===== */
 .abar{border-radius:var(--border-radius-md);padding:10px 13px;font-size:13px;margin-bottom:8px;font-weight:500}
 .abar.ok{background:#EAF3DE;color:#3B6D11}
@@ -1099,6 +1103,7 @@ button.color-swatch.sel{transform:none}
   </div>
   <div id="task-startup-list"></div>
   <button type="button" class="ui-btn task-startup-all" onclick="openTaskTabFromStartup()">すべてのタスクを見る</button>
+  <label class="task-startup-hide" hidden><input type="checkbox" id="task-startup-hide"/><span>今日は表示しない</span></label>
 </dialog>
 
 <!-- MODALS -->
@@ -1572,7 +1577,8 @@ scheduleDayCheck();
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState !== 'visible') return;
   todayWatcher.check();
-  resyncRemote();
+  // 戻ってきたとき: 読み込み直してから、開いたときのタスクの一覧を出すか決める（前に出してから1時間以上なら出す。D10）
+  resyncRemote().then(()=>maybeShowStartupTasks(true));
 });
 window.addEventListener('focus', ()=>todayWatcher.check());
 window.addEventListener('online', resyncRemote);
@@ -1592,7 +1598,7 @@ async function startWithUser(user){
   renderHome();
   renderCal();
   await loadRemote();
-  maybeShowStartupTasks(); // その日はじめて開いたときのタスクの一覧（D10）
+  maybeShowStartupTasks(); // 開いたときのタスクの一覧（D10。開くたびに出す）
   await flushOutbox();
   handleLegacyLocalData();
 }

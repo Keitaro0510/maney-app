@@ -1,7 +1,7 @@
 // タスクの画面（D3・D10）。計算は js/tasks.js（MoneyTasks）、部品は js/ui.js（MoneyUI）。
 // index.html の次のものを使う（呼ばれたときに読む）: currentRows・saveRows・server・currentUser・TODAY・STORAGE_PREFIX・sw
 // - タスクのタブ（#sec-task）: 追加・編集・完了・削除。完了したものは横線で残し、7日たったらいちばん下にたたむ
-// - その日はじめて開いたときの一覧（#task-startup）: 期限切れ・今日・2週間以内
+// - 開いたときの一覧（#task-startup）: 期限切れ・今日・2週間以内。開くたびに出し、「今日は表示しない」で止める
 // 完了できるのは、この2か所だけ（D10）。
 
 // 今のタスクの行（サーバーの写しに、送信待ちを重ねたもの）
@@ -171,27 +171,39 @@ function deleteTaskFromSheet(){
   });
 }
 
-// ---------- その日はじめて開いたときの一覧（D10） ----------
+// ---------- 開いたときの一覧（D10。ゲームのお知らせのように、開くたびに出す） ----------
 let startupGroups = []; // 開いたときに出すと決めたタスク（閉じるまで同じものを出す。完了にしても、横線で残す）
 let closeStartupFn = null;
-const startupKey = () => `${STORAGE_PREFIX}${currentUser.id}:tasksShownDay`;
+// 端末に覚えること: 最後に自動で出した時刻（tasksShownAt、ミリ秒）と、「今日は表示しない」にした日（tasksHideDay）
+const startupKey = name => `${STORAGE_PREFIX}${currentUser.id}:${name}`;
+function readStartup(name){ try{ return localStorage.getItem(startupKey(name)); }catch(e){ return null; } }
+function writeStartup(name, value){ try{ if(value == null) localStorage.removeItem(startupKey(name)); else localStorage.setItem(startupKey(name), value); }catch(e){} }
 
-// その日まだ出していなくて、出すタスクがあれば出す。起動したとき・日付が変わったときに呼ぶ
-function maybeShowStartupTasks(){
+// 出すタスクがあれば出す。起動したとき・日付が変わったときと、ほかのアプリから戻ってきたとき（resume）に呼ぶ。
+// 戻ってきたときは、前に出してから1時間以上たっていれば出す（MoneyTasks.shouldShowStartup）
+function maybeShowStartupTasks(resume = false){
   if(!currentUser || !server) return;
   if(document.querySelector('.mbg.open, dialog[open]')) return; // ほかの入力の画面が開いているときは出さない
-  let last = null;
-  try{ last = localStorage.getItem(startupKey()); }catch(e){}
-  const tasks = taskRows();
-  if(!MoneyTasks.shouldShowStartup(last, TODAY, tasks)) return;
-  try{ localStorage.setItem(startupKey(), TODAY); }catch(e){}
-  openStartupTasks();
+  const shown = readStartup('tasksShownAt');
+  const show = MoneyTasks.shouldShowStartup({
+    tasks: taskRows(), today: TODAY, hideDay: readStartup('tasksHideDay'),
+    resume, lastShownAt: shown ? Number(shown) : null, now: Date.now(),
+  });
+  if(!show) return;
+  writeStartup('tasksShownAt', String(Date.now()));
+  openStartupTasks(undefined, { auto: true });
 }
 
-// 開いたときの一覧を開く（ホームの1行からも開く。opener はそのボタン）。出すタスクは、開いたときに決める
-function openStartupTasks(opener){
+// 開いたときの一覧を開く（ホームの1行からも開く。opener はそのボタン）。出すタスクは、開いたときに決める。
+// auto: 自動で出したとき。下に「今日は表示しない」を出す。チェックしたら（その時に覚える）、その日はもう自動では出さない
+function openStartupTasks(opener, { auto = false } = {}){
   startupGroups = MoneyTasks.startupGroups(taskRows(), TODAY).map(g => ({ ...g, ids: g.tasks.map(t => t.id) }));
   renderStartupTasks();
+  const hide = document.getElementById('task-startup-hide');
+  hide.checked = false;
+  hide.closest('label').hidden = !auto;
+  const day = TODAY;
+  hide.onchange = () => writeStartup('tasksHideDay', hide.checked ? day : null);
   closeStartupFn = MoneyUI.openSheet(document.getElementById('task-startup'), opener);
 }
 
