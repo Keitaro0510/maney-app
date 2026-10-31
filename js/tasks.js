@@ -6,6 +6,7 @@
   const DAY = 24 * 60 * 60 * 1000;
   const FOLD_DAYS = 7;   // 完了して7日たったら「完了したタスク」にたたむ（D3）
   const SOON_DAYS = 14;  // 開いたときの一覧は、今日から2週間以内（D10）
+  const RESUME_GAP = 60 * 60 * 1000; // ほかのアプリから戻ってきたときは、前に出してから1時間以上たっていたら出す（D10）
 
   // 'YYYY-MM-DD' を、その日の0時（端末の時刻）にする
   const toDate = key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -74,9 +75,16 @@
     return groups.filter(g => g.tasks.length);
   }
 
-  // 開いたときの一覧を出すか: その日にまだ出しておらず、出すタスクがあるとき
-  function shouldShowStartup(lastShownDay, today, tasks) {
-    return lastShownDay !== today && startupGroups(tasks, today).length > 0;
+  // 開いたときの一覧を出すか（D10。2026-10-31 に「ゲームのお知らせのように開くたび」に書き直した）
+  // - 出すタスク（期限切れ・今日・2週間以内）がなければ出さない
+  // - 「今日は表示しない」にした日（hideDay が今日）は出さない
+  // - ほかのアプリから戻ってきたとき（resume）は、前に出してから1時間以上たっていれば出す。起動したとき・日付が変わったときは出す
+  // lastShownAt・now はミリ秒（Date.now()）。lastShownAt がなければ、まだ出していない
+  function shouldShowStartup({ tasks, today, hideDay = null, resume = false, lastShownAt = null, now = Date.now() }) {
+    if (hideDay === today) return false;
+    if (!startupGroups(tasks, today).length) return false;
+    if (resume && lastShownAt != null && now - lastShownAt < RESUME_GAP) return false;
+    return true;
   }
 
   // 期限の短い説明（一覧の行の下に出す）。done: 完了したタスク（期限を過ぎても「すぎています」と出さない）
