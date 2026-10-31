@@ -24,6 +24,8 @@
 <script src="js/tasks-ui.js"></script>
 <script src="js/monthly.js"></script>
 <script src="js/monthly-ui.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/backup-ui.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -631,6 +633,18 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .top-actions .icon-btn.active{background:var(--color-brand-soft);color:var(--color-brand);border-color:transparent}
 /* ===== 設定のいちばん下のアカウント（D10）===== */
 .account-email{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;overflow-wrap:anywhere}
+/* ===== データの書き出し・読み込み（D13。js/backup-ui.js）===== */
+.backup-note{font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6}
+.backup-actions{display:flex;gap:8px;flex-wrap:wrap}
+.backup-err{font-size:13px;color:var(--color-danger);margin-top:8px;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere}
+.import-file{font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:10px;overflow-wrap:anywhere}
+.import-counts{width:100%;border-collapse:collapse;font-size:14px}
+.import-counts th,.import-counts td{padding:6px 4px;border-bottom:0.5px solid var(--color-border-tertiary);text-align:right;font-weight:400}
+.import-counts thead th{font-size:12px;color:var(--color-text-secondary)}
+.import-counts th[scope=row]{text-align:left}
+.import-counts tr.less td:nth-child(2){color:var(--color-danger);font-weight:700}
+.import-warn{font-size:13px;line-height:1.6;margin-top:12px;padding:10px 12px;border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+.import-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
 /* ===== 同期の通知（保存の失敗・別の端末との競合） ===== */
 .sync-banner{
   position:fixed;left:0;right:0;
@@ -906,6 +920,16 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   </div>
   <button class="btn primary full" onclick="saveSetting()" style="margin-top:4px;background:#185FA5">設定を保存</button>
   <div class="card" style="margin-top:10px"><div class="st">ATM引き出し履歴</div><div id="wd-hist"></div></div>
+  <!-- データの書き出し・読み込み（D13。js/backup-ui.js） -->
+  <div class="card"><div class="st">データの書き出し・読み込み</div>
+    <div class="backup-note">すべてのデータを JSON のファイルに書き出します。何かあったときに、このファイルを読み込むと、書き出したときの状態に戻せます。</div>
+    <div class="backup-actions">
+      <button type="button" class="ui-btn" onclick="exportBackup()">書き出す</button>
+      <button type="button" class="ui-btn" id="backup-import-btn" onclick="pickBackupFile()">ファイルから読み込む</button>
+    </div>
+    <input type="file" id="backup-file" accept=".json,application/json" hidden onchange="readBackupFile(this)"/>
+    <div class="backup-err" id="backup-err" role="alert" hidden></div>
+  </div>
   <!-- アカウント（いちばん下。D10） -->
   <div class="card"><div class="st">アカウント</div>
     <div class="account-email">ログイン中: <span id="account-email"></span></div>
@@ -999,6 +1023,22 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <button type="button" class="ui-btn danger" onclick="deleteMonthly()">削除</button>
     <div class="monthly-hint">まちがえて作ったときだけ。前の月の分も計算から消えます</div>
   </section>
+</dialog>
+
+<!-- ファイルから読み込む前の確かめ（D13。js/backup-ui.js） -->
+<dialog class="sheet" id="import-sheet" aria-labelledby="import-sheet-title" aria-describedby="import-warn">
+  <div class="sheet-head">
+    <h2 id="import-sheet-title">ファイルから読み込む</h2>
+    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeImportSheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="import-file" id="import-file"></div>
+  <table class="import-counts" id="import-counts"></table>
+  <div class="import-warn" id="import-warn">今のデータは、すべてこのファイルの中身に置き換わります。ファイルを書き出したあとに記録した分は消えます。読み込む直前の状態は、サーバーに写しとして90日残ります。</div>
+  <div class="backup-err" id="import-err" role="alert" hidden></div>
+  <div class="import-actions">
+    <button type="button" class="ui-btn" id="import-cancel" onclick="closeImportSheet()">やめる</button>
+    <button type="button" class="ui-btn danger" id="import-run" onclick="runImport()">置き換える</button>
+  </div>
 </dialog>
 
 <!-- その日はじめて開いたときの一覧（D10）。×で閉じるだけ -->
@@ -1278,7 +1318,7 @@ function downloadJson(name, text){
   const blob = new Blob([text], {type: 'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${name}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `${name}-${TODAY}.json`; // 端末の時刻での日付（toISOString の日付は、朝9時までは前の日になる）
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }

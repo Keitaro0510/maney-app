@@ -84,13 +84,14 @@
       box.classList.remove('show');
       box.replaceChildren();
     };
-    box.replaceChildren(
+    // replaceChildren は null を「null」という文字にしてしまうので、ボタンがないときは渡さない
+    box.replaceChildren(...[
       el('span', { className: 'toast-msg', textContent: message }),
       actionLabel ? el('button', {
         type: 'button', className: 'ui-btn toast-action', textContent: actionLabel,
         onclick: () => { close(); if (onAction) onAction(); },
       }) : null,
-    );
+    ].filter(Boolean));
     box.classList.add('show');
     toastTimer = setTimeout(close, ms);
     return close;
