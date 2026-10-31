@@ -159,15 +159,10 @@ body{
 .up-amount{font-weight:700;white-space:nowrap}
 .up-amount.in{color:#3B6D11}.up-amount.out{color:#A32D2D}
 /* くわしく（ふだんはたたむ）。下に内容が開くことを、矢印と説明で先に伝える */
-.home-more summary{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;font-size:13px;color:var(--color-text-secondary);list-style:none}
-.home-more summary::-webkit-details-marker{display:none}
-.home-more summary::marker{content:''}
-.home-more-copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+.home-more-btn{min-height:56px}
+.home-more-copy{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
 .home-more-title{font-weight:700;color:var(--color-text-primary)}
 .home-more-hint{font-size:12px;color:var(--color-text-secondary)}
-.home-more-chevron{flex:0 0 auto;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--color-background-secondary);font-size:18px;line-height:1;transition:transform .2s ease}
-.home-more[open] .home-more-chevron{transform:rotate(180deg)}
-.home-more[open] summary{margin-bottom:10px}
 /* ===== ホームの判断・記録導線 ===== */
 .home-actions{display:grid;grid-template-columns:1.35fr 1fr .7fr;gap:8px;margin-bottom:.75rem}
 .home-actions .btn{margin:0;min-height:46px}
@@ -761,25 +756,11 @@ button.color-swatch.sel{transform:none}
     <div id="home-upcoming"></div>
   </div>
   <!-- くわしく（ふだんはたたむ。開いたときに描く） -->
-  <details class="card home-more" id="home-more" ontoggle="if(this.open)renderHomeMore()">
-    <summary>
-      <span class="home-more-copy"><span class="home-more-title">くわしく見る</span><span class="home-more-hint">残高の推移・今月の収支・予算を表示</span></span>
-      <span class="home-more-chevron" aria-hidden="true">⌄</span>
-    </summary>
-    <div class="st">残高推移（今後90日）</div>
-    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">給料・カード・固定費・予定（カード払い以外）を入れた見込み</div>
-    <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
-    <div class="graph-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>口座残高</div>
-      <div class="legend-item" style="display:flex;align-items:center;gap:4px"><div style="width:16px;height:2px;border-top:2px dashed rgba(163,45,45,0.4)"></div>¥0ライン</div>
-    </div>
-    <div id="balance-warn" style="margin-top:8px"></div>
-    <div class="st" style="margin-top:18px">今月の収支見通し</div>
-    <div id="forecast-content"></div>
-    <div class="st" style="margin-top:18px">今月の予算の進み</div>
-    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-secondary)"><span id="h-budlbl">予算 ¥0</span><span id="h-budused"></span></div>
-    <div class="pwrap"><div class="pbar" id="h-prog" style="width:0%;background:#3B6D11"></div></div>
-  </details>
+  <!-- くわしく（D11）: 押すと下から画面が出る。中身は #home-more（#71） -->
+  <button type="button" class="home-tasks home-more-btn" id="home-more-btn" aria-haspopup="dialog" onclick="openHomeMore(this)">
+    <span class="home-more-copy"><span class="home-more-title">くわしく見る</span><span class="home-more-hint">残高の推移・今月の収支・予算</span></span>
+    <span class="home-tasks-more" aria-hidden="true">›</span>
+  </button>
 </div>
 
 <!-- CALENDAR -->
@@ -1001,6 +982,27 @@ button.color-swatch.sel{transform:none}
     <span>タスク</span>
   </button>
 </nav>
+
+<!-- ホームの「くわしく」（D11・#71）: 残高の推移・今月の収支見通し・予算の進み -->
+<dialog class="sheet home-more" id="home-more" aria-labelledby="home-more-title">
+  <div class="sheet-head">
+    <h2 id="home-more-title">くわしく</h2>
+    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeHomeMore()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="st">残高推移（今後90日）</div>
+  <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">給料・カード・固定費・予定（カード払い以外）を入れた見込み</div>
+  <div class="chart-wrap"><canvas id="balance-chart"></canvas></div>
+  <div class="graph-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>口座残高</div>
+    <div class="legend-item" style="display:flex;align-items:center;gap:4px"><div style="width:16px;height:2px;border-top:2px dashed rgba(163,45,45,0.4)"></div>¥0ライン</div>
+  </div>
+  <div id="balance-warn" style="margin-top:8px"></div>
+  <div class="st" style="margin-top:18px">今月の収支見通し</div>
+  <div id="forecast-content"></div>
+  <div class="st" style="margin-top:18px">今月の予算の進み</div>
+  <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-secondary)"><span id="h-budlbl">予算 ¥0</span><span id="h-budused"></span></div>
+  <div class="pwrap"><div class="pbar" id="h-prog" style="width:0%;background:#3B6D11"></div></div>
+</dialog>
 
 <!-- タスクの編集（D3） -->
 <dialog class="sheet" id="task-sheet" aria-labelledby="task-sheet-title">
@@ -1787,8 +1789,12 @@ function renderHomeUpcoming(rows){
   }).join('');
 }
 
-// くわしく（開いたときだけ描く。グラフは見えていないと大きさが決まらないため）
+// くわしく（画面を開いているときだけ描く。グラフは見えていないと大きさが決まらないため）
 function renderHomeMore(){renderBalanceChart();renderForecast();renderHomeBudget();}
+// 「くわしく」の画面（下から出る）を開く。グラフは、画面が見えてから描く
+let closeHomeMoreFn=null;
+function openHomeMore(opener){closeHomeMoreFn=MoneyUI.openSheet(document.getElementById('home-more'),opener);renderHomeMore();}
+function closeHomeMore(){if(closeHomeMoreFn)closeHomeMoreFn();}
 function renderHomeBudget(){
   const y=gY(),m=gM(),lexp=monthLedger(y,m).filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);
   const bud=st.budget||0,pct=bud>0?Math.min(100,Math.round(lexp/bud*100)):0;
