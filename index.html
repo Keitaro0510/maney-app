@@ -237,6 +237,9 @@ body{
 /* ===== リストアイテム ===== */
 .ri{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 .ri:last-child{border-bottom:none}
+.ri{gap:8px}
+.ri-note{flex:1;min-width:0;text-align:right;font-size:13px;color:var(--color-text-secondary);line-height:1.4}
+.btn.sm{white-space:nowrap}
 /* 時刻ガター付きリストアイテム（日/週ビュー用。.riは中身のflexレイアウトのみ担当し、
    padding/border-bottomは外側の.ri-with-timeが持つ） */
 .ri-with-time{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
@@ -1651,6 +1654,17 @@ const calcH=(s,e,rest)=>{const[sh,sm]=s.split(':').map(Number);const[eh,em]=e.sp
 // ============================================================
 // カードサイクル
 // ============================================================
+// その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
+function cardBillAmount(card, ci, y, m){
+  const actual = getActualCard(ci, y, m);
+  return actual ? parseInt(actual.actualAmount) : cardCycleForBillMonth(card, ci, y, m).amount;
+}
+// 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
+function ledgerPayLabel(l){
+  if(l.type === 'income') return l.receive || '現金';
+  const card = l.cardIdx >= 0 ? st.cards[l.cardIdx] : null;
+  return card ? card.name : (l.pay || '');
+}
 // カードの締め日を実際の日付で取得（31=末日として扱う）
 function cardCloseDay(card, y, m){
   const cl = parseInt(card.closeDay);
@@ -1711,7 +1725,7 @@ function planTimeOnDay(p, ds){
   return {start:'',end:'',min:-1};
 }
 
-function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">¥${acct.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・固定費</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>=0?'＋':''} ¥${forecast.toLocaleString()}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
+function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">${yenSigned(acct)}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・固定費</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>0?'+':''}${yenSigned(forecast)}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
 
 // お金を「-¥1,200」「¥3,400」の形にする（マイナスはそのまま出す。D11）
 const yenSigned=v=>(v<0?'-':'')+'¥'+Math.abs(v).toLocaleString();
@@ -1725,7 +1739,7 @@ function renderHome(){const y=gY(),m=gM(),d=gD();
   balEl.textContent=yenSigned(bal);balEl.classList.toggle('negative',bal<0);
   renderHomeTasks();
   // 今日のお知らせ（作り方は前と同じ）
-  let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(monthDay(y,m,parseInt(card.billDay))===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(card.name)}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(f.amount>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(card.name)}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(cardCloseDay(card,y,m)===d)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(card.name)}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(job.name)}</strong> の締め日 — ${jPayD}日払い</div>`;});monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===d).forEach(fc=>{ahtml+=fc.kind==='income'?`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 入金 ¥${fc.amount.toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> ${monthlyPayLabel(fc)} ¥${fc.amount.toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${MoneyUI.escapeHtml(s.job)}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${MoneyUI.escapeHtml(p.title)}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;
+  let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(monthDay(y,m,parseInt(card.billDay))===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(card.name)}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(f.amount>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(card.name)}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(!card._deleted&&cardCloseDay(card,y,m)===d)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(card.name)}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(job.name)}</strong> の締め日 — ${jPayD}日払い</div>`;});monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===d).forEach(fc=>{ahtml+=fc.kind==='income'?`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 入金 ¥${fc.amount.toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> ${monthlyPayLabel(fc)} ¥${fc.amount.toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${MoneyUI.escapeHtml(s.job)}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${MoneyUI.escapeHtml(p.title)}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;
   renderHomeUpcoming(rows);
   if(document.getElementById('home-more').open)renderHomeMore();
 }
@@ -1848,7 +1862,7 @@ async function renderCalMonth(seq){
     const shifts=other?[]:(byDay[day]||[]),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
     const hasFc=!other&&fcDays.has(day);
     const isPay=!other&&payD.includes(day),isShime=!other&&shimeD.includes(day);
-    const isClose=!other&&st.cards.some(c=>cardCloseDay(c,calY,calM)===day),isBill=!other&&st.cards.some(c=>monthDay(calY,calM,parseInt(c.billDay))===day);
+    const isClose=!other&&st.cards.some(c=>!c._deleted&&cardCloseDay(c,calY,calM)===day),isBill=!other&&st.cards.some((c,ci)=>monthDay(calY,calM,parseInt(c.billDay))===day&&(!c._deleted||cardBillAmount(c,ci,calY,calM)>0));
 
     // 日曜・祝日は赤、土曜は青で日付表示
     const dnumColor=holiday||isSun?'#A32D2D':isSat?'#185FA5':'var(--color-text-secondary)';
@@ -1977,15 +1991,16 @@ function buildDay(ds, opts={}){
   });
   st.cards.forEach((card,ci)=>{
     const cl=cardCloseDay(card,y,m),billD=monthDay(y,m,parseInt(card.billDay));
-    if(day===cl){
+    if(!card._deleted&&day===cl){
       const billM=addM(y,m,1);
       const isPending=new Date(y,m,cl)>=new Date(gY(),gM(),gD());
-      push(-1,'',`<div class="ri"><span class="badge bcard">${card.name}</span><span style="font-size:13px;color:var(--color-text-secondary)">${isPending?'集計中 ':''}締め日 → ${billM.m+1}月${monthDay(billM.y,billM.m,parseInt(card.billDay))}日引き落とし</span></div>`);
+      push(-1,'',`<div class="ri"><span class="badge bcard">${MoneyUI.escapeHtml(card.name)}</span><span class="ri-note">${isPending?'集計中・':''}締め日（${billM.m+1}月${monthDay(billM.y,billM.m,parseInt(card.billDay))}日に引き落とし）</span></div>`);
     }
     if(day===billD){
       const actual=getActualCard(ci,y,m);
       const billCycle=cardCycleForBillMonth(card,ci,y,m);
       const amt=actual?parseInt(actual.actualAmount):billCycle.amount;
+      if(card._deleted&&!amt)return; // 削除したカードは、引き落とす分があるときだけ出す
       const billDate=new Date(y,m,billD),todayDate=new Date(gY(),gM(),gD());
       const isFuture=billDate>todayDate;
       push(-1,'',`<div class="ri"><div><span class="badge ${isFuture?'bpending':'bfixed'}">${card.name}</span>${actual?'<span class="act-badge">実額</span>':''}<div class="bill-label">${isFuture?'引き落とし予定日':'引き落とし日'}</div><div class="bill-label">${fmtMD(billCycle.cs)}〜${fmtMD(billCycle.ce)} の利用分</div></div><span style="font-size:14px;font-weight:600;color:${isFuture?'#BA7517':'#A32D2D'}">¥${amt.toLocaleString()}</span></div>`);
@@ -2015,12 +2030,11 @@ function buildDay(ds, opts={}){
     push(hm2min(s.start),s.start,`<div class="ri"><div><div style="display:flex;align-items:center;gap:8px"><span class="badge" style="background:${c.bg};color:${c.fg}">${s.job}</span><span style="font-size:13px">${s.start}〜${s.end}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費 ¥${r.transport.toLocaleString()}`:''}</div></div><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span></div>`);
   });
   lds.forEach(l=>{
-    const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;
     const amt=parseInt(l.amount);
     if(l.type==='income')inc+=amt; else exp+=amt;
     const lidx=st.ledger.indexOf(l),guard=`sameRecord(st.ledger,${lidx},'${l._id}')`;
     const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openLdgEdit(${lidx})">編集</button><button class="btn sm del" onclick="${guard}&&delLedger(${lidx})">削除</button>`:'';
-    push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span><div><div style="font-size:14px">${l.name}</div><div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
+    push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${MoneyUI.escapeHtml(l.cat)}</span><div style="min-width:0"><div style="font-size:14px">${MoneyUI.escapeHtml(l.name)}</div><div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(ledgerPayLabel(l))}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
   });
 
   items.sort((a,b)=>a.sort-b.sort); // 終日(-1)が先頭、以降は時刻昇順。同値はstable sortでpush順を維持
@@ -2195,7 +2209,7 @@ function saveShift(){const job=document.getElementById('m-job').value,start=docu
 function closeShiftModal(){document.getElementById('shift-mbg').classList.remove('open');}
 function shiftListPrev(){const nm=addM(shiftListY,shiftListM,-1);shiftListY=nm.y;shiftListM=nm.m;renderShiftList();}
 function shiftListNext(){const nm=addM(shiftListY,shiftListM,1);shiftListY=nm.y;shiftListM=nm.m;renderShiftList();}
-function renderShiftList(){const y=shiftListY,m=shiftListM;const ms=monthShifts(y,m).sort((a,b)=>a.date.localeCompare(b.date));const isCurrentMonth=(y===gY()&&m===gM());const payM=addM(y,m,1);const totalInc=ms.reduce((a,s)=>a+calcShiftInc(s).total,0);document.getElementById('shift-list-month-label').textContent=`${y}年${m+1}月のシフト`;const jobsInMonth=[...new Set(ms.map(s=>s.job))];const payLabel=jobsInMonth.length?jobsInMonth.map(jn=>{const job=st.jobs.find(j=>j.name===jn);return `${jn} ${payM.m+1}月${monthDay(payM.y,payM.m,jobPayDay(job))}日`;}).join('　'):`${payM.m+1}月${monthDay(payM.y,payM.m,parseInt(st.shiftPayDay)||10)}日払い`;document.getElementById('shift-list-month-sub').textContent=`${ms.length}件　¥${totalInc.toLocaleString()}　→　${payLabel}`;document.getElementById('shift-list-month-label').style.color=isCurrentMonth?'#185FA5':'var(--color-text-primary)';document.getElementById('shift-met-month-label').textContent=`${m+1}月出勤`;document.getElementById('s-days').textContent=ms.length+'日';document.getElementById('s-hours').textContent=ms.reduce((a,s)=>a+calcH(s.start,s.end,s.rest),0).toFixed(1)+'h';document.getElementById('s-income').textContent='¥'+totalInc.toLocaleString();if(!ms.length){document.getElementById('shift-list').innerHTML='<div class="empty">この月のシフトなし</div>';return;}document.getElementById('shift-list').innerHTML=ms.map(s=>{const c=jobColorByName(s.job),d=ds2d(s.date),ri=st.shifts.indexOf(s),r=calcShiftInc(s);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:13px;color:var(--color-text-secondary)">${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})</span><span class="badge" style="background:${c.bg};color:${c.fg}">${s.job}</span><div><div style="font-size:13px">${s.start}〜${s.end}</div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費¥${r.transport.toLocaleString()}`:''}</div></div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span><button class="btn sm del" onclick="delShift(${ri})">削除</button></div></div>`;}).join('');}
+function renderShiftList(){const y=shiftListY,m=shiftListM;const ms=monthShifts(y,m).sort((a,b)=>a.date.localeCompare(b.date));const isCurrentMonth=(y===gY()&&m===gM());const payM=addM(y,m,1);const totalInc=ms.reduce((a,s)=>a+calcShiftInc(s).total,0);document.getElementById('shift-list-month-label').textContent=`${y}年${m+1}月のシフト`;const jobsInMonth=[...new Set(ms.map(s=>s.job))];const payLabel=jobsInMonth.length?jobsInMonth.map(jn=>{const job=st.jobs.find(j=>j.name===jn);return `${jn} ${payM.m+1}月${monthDay(payM.y,payM.m,jobPayDay(job))}日`;}).join('　'):`${payM.m+1}月${monthDay(payM.y,payM.m,parseInt(st.shiftPayDay)||10)}日払い`;document.getElementById('shift-list-month-sub').textContent=`${ms.length}件　¥${totalInc.toLocaleString()}　→　${payLabel}`;document.getElementById('shift-list-month-label').style.color=isCurrentMonth?'#185FA5':'var(--color-text-primary)';document.getElementById('shift-met-month-label').textContent=`${m+1}月出勤`;document.getElementById('s-days').textContent=ms.length+'日';document.getElementById('s-hours').textContent=ms.reduce((a,s)=>a+calcH(s.start,s.end,s.rest),0).toFixed(1)+'h';document.getElementById('s-income').textContent='¥'+totalInc.toLocaleString();if(!ms.length){document.getElementById('shift-list').innerHTML='<div class="empty">この月のシフトなし</div>';return;}document.getElementById('shift-list').innerHTML=ms.map(s=>{const c=jobColorByName(s.job),d=ds2d(s.date),ri=st.shifts.indexOf(s),r=calcShiftInc(s);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0"><span style="font-size:13px;color:var(--color-text-secondary)">${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})</span><span class="badge" style="background:${c.bg};color:${c.fg}">${MoneyUI.escapeHtml(s.job)}</span><div><div style="font-size:13px">${s.start}〜${s.end}</div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費¥${r.transport.toLocaleString()}`:''}</div></div></div><div style="display:flex;align-items:center;gap:8px;flex:none"><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span><button class="btn sm del" onclick="delShift(${ri})">削除</button></div></div>`;}).join('');}
 function renderShiftSection(){renderFuyou();renderSalaryTable();renderMonthBars();const y=gY(),m=gM(),ms=monthShifts(y,m),totalInc=ms.reduce((a,s)=>a+calcShiftInc(s).total,0),transport=ms.reduce((a,s)=>a+calcShiftInc(s).transport,0);document.getElementById('year-confirmed').textContent='¥'+yearConfirmedIncome().toLocaleString();document.getElementById('year-estimated').textContent='¥'+yearEstimatedIncome().toLocaleString();document.getElementById('year-this-month').textContent='¥'+(totalInc-transport).toLocaleString();document.getElementById('year-transport').textContent='¥'+transport.toLocaleString();renderShiftList();renderJobList();}
 function renderSalaryTable(){
   const y=gY(),el=document.getElementById('salary-table');
@@ -2427,7 +2441,7 @@ function renderLedgerAll_(){
   if(document.getElementById('ldg-graph-sec').style.display!=='none')renderCharts();
 }
 
-function renderLedgerMetrics(){const ml=monthLedger(ldgListY,ldgListM);const exp=ml.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);const inc=ml.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('ldg-exp').textContent='¥'+exp.toLocaleString();document.getElementById('ldg-inc').textContent='¥'+inc.toLocaleString();const bal=inc-exp;const bEl=document.getElementById('ldg-bal');bEl.textContent=(bal>=0?'+':'')+'¥'+bal.toLocaleString();bEl.style.color=bal>=0?'#3B6D11':'#A32D2D';}
+function renderLedgerMetrics(){const ml=monthLedger(ldgListY,ldgListM);const exp=ml.filter(l=>l.type==='expense').reduce((a,l)=>a+parseInt(l.amount),0);const inc=ml.filter(l=>l.type==='income').reduce((a,l)=>a+parseInt(l.amount),0);document.getElementById('ldg-exp').textContent='¥'+exp.toLocaleString();document.getElementById('ldg-inc').textContent='¥'+inc.toLocaleString();const bal=inc-exp;const bEl=document.getElementById('ldg-bal');bEl.textContent=(bal>0?'+':'')+yenSigned(bal);bEl.style.color=bal>=0?'#3B6D11':'#A32D2D';}
 function renderLedger(){
   const ml=monthLedger(ldgListY,ldgListM).sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('ldg-list');
@@ -2464,13 +2478,12 @@ function renderLedger(){
     // 詳細アイテム
     const detailItems=items.map(l=>{
       const ri=st.ledger.indexOf(l);
-      const cn=l.cardIdx>=0&&st.cards[l.cardIdx]?st.cards[l.cardIdx].name:null;
       return `<div class="ri">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="badge ${l.type==='expense'?'bexp':'binc'}">${l.cat}</span>
+          <span class="badge ${l.type==='expense'?'bexp':'binc'}">${MoneyUI.escapeHtml(l.cat)}</span>
           <div>
-            <div style="font-size:14px">${l.name}</div>
-            <div style="font-size:12px;color:var(--color-text-secondary)">${cn||l.pay||''}${l.memo?' · '+l.memo:''}</div>
+            <div style="font-size:14px">${MoneyUI.escapeHtml(l.name)}</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(ledgerPayLabel(l))}${l.memo?' · '+MoneyUI.escapeHtml(l.memo):''}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">

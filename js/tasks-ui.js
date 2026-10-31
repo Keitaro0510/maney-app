@@ -22,7 +22,7 @@ function taskRow(t){
   const { el, checkRow } = MoneyUI;
   const overdue = !t.completed_at && t.due_date && MoneyTasks.daysBetween(TODAY, t.due_date) < 0;
   const memo = (t.memo || '').split('\n')[0];
-  const sub = [MoneyTasks.dueLabel(t.due_date, TODAY), memo].filter(Boolean).join('　');
+  const sub = [MoneyTasks.dueLabel(t.due_date, TODAY, !!t.completed_at), memo].filter(Boolean).join('　');
   const edit = el('button', { type: 'button', className: 'icon-btn task-edit', 'aria-label': `「${t.title}」を編集` });
   edit.innerHTML = ICON_MORE;
   edit.addEventListener('click', () => openTaskSheet(t.id, edit));
