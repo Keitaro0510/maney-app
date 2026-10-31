@@ -306,6 +306,7 @@ body{
 .plan-time-card.is-all-day .plan-time-note{padding:3px 1px}
 /* ===== ボタン ===== */
 .btn{
+  min-height:44px; /* 押せる所は 44px 以上（#58・#71） */
   padding:8px 16px;
   border:0.5px solid var(--color-border-secondary);
   border-radius:var(--border-radius-md);
@@ -507,8 +508,8 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 button.pay-chip,button.chip{font:inherit;font-size:13px;font-weight:500;color:var(--color-text-primary);background:transparent;min-height:44px;display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent}
 button.pay-chip.sel,button.chip.sel{color:#fff;background:#185FA5}
 button.pay-chip:focus-visible,button.chip:focus-visible,button.color-swatch:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
-.modal .btn{min-height:44px}
-.modal .fg input:not([type=checkbox]),.modal .fg select{min-height:44px}
+.fg input:not([type=checkbox]),.fg select{min-height:44px}
+.salary-input{min-height:44px}
 .cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chip{padding:6px 13px;border-radius:100px;font-size:13px;border:0.5px solid var(--color-border-secondary);cursor:pointer;font-weight:500}
 .chip.sel{background:#185FA5;color:#fff;border-color:transparent}
@@ -572,8 +573,12 @@ button.color-swatch.sel{transform:none}
 .date-mode-tab.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
 .date-mode-tab:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 #cal-view-tabs .date-mode-tab{padding:10px 0}
-.cat-tag{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;font-size:12px;border:0.5px solid var(--color-border-secondary);margin:3px}
-.cat-tag-del{cursor:pointer;color:var(--color-text-secondary);font-size:15px;line-height:1}
+.cat-tag{display:inline-flex;align-items:center;min-height:44px;padding:0 0 0 14px;border-radius:100px;font-size:13px;border:0.5px solid var(--color-border-secondary);margin:3px}
+/* 消すボタン（×）。見える × は小さいまま、押せる所を 44px にする（#71） */
+.cat-tag-del{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:transparent;cursor:pointer;color:var(--color-text-secondary);font:inherit;font-size:17px;line-height:1;-webkit-tap-highlight-color:transparent}
+.cat-tag-del:active{background:var(--color-background-secondary)}
+.cat-tag-del:focus-visible{outline:2px solid var(--color-brand);outline-offset:-2px}
+.job-add-toggle{width:100%}
 .graph-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:11px;color:var(--color-text-secondary)}
 .legend-item{display:flex;align-items:center;gap:4px}
 .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -870,12 +875,16 @@ button.color-swatch.sel{transform:none}
   </div>
   <button class="btn primary full shift-add" onclick="openShiftModal(null)">＋ シフトを追加</button>
   <div class="card shift-secondary" style="margin-top:10px">
-    <div class="st">バイト先を追加</div>
+    <!-- バイト先を追加（めったに使わないので、押したら欄を開く。#71） -->
+    <button type="button" class="ui-btn job-add-toggle" id="job-add-toggle" aria-expanded="false" aria-controls="job-add-form" onclick="toggleJobAdd()">＋ バイト先を追加</button>
+    <div id="job-add-form" hidden>
+    <div class="st" style="margin-top:12px">バイト先を追加</div>
     <div class="fgr"><div class="fg"><label>名前</label><input id="job-name" placeholder="カフェなど"/></div><div class="fg"><label>通常時給 (¥)</label><input id="job-wage" type="number" placeholder="1100"/></div></div>
     <div class="fgr3"><div class="fg"><label>深夜開始</label><input id="job-night-start" type="time" value="22:00"/></div><div class="fg"><label>深夜割増(%)</label><input id="job-night-rate" type="number" value="25"/></div><div class="fg"><label>交通費(片道¥)</label><input id="job-transport" type="number" placeholder="230"/></div></div>
     <div class="fgr"><div class="fg"><label>締め日</label><input id="job-close-day" type="number" min="1" max="31" placeholder="31（末日）"/></div><div class="fg"><label>給料日（翌月）</label><input id="job-pay-day" type="number" min="1" max="31" placeholder="10"/></div></div>
     <div class="fg"><label>カレンダーの色</label><div class="color-swatches" id="job-color-swatches"></div></div>
-    <button class="btn primary" onclick="addJob()">追加</button>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" onclick="toggleJobAdd(false)">やめる</button><button class="btn primary" onclick="addJob()">追加</button></div>
+    </div>
   </div>
   <div class="card shift-secondary"><div class="st">バイト先一覧</div><div id="job-list"></div></div>
 </div>
@@ -2354,7 +2363,14 @@ function ensureJobAddColor(){if(!jobAddColorSel)jobAddColorSel=PLAN_COLORS[st.jo
 function renderJobAddColorSwatches(){const el=document.getElementById('job-color-swatches');if(!el)return;el.innerHTML=PLAN_COLORS.map(c=>`<button type="button" class="color-swatch${jobAddColorSel===c.key?' sel':''}" style="background:${c.dot}" onclick="selJobAddColor('${c.key}')" aria-label="${COLOR_NAMES[c.key]}"></button>`).join('');}
 function selJobAddColor(key){jobAddColorSel=key;renderJobAddColorSwatches();}
 function renderJobList(){ensureJobAddColor();const el=document.getElementById('job-list');el.innerHTML=!st.jobs.some(j=>!j._deleted)?'<div class="empty">バイト先未登録</div>':st.jobs.map((j,i)=>{if(j._deleted)return'';const c=jobColorObj(j);return `<div class="ri"><div style="display:flex;align-items:center;gap:8px"><div class="dot" style="background:${c.dot}"></div><div><div style="font-size:14px">${j.name}</div><div style="font-size:11px;color:var(--color-text-secondary)">時給 ¥${j.wage} / 深夜 ${j.nightStart||'22:00'}〜+${j.nightRate||25}% / 交通費 ¥${(j.transport||0)*2}/回</div><div style="font-size:11px;color:var(--color-text-secondary)">締め日 ${(parseInt(j.closeDay)||31)>=28?'月末':(parseInt(j.closeDay)||31)+'日'} / 給料日 翌月${jobPayDay(j)}日</div></div></div><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openJobEdit(${i})">編集</button><button class="btn sm del" onclick="delJob(${i})">削除</button></div></div>`;}).join('');}
-function addJob(){const name=document.getElementById('job-name').value.trim(),wage=parseInt(document.getElementById('job-wage').value)||0;if(!name||!wage)return;const nightStart=document.getElementById('job-night-start').value||'22:00',nightRate=parseInt(document.getElementById('job-night-rate').value)||25,transport=parseInt(document.getElementById('job-transport').value)||0,closeDayVal=parseInt(document.getElementById('job-close-day').value)||parseInt(st.shiftCloseDay)||31,payDayVal=parseInt(document.getElementById('job-pay-day').value)||parseInt(st.shiftPayDay)||10,color=jobAddColorSel||PLAN_COLORS[st.jobs.length%PLAN_COLORS.length].key;st.jobs.push({name,wage,nightStart,nightRate,transport,closeDay:closeDayVal,payDay:payDayVal,color});save();document.getElementById('job-name').value='';document.getElementById('job-wage').value='';document.getElementById('job-transport').value='';document.getElementById('job-close-day').value='';document.getElementById('job-pay-day').value='';jobAddColorSel=null;renderJobList();renderShiftSection();renderCal();}
+function addJob(){const name=document.getElementById('job-name').value.trim(),wage=parseInt(document.getElementById('job-wage').value)||0;if(!name||!wage)return;const nightStart=document.getElementById('job-night-start').value||'22:00',nightRate=parseInt(document.getElementById('job-night-rate').value)||25,transport=parseInt(document.getElementById('job-transport').value)||0,closeDayVal=parseInt(document.getElementById('job-close-day').value)||parseInt(st.shiftCloseDay)||31,payDayVal=parseInt(document.getElementById('job-pay-day').value)||parseInt(st.shiftPayDay)||10,color=jobAddColorSel||PLAN_COLORS[st.jobs.length%PLAN_COLORS.length].key;st.jobs.push({name,wage,nightStart,nightRate,transport,closeDay:closeDayVal,payDay:payDayVal,color});save();document.getElementById('job-name').value='';document.getElementById('job-wage').value='';document.getElementById('job-transport').value='';document.getElementById('job-close-day').value='';document.getElementById('job-pay-day').value='';jobAddColorSel=null;renderJobList();renderShiftSection();renderCal();toggleJobAdd(false);MoneyUI.toast(`「${name}」を追加しました`);}
+// 「バイト先を追加」の欄を開く・閉じる（open を省くと、開いていれば閉じる）
+function toggleJobAdd(open){
+  const form=document.getElementById('job-add-form'),btn=document.getElementById('job-add-toggle');
+  const next=open===undefined?form.hidden:open;
+  form.hidden=!next;btn.hidden=next;btn.setAttribute('aria-expanded',String(next));
+  if(next){renderJobAddColorSwatches();document.getElementById('job-name').focus();}else btn.focus();
+}
 let jobEditIdx=-1,jobEditColorSel='blue';
 function openJobEdit(i){jobEditIdx=i;const j=st.jobs[i];document.getElementById('je-name').value=j.name;document.getElementById('je-wage').value=j.wage;document.getElementById('je-night-start').value=j.nightStart||'22:00';document.getElementById('je-night-rate').value=j.nightRate||25;document.getElementById('je-transport').value=j.transport||'';document.getElementById('je-close-day').value=j.closeDay||st.shiftCloseDay||31;document.getElementById('je-pay-day').value=j.payDay||st.shiftPayDay||10;jobEditColorSel=jobColorObj(j).key;renderJobEditColorSwatches();document.getElementById('job-edit-mbg').classList.add('open');}
 function closeJobEdit(){document.getElementById('job-edit-mbg').classList.remove('open');}
@@ -2608,7 +2624,7 @@ function addCatExp(){const v=document.getElementById('new-cat-exp').value.trim()
 function addCatInc(){const v=document.getElementById('new-cat-inc').value.trim();if(!v||st.catInc.includes(v))return;st.catInc.push(v);save();document.getElementById('new-cat-inc').value='';renderCatTags();}
 function delCatExp(i){if(st.catExp.length<=1)return;st.catExp.splice(i,1);save();renderCatTags();}
 function delCatInc(i){if(st.catInc.length<=1)return;st.catInc.splice(i,1);save();renderCatTags();}
-function renderCatTags(){const e=document.getElementById('cat-exp-tags'),n=document.getElementById('cat-inc-tags');if(e)e.innerHTML=st.catExp.map((c,i)=>`<span class="cat-tag">${c}<span class="cat-tag-del" onclick="delCatExp(${i})">×</span></span>`).join('');if(n)n.innerHTML=st.catInc.map((c,i)=>`<span class="cat-tag">${c}<span class="cat-tag-del" onclick="delCatInc(${i})">×</span></span>`).join('');}
+function renderCatTags(){const e=document.getElementById('cat-exp-tags'),n=document.getElementById('cat-inc-tags');if(e)e.innerHTML=st.catExp.map((c,i)=>`<span class="cat-tag">${MoneyUI.escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${MoneyUI.escapeHtml(c)}」を消す" onclick="delCatExp(${i})">×</button></span>`).join('');if(n)n.innerHTML=st.catInc.map((c,i)=>`<span class="cat-tag">${MoneyUI.escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${MoneyUI.escapeHtml(c)}」を消す" onclick="delCatInc(${i})">×</button></span>`).join('');}
 function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderWdHist();renderCatTags();renderCardList();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
 function updateShiftCyclePreview(){const cd=document.getElementById('set-close').value,pd=document.getElementById('set-pay').value;document.getElementById('shift-cycle-preview').textContent=`締め日: ${cd>=28?'月末':'毎月'+cd+'日'}　→　翌月${pd}日に口座に入金`;}
 function saveSetting(){
