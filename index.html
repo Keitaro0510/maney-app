@@ -199,7 +199,6 @@ body{
 .pill.s2{background:#FBEAF0;color:#993556}.pill.s3{background:#FAEEDA;color:#BA7517}
 .pill.s4{background:#EEEDFE;color:#3C3489}.pill.payday{background:#E6F1FB;color:#185FA5;font-weight:700}
 .pill.shime{background:#FAEEDA;color:#BA7517}.pill.hikiotoshi{background:#FCEBEB;color:#A32D2D}
-.pill.lexp{background:#FCEBEB;color:#A32D2D}.pill.linc{background:#EAF3DE;color:#3B6D11}
 .pill.wd{background:#EEEDFE;color:#3C3489}.pill.fixedcost{background:#FFF0E0;color:#C45000}
 /* ===== リストアイテム ===== */
 .ri{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
@@ -1716,7 +1715,7 @@ async function renderCalMonth(seq){
     const holiday=getHoliday(ds);
     const isSun=dow===0,isSat=dow===6;
 
-    const shifts=other?[]:(byDay[day]||[]),lds=other?[]:getLedgerForDay(ds),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
+    const shifts=other?[]:(byDay[day]||[]),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
     const hasFc=!other&&st.fixedCosts.some(fc=>monthDay(calY,calM,parseInt(fc.day))===day);
     const isPay=!other&&payD.includes(day),isShime=!other&&shimeD.includes(day);
     const isClose=!other&&st.cards.some(c=>cardCloseDay(c,calY,calM)===day),isBill=!other&&st.cards.some(c=>monthDay(calY,calM,parseInt(c.billDay))===day);
@@ -1737,9 +1736,7 @@ async function renderCalMonth(seq){
     // JS側でtitleを.sliceして切らない方が正しく省略される
     plans.sort((a,b)=>planTimeOnDay(a,ds).min-planTimeOnDay(b,ds).min);
     plans.forEach(p=>{const c=planColor(p.color),t=planTimeOnDay(p,ds);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${t.start?t.start+' ':''}${p.title}</div>`;});
-    const ldExp=lds.filter(l=>l.type==='expense'),ldInc=lds.filter(l=>l.type==='income');
-    if(ldExp.length) pills+=`<div class="pill lexp">-¥${ldExp.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
-    if(ldInc.length) pills+=`<div class="pill linc">+¥${ldInc.reduce((a,l)=>a+parseInt(l.amount),0).toLocaleString()}</div>`;
+    // 支出・収入の金額はセルに出さない（D10。セルを整理する。日の詳細・週表示・家計簿では見られる）
 
     html+=`<div class="cday${other?' otherm':''}${isT?' today':''}" onclick="dayClick('${ds}')"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
   }
