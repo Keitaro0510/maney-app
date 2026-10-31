@@ -1,4 +1,4 @@
-# 画面の構成と遷移（2026-10-29 時点。2026-10-31 に設定の開き方を直した）
+# 画面の構成と遷移（2026-10-29 時点。2026-10-31 に設定の開き方を直し、タスクを足した）
 
 今のアプリ（`index.html`）で、どこを押すとどの画面に行くかをまとめた「今の地図」。画面を作り直すとき（タスクを足す・タブを組み替える）の出発点にする。
 
@@ -9,7 +9,7 @@
 
 | 用語 | ここでの意味 |
 |---|---|
-| タブ | 画面の下に並ぶ4つ（ホーム・カレンダー・家計簿・シフト）。どの画面からでも行き来できる。設定は右上の歯車から開く（D10。2026-10-31 に下のタブから外した。空いた所には、あとでタスクのタブを置く） |
+| タブ | 画面の下に並ぶ5つ（ホーム・カレンダー・家計簿・シフト・タスク）。どの画面からでも行き来できる。設定は右上の歯車から開く（D10） |
 | 入力シート | 下からせり上がる入力の画面（モーダル）。「キャンセル」か「保存」で閉じ、元の画面に戻る。外側のタップやスワイプでは閉じない |
 | その場の操作 | 画面を移らずにできること（削除、実績の入力、月送りなど） |
 
@@ -28,7 +28,11 @@ flowchart TD
     cal["カレンダー"]
     ldg["家計簿"]
     shift["シフト"]
+    task["タスク"]
   end
+
+  start2(["その日はじめて開いたとき<br>（日付が変わったときも）"]) -- "期限切れ・今日・2週間以内があれば" --> sStartup(["今日のタスク"])
+  sStartup -- "すべてのタスクを見る" --> task
 
   gear["右上の歯車（どの画面にも出ている）"] -- "押す" --> set["設定"]
 
@@ -40,6 +44,7 @@ flowchart TD
     sAtm(["ATMで現金を引き出す"])
     sJob(["バイト先を編集"])
     sCard(["カードを編集"])
+    sTask(["タスクを編集"])
   end
 
   home -- "＋支出を記録" --> sLdg
@@ -56,6 +61,9 @@ flowchart TD
 
   shift -- "＋シフトを追加" --> sShift
   shift -- "バイト先の編集" --> sJob
+
+  task -- "名前か「>」を押す" --> sTask
+  sStartup -- "名前か「>」を押す" --> sTask
 
   set -- "カードの編集" --> sCard
 
@@ -103,6 +111,8 @@ flowchart LR
 | ATMで現金を引き出す | ホーム | `withdrawals`（日付は今日に決まる） | 774、1812 |
 | バイト先を編集 | シフト（バイト先一覧） | `jobs`（名前を変えると、シフトと給与の実績の名前も書き換える） | 793、1933 |
 | カードを編集 | 設定（クレジットカード） | `cards` | 790、1788 |
+| タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。互換の `st` を通さない） | `js/tasks-ui.js` の `openTaskSheet` |
+| 今日のタスク（`<dialog>`。その日はじめて開いたとき） | 起動したあと・日付が変わったとき | `tasks`（完了のチェック） | `js/tasks-ui.js` の `maybeShowStartupTasks` |
 
 ## その場の操作（画面を移らない）
 
@@ -112,6 +122,7 @@ flowchart LR
 | カレンダー | 予定の完了のチェック、予定・記録の削除 |
 | 家計簿 | 記録一覧とグラフの切り替え、月送り（グラフは月・年）、日ごとのまとまりの開閉、記録の削除 |
 | シフト | 給与の実績の入力（`salary_actuals`）、シフト一覧の月送り、シフトの削除、バイト先の追加（`jobs`）・削除 |
+| タスク | 上の欄で追加（期限は なし・今日・明日・日付）、完了のチェック（横線で残し、7日たったら「完了したタスク」にたたむ）。削除は編集の画面から、「元に戻す」付き |
 | 設定 | 残高・基準日・予算・給料サイクル・扶養の入力（いちばん下の「設定を保存」で `settings` に保存）、固定費・固定収入・カテゴリ・カードの追加と削除（押した瞬間に保存）、カードの引き落とし実績の入力（`card_bill_actuals`）、ATM の履歴の削除 |
 
 削除は、どれも確認なしで押した瞬間に消える。
@@ -131,6 +142,7 @@ flowchart LR
 | カレンダー | `renderCal`（1495）、`renderCalMonth`（1506）、`renderCalWeek`（1593）、`renderCalDay`（1572）、`dayClick`（1699） | `buildDay`（1631）、`fetchHolidays`（1456） |
 | 家計簿 | `renderLedger`（2040）、`renderLedgerMetrics`（2039）、`renderCharts`（2147） | `monthLedger`（1295） |
 | シフト | `renderShiftSection`（1837）、`renderSalaryTable`（1838）、`renderFuyou`（1924）、`renderShiftList`（1836）、`renderJobList`（1930） | `calcShiftInc`（1314）、`yearConfirmedIncome`・`yearEstimatedIncome`（1894-1923） |
+| タスク | `renderTaskTab`（`js/tasks-ui.js`） | `js/tasks.js` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
 タブの切り替えは `sw()`（`index.html:1274`）。切り替えるたびに、そのタブを全部描き直す。

@@ -67,22 +67,30 @@ function renderTaskTab(){
   box.replaceChildren(...cards);
 }
 
-// 追加の欄の期限のボタン（期限なし・今日・明日・日付を選ぶ）
+// 明日の日付（今日 TODAY の次の日）
+function tomorrowKey(){
+  const [y, m, d] = TODAY.split('-').map(Number);
+  return MoneyClock.dayKey(new Date(y, m - 1, d + 1));
+}
+
+// 追加の欄の期限のボタン（期限なし・今日・明日・日付を選ぶ）。選んでいるものに色を付ける
 function renderTaskAddDue(){
-  const tomorrow = MoneyClock.dayKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
-  const picked = taskAddDue && taskAddDue !== TODAY && taskAddDue !== tomorrow;
-  document.querySelectorAll('#task-add-due [data-due]').forEach(b => {
+  const tomorrow = tomorrowKey();
+  const picked = !!taskAddDue && taskAddDue !== TODAY && taskAddDue !== tomorrow;
+  document.querySelectorAll('#task-add-due button[data-due]').forEach(b => {
     const v = b.dataset.due;
-    const on = v === 'none' ? !taskAddDue : v === 'today' ? taskAddDue === TODAY : v === 'tomorrow' ? taskAddDue === tomorrow : picked;
-    b.setAttribute('aria-pressed', String(on));
-    if(v === 'pick') b.textContent = picked ? MoneyTasks.dueLabel(taskAddDue, TODAY).replace(/まで.*$/, '') : '日付…';
+    b.setAttribute('aria-pressed', String(v === 'none' ? !taskAddDue : v === 'today' ? taskAddDue === TODAY : taskAddDue === tomorrow));
   });
+  // 「日付…」は中に日付の入力欄があるので、文字の部分（span）だけを書き換える
+  const pick = document.querySelector('#task-add-due [data-due="pick"]');
+  pick.classList.toggle('on', picked);
+  pick.querySelector('.task-chip-text').textContent = picked ? MoneyTasks.dueLabel(taskAddDue, TODAY).replace(/まで.*$/, '') : '日付…';
+  pick.querySelector('input').value = picked ? taskAddDue : '';
 }
 function setTaskAddDue(kind){
-  const tomorrow = MoneyClock.dayKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
   if(kind === 'none') taskAddDue = null;
   else if(kind === 'today') taskAddDue = TODAY;
-  else if(kind === 'tomorrow') taskAddDue = tomorrow;
+  else if(kind === 'tomorrow') taskAddDue = tomorrowKey();
   renderTaskAddDue();
 }
 function pickTaskAddDue(value){ taskAddDue = value || null; renderTaskAddDue(); }
@@ -125,8 +133,7 @@ function openTaskSheet(id){
 function closeTaskSheet(){ if(closeTaskSheetFn) closeTaskSheetFn(); }
 
 function setTaskSheetDue(kind){
-  const tomorrow = MoneyClock.dayKey(new Date(Date.now() + 24 * 60 * 60 * 1000));
-  document.getElementById('task-due').value = kind === 'today' ? TODAY : kind === 'tomorrow' ? tomorrow : '';
+  document.getElementById('task-due').value = kind === 'today' ? TODAY : kind === 'tomorrow' ? tomorrowKey() : '';
 }
 
 function saveTaskSheet(){

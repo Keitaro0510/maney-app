@@ -374,7 +374,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   color:var(--color-text-primary);font:inherit;font-size:13px;font-weight:600;cursor:pointer;
   display:inline-flex;align-items:center;
 }
-.task-chip[aria-pressed="true"]{background:var(--color-brand-soft);color:var(--color-brand);border-color:var(--color-brand)}
+.task-chip[aria-pressed="true"],.task-chip.on{background:var(--color-brand-soft);color:var(--color-brand);border-color:var(--color-brand)}
 .task-chip input[type=date]{position:absolute;inset:0;opacity:0;cursor:pointer}
 .task-section{padding:4px 12px 4px 4px}
 .task-section-title{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 2px 10px;font-size:13px;font-weight:700;color:var(--color-text-secondary)}
@@ -782,7 +782,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <button type="button" class="task-chip" data-due="none" onclick="setTaskAddDue('none')">なし</button>
     <button type="button" class="task-chip" data-due="today" onclick="setTaskAddDue('today')">今日</button>
     <button type="button" class="task-chip" data-due="tomorrow" onclick="setTaskAddDue('tomorrow')">明日</button>
-    <label class="task-chip" data-due="pick">日付…<input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)"/></label>
+    <label class="task-chip" data-due="pick"><span class="task-chip-text">日付…</span><input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)"/></label>
   </div>
   <div id="task-list"></div>
 </div>
