@@ -87,6 +87,8 @@ erDiagram
     text kind "expense / income"
     text payment_method "bank / cash / card（入金は空）"
     uuid card_id FK "カード払いのときだけ"
+    date start_month "いつから（月の1日。空なら前から）"
+    date end_month "いつまで（月の1日。空なら続く）"
     bigint legacy_id "切り替える前の JSON の id"
   }
   salary_actuals {
@@ -143,7 +145,8 @@ erDiagram
 | 本人の行だけを読み書きできる。ログインしていない人は、どのテーブルにも触れない | RLS（`(select auth.uid()) = user_id`）と権限 |
 | 他人のカード・カテゴリ・バイト先を指す記録は入らない | 外部キーを `(user_id, card_id) → cards (user_id, id)` の組で張る |
 | 支出の記録に収入のカテゴリを付けられない | `(user_id, category_id, kind) → categories (user_id, id, kind)` |
-| カード払いのときだけ `card_id` がある。支出は現金かカード、収入は現金か口座 | check 制約 |
+| カード払いのときだけ `card_id` がある。支出は現金・カード・口座、収入は現金か口座（カード払いは支出だけ。2026-10-31 に支出の口座を足した。D11） | check 制約 |
+| 固定費の「いつから」「いつまで」は月の1日で、いつまでは、いつから より前にできない（D14） | check 制約 |
 | 金額は0以上、日は1〜31、扶養の上限・色・種類は決まった値だけ | check 制約 |
 | 削除済みでないカード・バイト先・カテゴリの名前は重ならない。同じバイト先・同じ支払月の給与の実績は1件だけ | 一意制約（`deleted_at is null` の部分インデックス） |
 | `created_at`・`updated_at` はサーバーの時刻。`id` と `user_id` はあとから変えられない | トリガー（`private.set_row_timestamps`） |
