@@ -942,7 +942,6 @@ button.color-swatch.sel{transform:none}
     <button class="btn primary" onclick="addCard()">追加</button>
     <div id="card-list-sec" style="margin-top:10px"></div>
   </div>
-  <button class="btn primary full" onclick="saveSetting()" style="margin-top:4px;background:#185FA5">設定を保存</button>
   <div class="card" style="margin-top:10px"><div class="st">ATM引き出し履歴</div><div id="wd-hist"></div></div>
   <!-- データの書き出し・読み込み（D13。js/backup-ui.js） -->
   <div class="card"><div class="st">データの書き出し・読み込み</div>
@@ -2625,21 +2624,28 @@ function addCatInc(){const v=document.getElementById('new-cat-inc').value.trim()
 function delCatExp(i){if(st.catExp.length<=1)return;st.catExp.splice(i,1);save();renderCatTags();}
 function delCatInc(i){if(st.catInc.length<=1)return;st.catInc.splice(i,1);save();renderCatTags();}
 function renderCatTags(){const e=document.getElementById('cat-exp-tags'),n=document.getElementById('cat-inc-tags');if(e)e.innerHTML=st.catExp.map((c,i)=>`<span class="cat-tag">${MoneyUI.escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${MoneyUI.escapeHtml(c)}」を消す" onclick="delCatExp(${i})">×</button></span>`).join('');if(n)n.innerHTML=st.catInc.map((c,i)=>`<span class="cat-tag">${MoneyUI.escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${MoneyUI.escapeHtml(c)}」を消す" onclick="delCatInc(${i})">×</button></span>`).join('');}
-function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderWdHist();renderCatTags();renderCardList();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
+function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderWdHist();renderCatTags();renderCardList();document.getElementById('set-close').onchange=()=>{updateShiftCyclePreview();saveSettingFields();};document.getElementById('set-pay').oninput=updateShiftCyclePreview;
+  // 変えたら（入力欄から離れたら）すぐ保存する（#71）
+  ['set-bal','set-bal-date','set-pay','set-bud','set-fuyou','set-other-inc'].forEach(id=>{document.getElementById(id).onchange=saveSettingFields;});}
 function updateShiftCyclePreview(){const cd=document.getElementById('set-close').value,pd=document.getElementById('set-pay').value;document.getElementById('shift-cycle-preview').textContent=`締め日: ${cd>=28?'月末':'毎月'+cd+'日'}　→　翌月${pd}日に口座に入金`;}
-function saveSetting(){
-  st.acctBase=parseInt(document.getElementById('set-bal').value)||0;
-  st.baseDate=document.getElementById('set-bal-date').value||TODAY;
-  st.shiftCloseDay=parseInt(document.getElementById('set-close').value)||31;
-  st.shiftPayDay=parseInt(document.getElementById('set-pay').value)||10;
-  st.budget=parseInt(document.getElementById('set-bud').value)||0;
-  st.fuyouLimit=document.getElementById('set-fuyou').value;
-  st.otherIncome=parseInt(document.getElementById('set-other-inc').value)||0;
+// 設定の入力欄（口座残高・基準日・給料サイクル・予算・扶養）を変えたら、すぐ保存する（#71）。
+// 入力欄から離れたとき（change）に呼ぶ。値が変わっていなければ何もしない
+function saveSettingFields(){
+  const next={
+    acctBase:parseInt(document.getElementById('set-bal').value)||0,
+    baseDate:document.getElementById('set-bal-date').value||TODAY,
+    shiftCloseDay:parseInt(document.getElementById('set-close').value)||31,
+    shiftPayDay:parseInt(document.getElementById('set-pay').value)||10,
+    budget:parseInt(document.getElementById('set-bud').value)||0,
+    fuyouLimit:document.getElementById('set-fuyou').value,
+    otherIncome:parseInt(document.getElementById('set-other-inc').value)||0,
+  };
+  if(Object.keys(next).every(k=>String(st[k]??'')===String(next[k])))return;
+  Object.assign(st,next);
   save(); // サーバーに送れなかったときは、同期の通知で知らせる
   renderHome();
   renderCal();
-  if(document.getElementById('sec-shift').classList.contains('active'))renderShiftSection();
-  alert('設定を保存しました！');
+  MoneyUI.toast('設定を保存しました');
 }
 // ============================================================
 // 予定
