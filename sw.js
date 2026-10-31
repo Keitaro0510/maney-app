@@ -1,4 +1,4 @@
-const CACHE_NAME = 'money-app-v44';
+const CACHE_NAME = 'money-app-v45';
 const ASSETS = [
   './',
   './index.html',
@@ -13,8 +13,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
+  // 新しい版のファイルは、ブラウザが覚えている分（GitHub Pages は10分）を使わず、必ずサーバーから取り直す。
+  // そうしないと、出した直後に開いたとき、古い index.html を新しいキャッシュに入れてしまうことがある
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });
