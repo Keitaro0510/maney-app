@@ -1094,7 +1094,8 @@ function store(name, value){
 }
 
 // 今の行（サーバーの写しに送信待ちを重ねたもの）
-function currentRows(){ return MoneyData.applyOutbox(server.rows, outbox); }
+// 今の行（サーバーの写しに、送信待ちを重ねたもの）。まだサーバーから読み込めていないときは、空の行（お金の計算が止まらないように）
+function currentRows(){ return server ? MoneyData.applyOutbox(server.rows, outbox) : {}; }
 
 // 今の行から、画面のデータ（互換の st）を作り直す。設定の行がなければ false
 function rebuildSt(){
@@ -1541,7 +1542,7 @@ function cardCloseDay(card, y, m){
 
 // カードの集計は js/money.js の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
 // 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
-function cardRowOf(card){const row=card._id&&currentRows().cards.find(c=>c.id===card._id);return row||{id:'__preview__',close_day:parseInt(card.closeDay),bill_day:parseInt(card.billDay)};}
+function cardRowOf(card){const row=card._id&&(currentRows().cards||[]).find(c=>c.id===card._id);return row||{id:'__preview__',close_day:parseInt(card.closeDay),bill_day:parseInt(card.billDay)};}
 function cardCycleForBillMonth(card,ci,billY,billM){const n=MoneyCalc.cardCycle(currentRows(),cardRowOf(card),billY,billM);return{cs:ds2d(n.cs),ce:ds2d(n.ce),billD:n.billD,amount:n.amount};}
 // idx: 0 は確定（次に引き落とされる分）、1 は集計中（その次）
 function cycle(card,idx){const row=cardRowOf(card),mo=MoneyCalc.cardCycleMonths(row,TODAY),bm=idx===0?mo.confirmed:mo.pending,n=MoneyCalc.cardCycle(currentRows(),row,bm.y,bm.m);return{label:idx===0?'確定':'集計中',cs:ds2d(n.cs),ce:ds2d(n.ce),billY:n.billY,billM:n.billM,billD:n.billD,amount:n.amount};}
