@@ -510,6 +510,12 @@ button.pay-chip.sel,button.chip.sel{color:#fff;background:#185FA5}
 button.pay-chip:focus-visible,button.chip:focus-visible,button.color-swatch:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .fg input:not([type=checkbox]),.fg select{min-height:44px}
 .salary-input{min-height:44px}
+/* 給料の実績入力の「勤務のない月」（ふだんはたたむ。#71） */
+.salary-idle summary{min-height:44px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--color-text-secondary);list-style:none}
+.salary-idle summary::-webkit-details-marker{display:none}
+.salary-idle summary::after{content:'›';font-size:18px;line-height:1;transition:transform .2s ease}
+.salary-idle[open] summary::after{transform:rotate(90deg)}
+.salary-idle summary:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chip{padding:6px 13px;border-radius:100px;font-size:13px;border:0.5px solid var(--color-border-secondary);cursor:pointer;font-weight:500}
 .chip.sel{background:#185FA5;color:#fff;border-color:transparent}
@@ -2275,7 +2281,8 @@ function renderSalaryTable(){
   let html='';
   st.jobs.forEach(job=>{
     const pay=jobPayDay(job),c=jobColorObj(job);
-    let rows='';
+    // 勤務のある月（見込みの金額があるか、実績を入れた月）は出し、勤務のない過ぎた月はたたむ（#71）
+    let rows='',idleRows='',idleCount=0;
     // 振込月ベースで1月〜12月を表示
     // 振込y年payM月 → 勤務月は前月(y年payM-1月、1月払いなら前年12月)
     for(let payM=1;payM<=12;payM++){
@@ -2288,7 +2295,9 @@ function renderSalaryTable(){
       const estimated=totalShiftIncNoTransportForJob(job.name,shiftY,shiftM);
       if(estimated===0&&!actual&&payDate>today)continue;
       const dispActual=actual?parseInt(actual.actualAmount):null;
-      rows+=`<div class="salary-row">
+      const idle=estimated===0&&!actual;
+      if(idle)idleCount++;
+      const row=`<div class="salary-row">
         <span class="salary-month">${payM}月払い</span>
         <span class="salary-est">
           ${shiftY !== y ? shiftY+'年' : ''}${shiftM+1}月分の勤務<br>
@@ -2302,8 +2311,10 @@ function renderSalaryTable(){
           ${dispActual?'<span class="act-badge">入力済</span>':''}
         </div>
       </div>`;
+      if(idle)idleRows+=row;else rows+=row;
     }
-    html+=`<div style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:6px;margin:10px 0 4px"><div class="dot" style="background:${c.dot}"></div><span style="font-size:13px;font-weight:600">${job.name}</span></div>${rows||'<div class="empty">シフトを登録するとここに表示されます</div>'}</div>`;
+    const idleHtml=idleCount?`<details class="salary-idle"><summary>勤務のない月も見る（${idleCount}か月）</summary>${idleRows}</details>`:'';
+    html+=`<div style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:6px;margin:10px 0 4px"><div class="dot" style="background:${c.dot}"></div><span style="font-size:13px;font-weight:600">${MoneyUI.escapeHtml(job.name)}</span></div>${rows||'<div class="empty">今年はまだ勤務がありません</div>'}${idleHtml}</div>`;
   });
   el.innerHTML=html;
 }
