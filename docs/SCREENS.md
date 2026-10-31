@@ -50,6 +50,7 @@ flowchart TD
   home -- "＋支出を記録" --> sLdg
   home -- "予定を追加" --> sPlan
   home -- "ATMで現金を引き出す" --> sAtm
+  home -- "タスクの1行（今日・期限切れがあるとき）" --> sStartup
 
   cal -- "＋シフトを追加・日の＋シフト" --> sShift
   cal -- "＋予定を追加・日の＋予定・予定の編集" --> sPlan
@@ -113,7 +114,7 @@ flowchart LR
 | バイト先を編集 | シフト（バイト先一覧） | `jobs`（名前を変えると、シフトと給与の実績の名前も書き換える） | 793、1933 |
 | カードを編集 | 設定（クレジットカード） | `cards` | 790、1788 |
 | タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。互換の `st` を通さない） | `js/tasks-ui.js` の `openTaskSheet` |
-| 今日のタスク（`<dialog>`。その日はじめて開いたとき） | 起動したあと・日付が変わったとき | `tasks`（完了のチェック） | `js/tasks-ui.js` の `maybeShowStartupTasks` |
+| 今日のタスク（`<dialog>`。その日はじめて開いたとき） | 起動したあと・日付が変わったとき・ホームのタスクの1行 | `tasks`（完了のチェック） | `js/tasks-ui.js` の `maybeShowStartupTasks` |
 
 ## その場の操作（画面を移らない）
 

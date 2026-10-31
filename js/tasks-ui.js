@@ -8,9 +8,10 @@
 function taskRows(){ return server ? (currentRows().tasks || []) : []; }
 const findTask = id => taskRows().find(t => t.id === id);
 
-// 画面を描き直す（タブと、開いていれば開いたときの一覧）
+// 画面を描き直す（タブ・ホームの1行と、開いていれば開いたときの一覧）
 function refreshTaskViews(){
   if(document.getElementById('sec-task').classList.contains('active')) renderTaskTab();
+  if(document.getElementById('sec-home').classList.contains('active')) renderHomeTasks();
   if(document.getElementById('task-startup').open) renderStartupTasks();
 }
 
@@ -24,10 +25,10 @@ function taskRow(t){
   const sub = [MoneyTasks.dueLabel(t.due_date, TODAY), memo].filter(Boolean).join('　');
   const edit = el('button', { type: 'button', className: 'icon-btn task-edit', 'aria-label': `「${t.title}」を編集` });
   edit.innerHTML = ICON_MORE;
-  edit.addEventListener('click', () => openTaskSheet(t.id));
+  edit.addEventListener('click', () => openTaskSheet(t.id, edit));
   const row = checkRow({ title: t.title, sub, done: !!t.completed_at, onChange: done => setTaskDone(t.id, done), end: edit });
   if(overdue) row.classList.add('overdue');
-  row.querySelector('.check-body').addEventListener('click', () => openTaskSheet(t.id));
+  row.querySelector('.check-body').addEventListener('click', () => openTaskSheet(t.id, edit)); // 閉じたら「>」に戻す
   return row;
 }
 
@@ -120,7 +121,7 @@ function setTaskDone(id, done){
 let taskEditId = null;
 let closeTaskSheetFn = null;
 
-function openTaskSheet(id){
+function openTaskSheet(id, opener){
   const t = findTask(id);
   if(!t) return refreshTaskViews();
   taskEditId = id;
@@ -128,7 +129,7 @@ function openTaskSheet(id){
   document.getElementById('task-due').value = t.due_date || '';
   document.getElementById('task-memo').value = t.memo || '';
   document.getElementById('task-title-err').hidden = true;
-  closeTaskSheetFn = MoneyUI.openSheet(document.getElementById('task-sheet'));
+  closeTaskSheetFn = MoneyUI.openSheet(document.getElementById('task-sheet'), opener);
 }
 function closeTaskSheet(){ if(closeTaskSheetFn) closeTaskSheetFn(); }
 
@@ -184,9 +185,35 @@ function maybeShowStartupTasks(){
   const tasks = taskRows();
   if(!MoneyTasks.shouldShowStartup(last, TODAY, tasks)) return;
   try{ localStorage.setItem(startupKey(), TODAY); }catch(e){}
-  startupGroups = MoneyTasks.startupGroups(tasks, TODAY).map(g => ({ ...g, ids: g.tasks.map(t => t.id) }));
+  openStartupTasks();
+}
+
+// 開いたときの一覧を開く（ホームの1行からも開く。opener はそのボタン）。出すタスクは、開いたときに決める
+function openStartupTasks(opener){
+  startupGroups = MoneyTasks.startupGroups(taskRows(), TODAY).map(g => ({ ...g, ids: g.tasks.map(t => t.id) }));
   renderStartupTasks();
-  closeStartupFn = MoneyUI.openSheet(document.getElementById('task-startup'));
+  closeStartupFn = MoneyUI.openSheet(document.getElementById('task-startup'), opener);
+}
+
+// ---------- ホームの1行（D10） ----------
+// 「タスク　今日 2件　期限切れ 1件 ›」。押すと、開いたときと同じ一覧を開く。どちらも0件なら出さない
+function renderHomeTasks(){
+  const btn = document.getElementById('home-tasks');
+  if(!btn) return;
+  const { today, overdue } = MoneyTasks.homeSummary(taskRows(), TODAY);
+  btn.hidden = !(today || overdue);
+  if(btn.hidden) return;
+  const { el } = MoneyUI;
+  const parts = [today ? `今日 ${today}件` : '', overdue ? `期限切れ ${overdue}件` : ''].filter(Boolean);
+  btn.replaceChildren(
+    el('span', { className: 'home-tasks-label', textContent: 'タスク' }),
+    el('span', { className: 'home-tasks-counts' }, [
+      today ? el('span', { textContent: `今日 ${today}件` }) : null,
+      overdue ? el('span', { className: 'overdue', textContent: `期限切れ ${overdue}件` }) : null,
+    ]),
+    el('span', { className: 'home-tasks-more', 'aria-hidden': 'true', textContent: '›' }),
+  );
+  btn.setAttribute('aria-label', `タスク: ${parts.join('、')}。一覧を開く`);
 }
 
 function renderStartupTasks(){
