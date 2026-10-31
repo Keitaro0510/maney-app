@@ -57,9 +57,9 @@
 
   // 下からせり上がる画面（<dialog class="sheet">）を開く。
   // 開いている間は後ろを触れない。Esc か閉じるボタンで閉じる（外側を押しても閉じない。今の入力シートと同じ）。
-  // 閉じたら、開く前にフォーカスがあった所に戻す。戻り値は閉じる関数
-  function openSheet(dialog) {
-    const opener = document.activeElement;
+  // 閉じたら、opener（開いたボタン）か、開く前にフォーカスがあった所に戻す。戻り値は閉じる関数。
+  // iPhone の Safari はボタンを押してもフォーカスを移さないので、押したボタンを opener で渡す
+  function openSheet(dialog, opener = document.activeElement) {
     const restore = () => {
       dialog.removeEventListener('close', restore);
       if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();

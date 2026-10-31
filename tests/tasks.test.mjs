@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const {
   daysBetween, sortTasks, isFolded, groupForTab, startupGroups, shouldShowStartup, dueLabel, nextPosition,
-  tasksOnDay, countByDay,
+  tasksOnDay, countByDay, homeSummary,
 } = require('../js/tasks.js');
 
 const TODAY = '2026-11-02';                       // 月曜
@@ -130,4 +130,17 @@ test('カレンダー: 期限の日ごとに、終えていないものと終え
   assert.deepEqual(counts.get('2026-11-02'), { open: 2, done: 1 });
   assert.deepEqual(counts.get('2026-11-03'), { open: 0, done: 1 });
   assert.equal(counts.size, 2, '期限のないタスクは数えない');
+});
+
+test('ホームの1行: 終えていないタスクのうち、今日が期限のものと期限切れのものを数える', () => {
+  assert.deepEqual(homeSummary([
+    task({ due_date: '2026-11-02' }),
+    task({ due_date: '2026-11-02' }),
+    task({ due_date: '2026-11-02', completed_at: '2026-11-02T00:00:00Z' }),
+    task({ due_date: '2026-10-30' }),
+    task({ due_date: '2026-10-30', completed_at: '2026-10-31T00:00:00Z' }),
+    task({ due_date: '2026-11-03' }),
+    task({}),
+  ], TODAY), { today: 2, overdue: 1 });
+  assert.deepEqual(homeSummary([], TODAY), { today: 0, overdue: 0 });
 });

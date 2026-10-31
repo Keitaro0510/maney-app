@@ -112,9 +112,21 @@
     return counts;
   }
 
+  // ホームの1行用（D10）: 終えていないタスクのうち、今日が期限のものと、期限切れのものの件数
+  function homeSummary(tasks, today) {
+    let todayCount = 0, overdue = 0;
+    for (const t of tasks) {
+      if (t.completed_at || !t.due_date) continue;
+      const d = daysBetween(today, t.due_date);
+      if (d === 0) todayCount++;
+      else if (d < 0) overdue++;
+    }
+    return { today: todayCount, overdue };
+  }
+
   const MoneyTasks = {
     FOLD_DAYS, SOON_DAYS, SECTIONS, daysBetween, sortTasks, isFolded, sectionOf, groupForTab, startupGroups,
-    shouldShowStartup, dueLabel, nextPosition, tasksOnDay, countByDay,
+    shouldShowStartup, dueLabel, nextPosition, tasksOnDay, countByDay, homeSummary,
   };
   root.MoneyTasks = MoneyTasks;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyTasks;
