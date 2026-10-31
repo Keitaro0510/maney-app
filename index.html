@@ -291,7 +291,8 @@ body{
 }
 .btn.primary{background:var(--color-brand);color:#fff;border-color:transparent;font-weight:700}
 .btn:active,.nav-item:active,.pay-chip:active,.chip:active{transform:scale(.98)}
-.btn.sm{padding:5px 11px;font-size:12px}
+/* 編集・削除・月送りも、スマホで押しやすい最小のタップ領域を持たせる */
+.btn.sm{min-width:44px;min-height:44px;padding:5px 11px;font-size:12px}
 .btn.del{color:#A32D2D;border-color:#F0959560}
 .btn.edit{color:#185FA5;border-color:#B5D4F4}
 .btn.plan-btn{color:#993556;border-color:#F4C0D180}
