@@ -49,7 +49,7 @@ flowchart TD
 
   home -- "＋支出を記録" --> sLdg
   home -- "予定を追加" --> sPlan
-  home -- "ATMで現金を引き出す" --> sAtm
+  home -- "ATM" --> sAtm
   home -- "タスクの1行（今日・期限切れがあるとき）" --> sStartup
 
   cal -- "＋シフトを追加・日の＋シフト" --> sShift
@@ -120,7 +120,7 @@ flowchart LR
 
 | タブ | できること |
 |---|---|
-| ホーム | 見るだけ（残高・今日使える・グラフ・見通し・カードの予測・予算・今後の予定）。項目をタップしても何も起きない |
+| ホーム | 見るだけ。上から、給料日までに使えるお金（1日あたり・給料まで何日・口座の残高）、タスクの1行、記録のボタン、今日のお知らせ、これからのお金の動き（2週間）、「くわしく」（残高の推移・今月の収支見通し・予算の進み。ふだんはたたむ）（D11）。項目をタップしても何も起きない |
 | カレンダー | 予定の「済み」のチェック（予算に含めない。D2）、予定・記録の削除 |
 | 家計簿 | 記録一覧とグラフの切り替え、月送り（グラフは月・年）、日ごとのまとまりの開閉、記録の削除 |
 | シフト | 給与の実績の入力（`salary_actuals`）、シフト一覧の月送り、シフトの削除、バイト先の追加（`jobs`）・削除 |
@@ -140,7 +140,7 @@ flowchart LR
 
 | タブ | 描く関数 | 主な計算 |
 |---|---|---|
-| ホーム | `renderHome`（1447）、`renderHomeStatus`（2308）、`renderForecast`（1445）、`renderBalanceChart`（1418） | `estimateAcct`（1375）、`buildBalanceSeries`（1380）、`upcomingIncome`・`upcomingFixed`（1423-1424）、`cycle`（1347） |
+| ホーム | `renderHome`（1578）、`renderHomeUpcoming`（1594）、`renderHomeMore`（1606。中で `renderBalanceChart`・`renderForecast`・`renderHomeBudget`） | `js/money.js` の `spendable`・`upcoming`・`balanceAt`・`balanceSeries`、`upcomingIncome`・`upcomingFixed`（1545-1551）、`cycle`（1524） |
 | カレンダー | `renderCal`（1495）、`renderCalMonth`（1506）、`renderCalWeek`（1593）、`renderCalDay`（1572）、`dayClick`（1699） | `buildDay`（1631）、`fetchHolidays`（1456） |
 | 家計簿 | `renderLedger`（2040）、`renderLedgerMetrics`（2039）、`renderCharts`（2147） | `monthLedger`（1295） |
 | シフト | `renderShiftSection`（1837）、`renderSalaryTable`（1838）、`renderFuyou`（1924）、`renderShiftList`（1836）、`renderJobList`（1930） | `calcShiftInc`（1314）、`yearConfirmedIncome`・`yearEstimatedIncome`（1894-1923） |
