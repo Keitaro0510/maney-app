@@ -14,7 +14,7 @@ function baseRows(extra = {}) {
     settings: [{ id: 's', acct_base: 100000, base_date: '2026-10-01', budget: 0, shift_pay_day: 10, shift_close_day: 31 }],
     cards: [{ id: 'card1', name: 'Aカード', close_day: 31, bill_day: 27, position: 0 }],
     jobs: [{ id: 'job1', name: 'カフェ', wage: 1000, night_start: '22:00:00', night_rate: 25, transport: 0, pay_day: 25, close_day: 31, position: 0 }],
-    categories: [], ledger_entries: [], shifts: [], plans: [], fixed_costs: [], fixed_incomes: [], withdrawals: [],
+    categories: [], ledger_entries: [], shifts: [], plans: [], fixed_costs: [], withdrawals: [],
     salary_actuals: [], card_bill_actuals: [],
     ...extra,
   };
@@ -105,8 +105,8 @@ test('残高: 給料・固定費・カード・ATM・口座振込の収入。現
       fixed({ name: '家賃', amount: 30000, day: 27, payment_method: 'bank' }),
       fixed({ name: 'ジム', amount: 5000, day: 5, payment_method: 'cash' }),            // 現金は口座の外
       fixed({ name: '仕送り', amount: 20000, day: 3, kind: 'income', payment_method: null }),
+      fixed({ name: '奨学金', amount: 40000, day: 11, kind: 'income', payment_method: null }),
     ],
-    fixed_incomes: [{ id: 'fi', name: '奨学金', amount: 40000, day: 11, position: 0 }],
     ledger_entries: [
       ledger('2026-09-20', 'expense', 6000, 'card', 'card1'),                               // 10/27 に引き落とし
       ledger('2026-10-02', 'expense', 1500, 'cash'),                                        // 現金は引かない

@@ -20,11 +20,11 @@ function options() {
   return { newId: () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`, now: NOW };
 }
 
-// 画面で st を変えて保存したときの変更の列
+// 画面で st を変えて保存したときの変更の列（index.html の save() と同じく、互換の st が持つテーブルだけを比べる）
 function changesAfter(edit, base = fixture.rows) {
   const st = rowsToSt(base);
   edit(st);
-  return diffRows(base, stToRows(st, base, options()));
+  return diffRows(base, stToRows(st, base, options()), COMPAT_TABLES);
 }
 
 const rowOf = (table, pred) => fixture.rows[table].find(pred);
@@ -162,7 +162,7 @@ test('新しい予定は legacy_id を持たず、st の id は登録日時に�
   const base = fixture.rows;
   const st = rowsToSt(base);
   st.plans.push({ id: 1, title: '映画', date: '2026-11-20', dateStart: '2026-11-20', dateEnd: '2026-11-20', timeStart: '18:00', timeEnd: '', budget: 2000, memo: '', color: 'pink', done: false });
-  const changes = diffRows(base, stToRows(st, base, options()));
+  const changes = diffRows(base, stToRows(st, base, options()), COMPAT_TABLES);
   assert.equal(changes[0].row.legacy_id, null);
   assert.equal(changes[0].row.start_time, '18:00:00');
   const rebuilt = rowsToSt(applyChanges(base, changes, NOW));
@@ -313,10 +313,11 @@ const task = {
 };
 const withTasks = { ...fixture.rows, tasks: [task] };
 
-test('tasks は互換の st を通さないテーブル。互換のテーブルとあわせて全部になる', () => {
-  assert.deepStrictEqual(DIRECT_TABLES, ['tasks']);
-  assert.ok(TABLES.includes('tasks'));
-  assert.ok(!COMPAT_TABLES.includes('tasks'));
+test('固定費と tasks は互換の st を通さないテーブル。互換のテーブルとあわせて全部になる', () => {
+  assert.deepStrictEqual(DIRECT_TABLES, ['fixed_costs', 'tasks']);
+  assert.ok(TABLES.includes('tasks') && TABLES.includes('fixed_costs'));
+  assert.ok(!COMPAT_TABLES.includes('tasks') && !COMPAT_TABLES.includes('fixed_costs'));
+  assert.ok(!TABLES.includes('fixed_incomes'), '固定収入は固定費にまとめたので読まない（D14）');
   assert.deepStrictEqual([...COMPAT_TABLES, ...DIRECT_TABLES].sort(), [...TABLES].sort());
 });
 
@@ -341,6 +342,41 @@ test('タスクを直接保存する変更: 追加・更新・削除を受け付
   ];
   assert.equal(checkDirectChanges(changes), changes);
   assert.doesNotThrow(() => checkDirectChanges([{ table: 'tasks', action: 'delete', id: task.id }]));
+});
+
+test('互換の st から保存しても、固定費（毎月のお金）は消えない（D14）', () => {
+  const st = rowsToSt(fixture.rows);
+  st.ledger.push({ date: '2026-10-30', amount: 300, name: 'お茶', cat: '食費', type: 'expense', pay: '現金', memo: '' });
+  const after = stToRows(st, fixture.rows, options());
+  assert.ok(!('fixed_costs' in after), '互換の st は固定費を持たない');
+  assert.deepStrictEqual(diffRows(fixture.rows, after, COMPAT_TABLES).map(c => `${c.table}:${c.action}`), ['ledger_entries:insert']);
+});
+
+test('固定費（毎月のお金）は直接保存できる。「来月から金額を変える」は1つの操作で2行を変える', () => {
+  const fc = fixture.rows.fixed_costs[0];
+  const changes = checkDirectChanges([
+    { table: 'fixed_costs', action: 'update', id: fc.id, row: { end_month: '2026-11-01' } },
+    { table: 'fixed_costs', action: 'insert', id: 'fc-new', row: { name: fc.name, amount: 1000, day: fc.day, kind: fc.kind,
+      payment_method: fc.payment_method, card_id: fc.card_id, start_month: '2026-12-01', end_month: null, position: 9 } },
+  ]);
+  const op = makeOp(changes, { id: 'op-fc', epoch: 2, now: NOW, server: { rows: fixture.rows, epoch: 2 }, outbox: [] });
+  assert.equal(op.changes[0].base, fc.updated_at);
+  const rows = applyOutbox(fixture.rows, [op]);
+  assert.equal(rows.fixed_costs.find(r => r.id === fc.id).end_month, '2026-11-01');
+  assert.equal(rows.fixed_costs.find(r => r.id === 'fc-new').amount, 1000);
+});
+
+test('口座から直接払う支出（D11）: 「口座」は bank で保存し、読み直すと「口座」に戻る', () => {
+  const changes = changesAfter(st => st.ledger.push({
+    date: '2026-10-27', amount: 50000, name: '家賃', cat: '食費', type: 'expense', pay: '口座', memo: '',
+  }));
+  assert.equal(changes.length, 1);
+  assert.equal(changes[0].row.payment_method, 'bank');
+  assert.equal(changes[0].row.card_id, null);
+  const rebuilt = rowsToSt(applyChanges(fixture.rows, changes, NOW));
+  assert.equal(rebuilt.ledger.find(l => l.name === '家賃' && l.date === '2026-10-27').pay, '口座');
+  assert.deepStrictEqual(diffRows(applyChanges(fixture.rows, changes, NOW),
+    stToRows(rebuilt, applyChanges(fixture.rows, changes, NOW), options()), COMPAT_TABLES), [], '読み直して保存しても、変更はない');
 });
 
 test('タスクを直接保存する変更: 正しくなければ送信待ちに積まない', () => {

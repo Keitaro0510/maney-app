@@ -22,6 +22,8 @@
 <script src="js/ui.js"></script>
 <script src="js/tasks.js"></script>
 <script src="js/tasks-ui.js"></script>
+<script src="js/monthly.js"></script>
+<script src="js/monthly-ui.js"></script>
 <style>
 :root{
   --color-background-primary:#ffffff;
@@ -365,6 +367,37 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .toast.show{display:flex}
 .toast-msg{padding:10px 0}
 .toast .toast-action{color:#9CC8F2;border:none;flex:none}
+/* ===== 毎月のお金（D14。画面の動きは js/monthly-ui.js）===== */
+.monthly-lead{font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6}
+.monthly-section{padding:4px 14px}
+.monthly-section-title{font-size:13px;font-weight:700;color:var(--color-text-secondary);padding:10px 0 2px}
+.monthly-row{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 0;border:none;border-bottom:0.5px solid var(--color-border-tertiary);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.monthly-row:last-child{border-bottom:none}
+.monthly-row:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+.monthly-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.monthly-name{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.monthly-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.monthly-amount{font-weight:700;white-space:nowrap}
+.monthly-amount.in,.monthly-info-amount.in{color:#3B6D11}
+.monthly-amount.out,.monthly-info-amount.out{color:#C45000}
+.monthly-ended .monthly-amount{color:var(--color-text-secondary)}
+.monthly-ended summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--color-text-secondary)}
+.monthly-note{font-size:12px;color:var(--color-text-secondary);padding-bottom:4px}
+.monthly-empty{font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.monthly-empty-title{font-size:15px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px}
+.monthly-info{font-size:13px;color:var(--color-text-secondary);line-height:1.7}
+.monthly-info-amount{font-size:22px;font-weight:700}
+.monthly-state{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+.monthly-part{border-top:0.5px solid var(--color-border-tertiary);padding-top:12px;margin-top:14px}
+.monthly-part h3{font-size:14px;font-weight:700;margin-bottom:8px}
+.monthly-hint{font-size:12px;color:var(--color-text-secondary);margin-top:6px;line-height:1.5}
+.monthly-amount-form{display:flex;gap:8px}
+.monthly-amount-form input{flex:1;min-width:0;min-height:44px;padding:0 12px;font:inherit;font-size:16px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)}
+.monthly-stop-btns{display:flex;gap:8px;flex-wrap:wrap}
+/* 収支を記録の「毎月くり返す」（D14） */
+.ldg-repeat{display:flex;align-items:center;gap:10px;min-height:44px;margin:-4px 0 8px;font-size:14px;font-weight:600;cursor:pointer}
+.ldg-repeat input{width:22px;height:22px;accent-color:var(--color-brand);margin:0}
+.ldg-repeat-hint{font-size:12px;color:var(--color-brand);background:var(--color-brand-soft);border-radius:var(--border-radius-md);padding:8px 10px;margin-bottom:12px;line-height:1.5}
 /* ===== タスク（D3・D10。画面の動きは js/tasks-ui.js）===== */
 .task-add{display:flex;gap:8px}
 .task-add-input{
@@ -701,7 +734,7 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 <!-- LEDGER -->
 <div id="sec-ledger" class="sec">
   <div class="page-title">家計簿</div>
-  <div class="tab2" id="ldg-main-tabs"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div></div>
+  <div class="tab2" id="ldg-main-tabs"><div class="tb2 active" onclick="ldgTab('list')">記録一覧</div><div class="tb2" onclick="ldgTab('graph')">グラフ</div><div class="tb2" onclick="ldgTab('monthly')">毎月のお金</div></div>
   <div class="month-nav" id="ldg-month-nav">
     <button class="btn sm" onclick="ldgMonthPrev()">&#8592;</button>
     <div style="text-align:center"><div class="month-nav-label" id="ldg-month-label"></div></div>
@@ -725,6 +758,12 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <div class="tab2"><div class="tb2 active" onclick="setLdgGraphMode('month')">月</div><div class="tb2" onclick="setLdgGraphMode('year')">年</div></div>
     <div class="card"><div class="st" id="cat-chart-title">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
     <div class="card"><div class="st" id="day-chart-title">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
+  </div>
+  <!-- 毎月のお金（D14。動きは js/monthly-ui.js） -->
+  <div id="ldg-monthly-sec" style="display:none">
+    <div class="monthly-lead">家賃・サブスク・仕送りなど、毎月同じ日に動くお金です。残高の見込みに入ります（家計簿の記録には1件ずつは出ません）。</div>
+    <button class="btn primary full" onclick="openLedgerModal(null,{repeat:true})" style="margin-top:0;margin-bottom:.75rem">＋ 毎月のお金を入れる</button>
+    <div id="monthly-list"></div>
   </div>
 </div>
 
@@ -805,13 +844,9 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <div class="fg"><label>扶養の壁</label><select id="set-fuyou"><option value="1030000">103万円の壁</option><option value="1300000">130万円の壁</option><option value="both">両方表示</option></select></div>
     <div class="fg"><label>今年の確定収入（バイト以外の給与）</label><input id="set-other-inc" type="number" inputmode="numeric" placeholder="0"/></div>
   </div>
-  <div class="card"><div class="st">固定費の登録</div>
-    <div class="fg"><label>名前</label><input id="fc-name" placeholder="Netflix、家賃 など"/></div>
-    <div class="fgr"><div class="fg"><label>金額 (¥)</label><input id="fc-amount" type="number" inputmode="numeric" placeholder="1000"/></div><div class="fg"><label>引き落とし日</label><input id="fc-day" type="number" inputmode="numeric" min="1" max="31" placeholder="1"/></div></div>
-    <div class="fg"><label>種別</label><select id="fc-type" onchange="onFcTypeChange()"><option value="expense">支出（引き落とし）</option><option value="income">収入（毎月入金）</option></select></div>
-    <div class="fg" id="fc-pay-wrap"><label>支払い方法</label><select id="fc-pay" onchange="onFcPayChange()"><option value="bank">口座引き落とし（直接）</option><option value="cash">現金</option></select><div class="hint" id="fc-pay-hint">口座から直接引き落とし</div></div>
-    <button class="btn primary" onclick="addFixedCost()">追加</button>
-    <div id="fc-list" style="margin-top:10px"></div>
+  <div class="card"><div class="st">毎月のお金（固定費・毎月の収入）</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6">家計簿のタブの「毎月のお金」に移りました。支出・収入を記録するときに「毎月くり返す」を選んでも入れられます。</div>
+    <button class="btn" onclick="openMonthlyTab()">毎月のお金を開く</button>
   </div>
   <div class="card"><div class="st">支出カテゴリ</div>
     <div id="cat-exp-tags" style="margin-bottom:12px"></div>
@@ -819,12 +854,6 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
     <div class="st" style="margin-top:14px">収入カテゴリ</div>
     <div id="cat-inc-tags" style="margin-bottom:12px"></div>
     <div style="display:flex;gap:8px"><input id="new-cat-inc" placeholder="新しいカテゴリ名" style="flex:1;padding:10px 12px;font-size:15px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)"/><button class="btn primary" onclick="addCatInc()">追加</button></div>
-  </div>
-  <div class="card"><div class="st">その他の固定収入</div>
-    <div class="fg"><label>名前</label><input id="fi-name" placeholder="仕送りなど"/></div>
-    <div class="fgr"><div class="fg"><label>金額 (¥)</label><input id="fi-amount" type="number" inputmode="numeric" placeholder="50000"/></div><div class="fg"><label>入金日</label><input id="fi-date" type="number" inputmode="numeric" min="1" max="31" placeholder="1"/></div></div>
-    <button class="btn primary" onclick="addFixedInc()">追加</button>
-    <div id="fi-list" style="margin-top:10px"></div>
   </div>
   <!-- カードタブ（設定内） -->
   <div class="card"><div class="st">クレジットカード</div>
@@ -900,6 +929,37 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   </div>
 </dialog>
 
+<!-- 毎月のお金の1つ（D14。動きは js/monthly-ui.js） -->
+<dialog class="sheet" id="monthly-sheet" aria-labelledby="monthly-sheet-title">
+  <div class="sheet-head">
+    <h2 id="monthly-sheet-title"></h2>
+    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeMonthlySheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="monthly-info" id="monthly-sheet-info"></div>
+  <div class="monthly-state" id="monthly-state" hidden></div>
+  <section class="monthly-part" id="monthly-amount-part">
+    <h3 id="monthly-amount-title">来月から金額を変える</h3>
+    <div class="monthly-amount-form">
+      <input id="monthly-new-amount" type="number" inputmode="numeric" min="1" placeholder="新しい金額" aria-labelledby="monthly-amount-title" aria-describedby="monthly-amount-hint monthly-amount-err"/>
+      <button type="button" class="ui-btn primary" onclick="changeMonthlyAmount()">変える</button>
+    </div>
+    <div class="monthly-hint" id="monthly-amount-hint"></div>
+    <div class="task-field-err" id="monthly-amount-err" role="alert" hidden>金額を入れてください</div>
+  </section>
+  <section class="monthly-part" id="monthly-stop-part">
+    <h3>やめる</h3>
+    <div class="monthly-stop-btns">
+      <button type="button" class="ui-btn" id="monthly-stop-this" onclick="stopMonthly('this')">今月まで</button>
+      <button type="button" class="ui-btn" id="monthly-stop-last" onclick="stopMonthly('last')">先月まで</button>
+    </div>
+    <div class="monthly-hint" id="monthly-stop-hint"></div>
+  </section>
+  <section class="monthly-part">
+    <button type="button" class="ui-btn danger" onclick="deleteMonthly()">削除</button>
+    <div class="monthly-hint">まちがえて作ったときだけ。前の月の分も計算から消えます</div>
+  </section>
+</dialog>
+
 <!-- その日はじめて開いたときの一覧（D10）。×で閉じるだけ -->
 <dialog class="sheet" id="task-startup" aria-labelledby="task-startup-title">
   <div class="sheet-head">
@@ -928,10 +988,10 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
   <div class="fg"><label>色</label><div class="color-swatches" id="plan-color-swatches"></div></div><div class="fg"><label>メモ</label><textarea id="plan-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closePlanModal()">キャンセル</button><button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button></div>
 </div></div>
 <div class="mbg" id="card-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>カードを編集</h3><div class="fg"><label>カード名</label><input id="ce-name"/></div><div class="fgr"><div class="fg"><label>締め日</label><div style="display:flex;align-items:center;gap:8px"><input id="ce-close" type="number" inputmode="numeric" min="1" max="31" style="flex:1"/><label style="display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap;margin-bottom:0"><input type="checkbox" id="ce-close-eom" onchange="toggleCardCloseEom('ce')"> 末日</label></div></div><div class="fg"><label>引き落とし日</label><input id="ce-bill" type="number" inputmode="numeric" min="1" max="31"/></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeCardEdit()">キャンセル</button><button class="btn primary" onclick="saveCardEdit()">保存</button></div></div></div>
-<div class="mbg" id="ldg-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>記録を編集</h3><div class="pay-chips" id="lde-type-chips"><div class="pay-chip sel" onclick="selLdeType('expense')">支出</div><div class="pay-chip" onclick="selLdeType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="lde-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="lde-amount"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="lde-cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="lde-name"/></div><div class="fg" id="lde-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="lde-pay-chips"></div></div><div class="fg" id="lde-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="lde-receive-chips"></div><div class="hint" id="lde-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="lde-memo"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgEdit()">キャンセル</button><button class="btn primary" onclick="saveLdgEdit()">保存</button></div></div></div>
+<div class="mbg" id="ldg-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>記録を編集</h3><div class="pay-chips" id="lde-type-chips"><div class="pay-chip sel" onclick="selLdeType('expense')">支出</div><div class="pay-chip" onclick="selLdeType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="lde-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="lde-amount"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="lde-cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="lde-name"/></div><div class="fg" id="lde-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="lde-pay-chips"></div><div class="hint" id="lde-pay-hint"></div></div><div class="fg" id="lde-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="lde-receive-chips"></div><div class="hint" id="lde-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="lde-memo"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgEdit()">キャンセル</button><button class="btn primary" onclick="saveLdgEdit()">保存</button></div></div></div>
 <div class="mbg" id="shift-mbg"><div class="modal"><div class="modal-handle"></div><h3>シフトを追加</h3><div class="fg"><label>バイト先</label><select id="m-job"></select></div><div class="fgr"><div class="fg"><label>出勤</label><input type="time" id="m-start" value="09:00"/></div><div class="fg"><label>退勤</label><input type="time" id="m-end" value="17:00" aria-describedby="m-time-err"/></div></div><div class="form-err" id="m-time-err" role="alert" hidden>退勤は、出勤より後の時刻にしてください（日をまたぐシフトは登録できません）</div><div class="fg"><label>休憩時間（分）</label><div class="pay-chips" id="m-rest-chips"></div><input type="number" id="m-rest" value="0" min="0" step="5" placeholder="例: 60"/></div><div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:12px;font-size:13px">1日: <strong id="m-prev">¥0</strong>（深夜:<span id="m-night">0h</span>　休憩:<span id="m-rest-lbl">0分</span>）交通費:<strong id="m-transport">¥0</strong> 合計:<strong id="m-prev-total">¥0</strong></div><div class="fg"><label>日付を選択（複数OK）</label><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="m-month-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button class="btn sm" onclick="shiftCalPrev()">&#8592;</button><button class="btn sm" onclick="shiftCalNext()">&#8594;</button></div></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px" id="shift-cal-dow"></div><div id="shift-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div><div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="sel-days-count">0日</span>　合計: <strong id="m-total-all">¥0</strong></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeShiftModal()">キャンセル</button><button class="btn primary" onclick="saveShift()">一括保存</button></div></div></div>
 <div class="mbg" id="job-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>バイト先を編集</h3><div class="fgr"><div class="fg"><label>名前</label><input id="je-name" placeholder="カフェなど"/></div><div class="fg"><label>通常時給 (¥)</label><input id="je-wage" type="number" placeholder="1100"/></div></div><div class="fgr3"><div class="fg"><label>深夜開始</label><input id="je-night-start" type="time"/></div><div class="fg"><label>深夜割増(%)</label><input id="je-night-rate" type="number"/></div><div class="fg"><label>交通費(片道¥)</label><input id="je-transport" type="number" placeholder="230"/></div></div><div class="fgr"><div class="fg"><label>締め日</label><input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）"/></div><div class="fg"><label>給料日（翌月）</label><input id="je-pay-day" type="number" min="1" max="31" placeholder="10"/></div></div><div class="fg"><label>カレンダーの色</label><div class="color-swatches" id="je-color-swatches"></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeJobEdit()">キャンセル</button><button class="btn primary" onclick="saveJobEdit()">保存</button></div></div></div>
-<div class="mbg" id="ldg-mbg"><div class="modal"><div class="modal-handle"></div><h3>収支を記録</h3><div class="pay-chips" id="ldg-type-chips"><div class="pay-chip sel" onclick="selLdgType('expense')">支出</div><div class="pay-chip" onclick="selLdgType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="ldg-date"/></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="ldg-amount" placeholder="1500"/></div><div class="fg"><label>カテゴリ</label><div class="cat-chips" id="cat-chips"></div></div><div class="fg"><label>名前・メモ</label><input id="ldg-name" placeholder="ランチ、交通費など"/></div><div class="fg" id="ldg-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="ldg-pay-chips"></div></div><div class="fg" id="ldg-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="ldg-receive-chips"></div><div class="hint" id="ldg-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label>備考</label><textarea id="ldg-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgModal()">キャンセル</button><button class="btn primary" onclick="saveLedger()">保存</button></div></div></div>
+<div class="mbg" id="ldg-mbg"><div class="modal"><div class="modal-handle"></div><h3>収支を記録</h3><div class="pay-chips" id="ldg-type-chips"><div class="pay-chip sel" onclick="selLdgType('expense')">支出</div><div class="pay-chip" onclick="selLdgType('income')">収入</div></div><div class="fg"><label>日付</label><input type="date" id="ldg-date" onchange="renderLdgRepeat()"/></div><label class="ldg-repeat"><input type="checkbox" id="ldg-repeat" onchange="renderLdgRepeat()"/><span>毎月くり返す</span></label><div class="ldg-repeat-hint" id="ldg-repeat-hint" hidden></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="ldg-amount" placeholder="1500"/></div><div class="fg" id="ldg-cat-wrap"><label>カテゴリ</label><div class="cat-chips" id="cat-chips"></div></div><div class="fg"><label for="ldg-name" id="ldg-name-label">名前・メモ</label><input id="ldg-name" placeholder="ランチ、交通費など" aria-describedby="ldg-name-err"/><div class="task-field-err" id="ldg-name-err" role="alert" hidden>毎月のお金には名前を入れてください（家賃・動画のサブスクなど）</div></div><div class="fg" id="ldg-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="ldg-pay-chips"></div><div class="hint" id="ldg-pay-hint"></div></div><div class="fg" id="ldg-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="ldg-receive-chips"></div><div class="hint" id="ldg-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg" id="ldg-memo-wrap"><label>備考</label><textarea id="ldg-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgModal()">キャンセル</button><button class="btn primary" onclick="saveLedger()">保存</button></div></div></div>
 
 <script>
 // ============================================================
@@ -954,7 +1014,7 @@ const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,
 let TODAY=MoneyClock.dayKey(_now);
 
 // 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
-function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,fixedIncs:[],jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC],fixedCosts:[]};}
+function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC]};}
 let st=defaultSt();
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
@@ -1048,7 +1108,7 @@ let sendBlocked = null;    // 送るのを止めている理由（'conflict'・'
 
 const TABLE_LABELS = {
   settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',
-  shifts: 'シフト', plans: '予定', fixed_costs: '固定費', fixed_incomes: '固定収入', withdrawals: '引き出し',
+  shifts: 'シフト', plans: '予定', fixed_costs: '毎月のお金', withdrawals: '引き出し',
   salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績', tasks: 'タスク',
 };
 
@@ -1437,7 +1497,7 @@ async function loadData(){
 }
 
 function fixDefaults(){
-  ['wds','fixedIncs','actualInputs','plans','fixedCosts'].forEach(k=>{if(!st[k])st[k]=[];});
+  ['wds','actualInputs','plans'].forEach(k=>{if(!st[k])st[k]=[];});
   if(!st.catExp||!st.catExp.length)st.catExp=[...DEF_EXP];
   if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
   // 予定に時刻フィールドを追加(2026-08-10〜)。既存予定はtimeStart:''(終日)として正規化する
@@ -1461,7 +1521,7 @@ function sw(t){
   if(sb){sb.classList.toggle('active',t==='set');if(t==='set')sb.setAttribute('aria-current','page');else sb.removeAttribute('aria-current');}
   if(t==='home')renderHome();
   else if(t==='cal')renderCal();
-  else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();}
+  else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();if(document.getElementById('ldg-monthly-sec').style.display!=='none')renderMonthlyTab();}
   else if(t==='shift')renderShiftSection();
   else if(t==='task')renderTaskTab();
   else if(t==='set')initSettingTab();
@@ -1542,9 +1602,8 @@ function renderBalanceChart(){const{labels,balances}=buildBalanceSeries();const 
 // ============================================================
 // ホーム
 // ============================================================
-// 今月これから入るお金（固定収入・固定費の収入・給料。給料日が過ぎていたら来月の給料）。数え方は js/money.js（固定費の期間も見る）
+// 今月これから入るお金（毎月のお金の収入・給料。給料日が過ぎていたら来月の給料）。数え方は js/money.js（固定費の期間も見る）
 function upcomingIncome(){const mdl=MoneyCalc.model(currentRows()),y=gY(),m=gM(),d=gD(),parts=[];
-  mdl.fixedIncomes.forEach(fi=>{if(monthDay(y,m,fi.day)>d)parts.push({label:fi.name,amount:fi.amount});});
   mdl.fixedCosts.filter(fc=>fc.kind==='income'&&MoneyCalc.activeInMonth(fc,y,m)).forEach(fc=>{if(monthDay(y,m,fc.day)>d)parts.push({label:fc.name,amount:fc.amount});});
   mdl.jobs.forEach(job=>{const pay=monthDay(y,m,MoneyCalc.payDayOf(mdl,job))>d?{y,m}:addM(y,m,1),work=addM(pay.y,pay.m,-1),s=MoneyCalc.salary(mdl,job,pay.y,pay.m);if(s.amount>0)parts.push({label:`${job.name}（${work.m+1}月分）`,amount:s.amount});});
   return{total:parts.reduce((a,p)=>a+p.amount,0),parts};}
@@ -1585,7 +1644,7 @@ function renderHome(){const y=gY(),m=gM(),d=gD();
   balEl.textContent=yenSigned(bal);balEl.classList.toggle('negative',bal<0);
   renderHomeTasks();
   // 今日のお知らせ（作り方は前と同じ）
-  let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(monthDay(y,m,parseInt(card.billDay))===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(card.name)}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(f.amount>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(card.name)}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(cardCloseDay(card,y,m)===d)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(card.name)}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(job.name)}</strong> の締め日 — ${jPayD}日払い</div>`;});st.fixedCosts.filter(fc=>monthDay(y,m,parseInt(fc.day))===d).forEach(fc=>{ahtml+=fc.type==='income'?`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 入金 ¥${parseInt(fc.amount).toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 引き落とし ¥${parseInt(fc.amount).toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${MoneyUI.escapeHtml(s.job)}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${MoneyUI.escapeHtml(p.title)}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;
+  let ahtml='';const todayDS=toDS(y,m,d);st.cards.forEach((card,ci)=>{if(monthDay(y,m,parseInt(card.billDay))===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(card.name)}</strong> 引き落とし ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(f.amount>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(card.name)}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(cardCloseDay(card,y,m)===d)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(card.name)}</strong> の締め日</div>`;});st.jobs.forEach(job=>{const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(actual.actualAmount).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(job.name)}</strong> の締め日 — ${jPayD}日払い</div>`;});monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===d).forEach(fc=>{ahtml+=fc.kind==='income'?`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 入金 ¥${fc.amount.toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> ${monthlyPayLabel(fc)} ¥${fc.amount.toLocaleString()}</div>`;});st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${MoneyUI.escapeHtml(s.job)}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar" style="background:${c.bg};color:${c.fg}">📅 <strong>${MoneyUI.escapeHtml(p.title)}</strong>${p.budget>0?` 予算 ¥${p.budget.toLocaleString()}`:''}</div>`;});document.getElementById('alerts-home').innerHTML=ahtml;
   renderHomeUpcoming(rows);
   if(document.getElementById('home-more').open)renderHomeMore();
 }
@@ -1688,6 +1747,7 @@ async function renderCalMonth(seq){
   const total=Math.ceil((first+dim)/7)*7;
   const byDay={};
   monthShifts(calY,calM).forEach(s=>{const d=new Date(s.date).getDate();(byDay[d]=byDay[d]||[]).push(s);});
+  const fcDays=new Set(monthlyRowsIn(calY,calM).map(fc=>monthDay(calY,calM,fc.day))); // 毎月のお金がある日（D14）
   const shimeD=st.jobs.map(j=>jobCloseDayNum(j,calY,calM)),payD=(st.jobs.length?st.jobs.map(jobPayDay):[parseInt(st.shiftPayDay)||10]).map(p=>monthDay(calY,calM,p));
   const taskCount=MoneyTasks.countByDay(taskRows()); // タスクの件数（期限の日ごと。D10）
   let html='';
@@ -1703,7 +1763,7 @@ async function renderCalMonth(seq){
     const isSun=dow===0,isSat=dow===6;
 
     const shifts=other?[]:(byDay[day]||[]),wdT=other?[]:st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
-    const hasFc=!other&&st.fixedCosts.some(fc=>monthDay(calY,calM,parseInt(fc.day))===day);
+    const hasFc=!other&&fcDays.has(day);
     const isPay=!other&&payD.includes(day),isShime=!other&&shimeD.includes(day);
     const isClose=!other&&st.cards.some(c=>cardCloseDay(c,calY,calM)===day),isBill=!other&&st.cards.some(c=>monthDay(calY,calM,parseInt(c.billDay))===day);
 
@@ -1806,7 +1866,7 @@ function buildDay(ds, opts={}){
   const actions=opts.actions!==false, showTime=!!opts.showTime;
   const d=ds2d(ds), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
   const shifts=st.shifts.filter(s=>s.date===ds),lds=getLedgerForDay(ds),wdList=st.wds.filter(w=>w.date===ds),
-        plans=getPlansForDay(ds),fcList=st.fixedCosts.filter(fc=>monthDay(y,m,parseInt(fc.day))===day);
+        plans=getPlansForDay(ds),fcList=monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===day);
   const items=[]; let inc=0, exp=0;
   const push=(sort,time,html)=>items.push({sort,time,html:showTime?`<div class="ri-with-time"><span class="ri-time">${time||''}</span>${html}</div>`:html});
 
@@ -1848,9 +1908,8 @@ function buildDay(ds, opts={}){
     }
   });
   fcList.forEach(fc=>{
-    let pl=fc.type==='income'?'入金':fc.pay==='bank'?'口座引き落とし':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';
-    if(fc.type==='income')inc+=parseInt(fc.amount); // 支出側(固定費)の集計はcycle等の既存ロジックと重複するため対象外、収入だけ加算
-    push(-1,'',`<div class="ri"><div><span class="badge bfixcost">${fc.name}</span><div style="font-size:11px;color:var(--color-text-secondary)">${pl}</div></div><span style="font-size:14px;font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${parseInt(fc.amount).toLocaleString()}</span></div>`);
+    if(fc.kind==='income')inc+=fc.amount; // 支出側(固定費)の集計はcycle等の既存ロジックと重複するため対象外、収入だけ加算
+    push(-1,'',`<div class="ri"><div><span class="badge bfixcost">${MoneyUI.escapeHtml(fc.name)}</span><div style="font-size:11px;color:var(--color-text-secondary)">毎月・${MoneyUI.escapeHtml(monthlyPayLabel(fc))}</div></div><span style="font-size:14px;font-weight:600;color:${fc.kind==='income'?'#3B6D11':'#C45000'}">${fc.kind==='income'?'+':'-'}¥${fc.amount.toLocaleString()}</span></div>`);
   });
   wdList.forEach(w=>push(-1,'',`<div class="ri"><span class="badge bwd">ATM引き出し</span><span style="font-size:14px;font-weight:600;color:#3C3489">-¥${parseInt(w.amount).toLocaleString()}</span></div>`));
   plans.forEach(p=>{
@@ -1980,12 +2039,13 @@ function addCard(){
   document.getElementById('cn-close-eom').checked=false;
   document.getElementById('cn-bill').value='';
   document.getElementById('cn-cycle-preview').style.display='none';
-  updateFcPaySelect();renderCardList();renderHome();
+  renderCardList();renderHome();
 }
 function renderCardBillHistory(ci,card){const billDay=parseInt(card.billDay),today=new Date(gY(),gM(),gD());let rows='';for(let i=5;i>=0;i--){const bm=addM(gY(),gM(),-i),billDate=monthDate(bm.y,bm.m,billDay);if(billDate>today)continue;const estimated=cardBillForDate(card,bm.y,bm.m),actual=getActualCard(ci,bm.y,bm.m),dispActual=actual?parseInt(actual.actualAmount):null;rows+=`<div class="salary-row"><span class="salary-month">${bm.y}/${bm.m+1}月</span><span class="salary-est">推定 ¥${estimated.toLocaleString()}<br><span style="font-size:10px">${bm.m+1}月${billDay}日引き落とし</span></span><div style="display:flex;align-items:center;gap:6px"><input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="${dispActual||''}" onchange="onCardBillChange(${ci},${bm.y},${bm.m},${estimated},this.value)"/>${dispActual?'<span class="act-badge">入力済</span>':''}</div></div>`;}return rows||'<div class="empty" style="font-size:12px">まだ引き落とし実績なし</div>';}
 function onCardBillChange(ci,bY,bM,estimated,val){const amount=parseInt(val)||0;if(amount>0){setActualCard(ci,bY,bM,amount,estimated);save();renderHome();renderCardList();}else{const key=cardActualKey(ci,bY,bM);st.actualInputs=st.actualInputs.filter(a=>!(a.type==='card'&&a.cardKey===key));save();renderHome();renderCardList();}}
 function renderCardList(){const el=document.getElementById('card-list-sec');if(!st.cards.some(c=>!c._deleted)){el.innerHTML='';return;}el.innerHTML=st.cards.map((card,ci)=>{if(card._deleted)return'';const f=cycle(card,0),c=cycle(card,1),aF=getActualCard(ci,f.billY,f.billM),fAmt=aF?parseInt(aF.actualAmount):f.amount;const closeDayLabel=parseInt(card.closeDay)>=28?'末日':`${card.closeDay}日`;return `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font-size:15px;font-weight:600">${card.name}</span><div style="display:flex;gap:6px"><button class="btn sm edit" onclick="openCardEdit(${ci})">編集</button><button class="btn sm del" onclick="delCard(${ci})">削除</button></div></div><div class="fgr" style="margin-bottom:10px"><div><div style="font-size:11px;color:var(--color-text-secondary)">締め日</div><div style="font-size:14px;font-weight:600">毎月${closeDayLabel}</div></div><div><div style="font-size:11px;color:var(--color-text-secondary)">引き落とし日</div><div style="font-size:14px;font-weight:600">毎月${card.billDay}日</div></div></div><div class="bill-row"><div><span class="badge bfixed">確定</span>${aF?'<span class="act-badge">実額入力済</span>':''}<div class="bill-label">${f.billY}年${f.billM+1}月${f.billD}日 口座引き落とし</div><div class="bill-label">${fmtMD(f.cs)}〜${fmtMD(f.ce)} の利用分</div></div><div class="bill-amount" style="color:#A32D2D">¥${fAmt.toLocaleString()}</div></div><div class="bill-row"><div><span class="badge bpending">集計中</span><div class="bill-label">${c.billY}年${c.billM+1}月${c.billD}日 引き落とし予定</div><div class="bill-label">${fmtMD(c.cs)}〜${fmtMD(c.ce)} の利用分</div></div><div class="bill-amount" style="color:#BA7517">¥${c.amount.toLocaleString()}</div></div><div style="margin-top:10px"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">引き落とし実績入力</div>${renderCardBillHistory(ci,card)}</div></div>`;}).join('');}
-function delCard(i){st.cards[i]._deleted=true;/* 削除済みにする（配列から消すと、記録のカードの番号がずれる） */st.fixedCosts.forEach(fc=>{if(fc.pay===`card-${i}`)fc.pay='bank';});save();updateFcPaySelect();renderCardList();renderHome();}
+// カードを削除済みにする（配列から消すと、記録のカードの番号がずれる）。そのカードで払う毎月のお金は、来月から口座からの引き落としにする
+function delCard(i){const cardId=st.cards[i]._id;st.cards[i]._deleted=true;save();moveMonthlyOffCard(cardId);renderCardList();renderHome();}
 function openCardEdit(i){
   cardEditIdx=i;const card=st.cards[i];
   const isEom=parseInt(card.closeDay)>=28;
@@ -2144,17 +2204,23 @@ function delShift(i){st.shifts.splice(i,1);save();renderShiftList();renderShiftS
 // ============================================================
 // 家計簿
 // ============================================================
-function openLedgerModal(ds){ldgType='expense';ldgPay='現金';ldgCardIdx=-1;ldgCat=st.catExp[0]||'';ldgReceive='現金';document.getElementById('ldg-date').value=ds||TODAY;document.getElementById('ldg-amount').value='';document.getElementById('ldg-name').value='';document.getElementById('ldg-memo').value='';renderLdgType();renderCatChips();renderPayChips();document.getElementById('ldg-mbg').classList.add('open');}
-function selLdgType(t){ldgType=t;ldgCat=(t==='expense'?st.catExp[0]:st.catInc[0])||'';renderLdgType();renderCatChips();renderPayChips();}
+// opts.repeat: 「毎月くり返す」を選んだ状態で開く（家計簿のタブの「毎月のお金」から）
+function openLedgerModal(ds,opts={}){ldgType='expense';ldgPay='現金';ldgCardIdx=-1;ldgCat=st.catExp[0]||'';ldgReceive='現金';document.getElementById('ldg-date').value=ds||TODAY;document.getElementById('ldg-amount').value='';document.getElementById('ldg-name').value='';document.getElementById('ldg-memo').value='';document.getElementById('ldg-repeat').checked=!!opts.repeat;renderLdgType();renderCatChips();renderPayChips();renderLdgRepeat();document.getElementById('ldg-mbg').classList.add('open');}
+function selLdgType(t){ldgType=t;ldgCat=(t==='expense'?st.catExp[0]:st.catInc[0])||'';renderLdgType();renderCatChips();renderPayChips();renderLdgRepeat();}
 function renderLdgType(){document.querySelectorAll('#ldg-type-chips .pay-chip').forEach((el,i)=>el.classList.toggle('sel',['expense','income'][i]===ldgType));}
 function renderCatChips(){const cats=ldgType==='expense'?st.catExp:st.catInc;if(!cats.includes(ldgCat))ldgCat=cats[0]||'';document.getElementById('cat-chips').innerHTML=cats.map(c=>`<div class="chip${ldgCat===c?' sel':''}" onclick="selCat('${c}')">${c}</div>`).join('');}
 function selCat(c){ldgCat=c;document.querySelectorAll('#cat-chips .chip').forEach(el=>el.classList.toggle('sel',el.textContent===c));}
+// 支払い方法の選択肢: 現金・口座（D11）・カード。削除済みのカードは、その記録が使っているときだけ出す
+function payOptions(curCardIdx){return [{label:'現金',pay:'現金',ci:-1},{label:'口座',pay:'口座',ci:-1},...st.cards.map((c,i)=>({label:c.name,pay:c.name,ci:i,hidden:c._deleted&&curCardIdx!==i}))].filter(o=>!o.hidden);}
+const isPaySel=(o,pay,ci)=>o.ci>=0?ci===o.ci:(ci<0&&(pay==='口座')===(o.pay==='口座'));
+const payHint=(pay,ci)=>ci>=0?'カードの引き落とし日に、口座から引きます':pay==='口座'?'振込・口座引き落としなど。その日に口座の残高から引きます':'現金は、ATM で引き出したときに口座から引いています';
+function payChipsHtml(pay,ci,fn){return payOptions(ci).map((o,k)=>`<div class="pay-chip${isPaySel(o,pay,ci)?' sel':''}" onclick="${fn}(${k})">${MoneyUI.escapeHtml(o.label)}</div>`).join('');}
 function renderPayChips(){
   const pw=document.getElementById('ldg-pay-wrap');
   const rw=document.getElementById('ldg-receive-wrap');
   if(ldgType==='income'){
     pw.style.display='none';
-    rw.style.display='block';
+    rw.style.display=document.getElementById('ldg-repeat').checked?'none':'block'; // 毎月の収入は口座に入るものとして数える（D14）
     // 受取方法：現金 or 口座振込
     document.getElementById('ldg-receive-chips').innerHTML=
       ['現金','口座振込'].map(o=>`<div class="pay-chip${ldgReceive===o?' sel':''}" onclick="selReceive('${o}')">${o}</div>`).join('');
@@ -2164,12 +2230,34 @@ function renderPayChips(){
   }
   rw.style.display='none';
   pw.style.display='block';
-  const opts=['現金',...st.cards.map(c=>c.name)];
-  document.getElementById('ldg-pay-chips').innerHTML=opts.map((o,i)=>i>0&&st.cards[i-1]._deleted&&ldgCardIdx!==i-1?'':`<div class="pay-chip${(i===0&&ldgCardIdx===-1)||(i>0&&ldgCardIdx===i-1)?' sel':''}" onclick="selPay('${o}',${i-1})">${o}</div>`).join('');
+  document.getElementById('ldg-pay-chips').innerHTML=payChipsHtml(ldgPay,ldgCardIdx,'selPayAt');
+  document.getElementById('ldg-pay-hint').textContent=payHint(ldgPay,ldgCardIdx);
 }
 function selReceive(r){ldgReceive=r;renderPayChips();}
-function selPay(p,ci){ldgPay=p;ldgCardIdx=ci;renderPayChips();}
-function saveLedger(){const date=document.getElementById('ldg-date').value,amount=document.getElementById('ldg-amount').value,name=document.getElementById('ldg-name').value.trim(),memo=document.getElementById('ldg-memo').value.trim();if(!date||!amount)return;const entry={date,amount:parseInt(amount),name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;st.ledger.push(entry);save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
+function selPayAt(k){const o=payOptions(ldgCardIdx)[k];if(!o)return;ldgPay=o.pay;ldgCardIdx=o.ci;renderPayChips();}
+// 「毎月くり返す」（D14）: 選ぶと、その日を毎月の日にして、その月から数える。カテゴリと備考は残らないので隠す。
+// 毎月の収入は、口座に入るものとして数える（受取方法を隠す）
+function renderLdgRepeat(){
+  const on=document.getElementById('ldg-repeat').checked,date=document.getElementById('ldg-date').value||TODAY,dt=ds2d(date);
+  const hint=document.getElementById('ldg-repeat-hint');
+  hint.hidden=!on;
+  hint.textContent=on?`毎月${dt.getDate()}日に数えます（${dt.getFullYear()}年${dt.getMonth()+1}月から）。家計簿の記録には1件ずつは出ず、「毎月のお金」に入ります${ldgType==='income'?'。毎月の収入は、口座に入るものとして数えます':''}`:'';
+  document.getElementById('ldg-cat-wrap').hidden=on;
+  document.getElementById('ldg-memo-wrap').hidden=on;
+  renderPayChips(); // 毎月の収入は受取方法を出さない
+  document.getElementById('ldg-name-label').textContent=on?'名前':'名前・メモ';
+  document.getElementById('ldg-name').placeholder=on?(ldgType==='income'?'仕送り、奨学金など':'家賃、動画のサブスクなど'):'ランチ、交通費など';
+  document.getElementById('ldg-name-err').hidden=true;
+}
+function saveLedger(){const date=document.getElementById('ldg-date').value,amount=document.getElementById('ldg-amount').value,name=document.getElementById('ldg-name').value.trim(),memo=document.getElementById('ldg-memo').value.trim();if(!date||!amount)return;
+  if(document.getElementById('ldg-repeat').checked){
+    if(!name){document.getElementById('ldg-name-err').hidden=false;document.getElementById('ldg-name').focus();return;}
+    const card=ldgType==='expense'&&ldgCardIdx>=0?st.cards[ldgCardIdx]:null;
+    const ok=saveMonthlyFromLedger({name,amount:parseInt(amount),dateKey:date,kind:ldgType,payment_method:card?'card':ldgPay==='口座'?'bank':'cash',card_id:card?card._id:null});
+    if(!ok)return;
+    closeLdgModal();renderCurrentSection();return;
+  }
+  const entry={date,amount:parseInt(amount),name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;st.ledger.push(entry);save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
 function closeLdgModal(){document.getElementById('ldg-mbg').classList.remove('open');}
 function openLdgEdit(i){ldeIdx=i;const l=st.ledger[i];ldeType=l.type;ldeCat=l.cat;ldePay=l.pay||'現金';ldeCardIdx=l.cardIdx!==undefined?l.cardIdx:-1;ldeReceive=l.receive||'現金';document.getElementById('lde-date').value=l.date;document.getElementById('lde-amount').value=l.amount;document.getElementById('lde-name').value=l.name;document.getElementById('lde-memo').value=l.memo||'';renderLdeType();renderLdeCatChips();renderLdePayChips();document.getElementById('ldg-edit-mbg').classList.add('open');}
 function closeLdgEdit(){document.getElementById('ldg-edit-mbg').classList.remove('open');}
@@ -2191,11 +2279,11 @@ function renderLdePayChips(){
   }
   rw.style.display='none';
   pw.style.display='block';
-  const opts=['現金',...st.cards.map(c=>c.name)];
-  document.getElementById('lde-pay-chips').innerHTML=opts.map((o,i)=>i>0&&st.cards[i-1]._deleted&&ldeCardIdx!==i-1?'':`<div class="pay-chip${(i===0&&ldeCardIdx===-1)||(i>0&&ldeCardIdx===i-1)?' sel':''}" onclick="selLdePay('${o}',${i-1})">${o}</div>`).join('');
+  document.getElementById('lde-pay-chips').innerHTML=payChipsHtml(ldePay,ldeCardIdx,'selLdePayAt');
+  document.getElementById('lde-pay-hint').textContent=payHint(ldePay,ldeCardIdx);
 }
 function selLdeReceive(r){ldeReceive=r;renderLdePayChips();}
-function selLdePay(p,ci){ldePay=p;ldeCardIdx=ci;renderLdePayChips();}
+function selLdePayAt(k){const o=payOptions(ldeCardIdx)[k];if(!o)return;ldePay=o.pay;ldeCardIdx=o.ci;renderLdePayChips();}
 function saveLdgEdit(){
   const date=document.getElementById('lde-date').value,amount=document.getElementById('lde-amount').value,name=document.getElementById('lde-name').value.trim(),memo=document.getElementById('lde-memo').value.trim();
   if(!date||!amount)return;
@@ -2208,7 +2296,7 @@ function saveLdgEdit(){
   st.ledger[ldeIdx]=entry;
   save();closeLdgEdit();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();
 }
-function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();}
+function ldgTab(t){document.querySelectorAll('#ldg-main-tabs .tb2').forEach((el,i)=>el.classList.toggle('active',['list','graph','monthly'][i]===t));document.getElementById('ldg-list-sec').style.display=t==='list'?'block':'none';document.getElementById('ldg-graph-sec').style.display=t==='graph'?'block':'none';document.getElementById('ldg-monthly-sec').style.display=t==='monthly'?'block':'none';updateLdgNav_();if(t==='graph')renderCharts();if(t==='monthly')renderMonthlyTab();}
 
 // ============================================================
 // 家計簿の対象年月ナビゲーション（記録一覧・グラフで共有）
@@ -2219,8 +2307,9 @@ function updateLdgNav_(){
   if(yEl)yEl.textContent=`${ldgListY}年`;
   const graphVisible=document.getElementById('ldg-graph-sec').style.display!=='none';
   const showYearNav=graphVisible&&ldgGraphMode==='year';
-  document.getElementById('ldg-month-nav').style.display=showYearNav?'none':'flex';
-  document.getElementById('ldg-year-nav').style.display=showYearNav?'flex':'none';
+  const monthlyVisible=document.getElementById('ldg-monthly-sec').style.display!=='none'; // 毎月のお金は月送りを使わない
+  document.getElementById('ldg-month-nav').style.display=monthlyVisible||showYearNav?'none':'flex';
+  document.getElementById('ldg-year-nav').style.display=!monthlyVisible&&showYearNav?'flex':'none';
 }
 function ldgMonthPrev(){const nm=addM(ldgListY,ldgListM,-1);ldgListY=nm.y;ldgListM=nm.m;renderLedgerAll_();}
 function ldgMonthNext(){const nm=addM(ldgListY,ldgListM,1);ldgListY=nm.y;ldgListM=nm.m;renderLedgerAll_();}
@@ -2352,21 +2441,12 @@ function renderCharts(){ldgGraphMode==='year'?renderChartsYear_():renderChartsMo
 // ============================================================
 // 設定
 // ============================================================
-function onFcTypeChange(){document.getElementById('fc-pay-wrap').style.display=document.getElementById('fc-type').value==='expense'?'block':'none';}
-function onFcPayChange(){const v=document.getElementById('fc-pay').value,h=document.getElementById('fc-pay-hint');if(v==='bank')h.textContent='口座から直接引き落とし：口座残高の推定に自動反映されます';else if(v==='cash')h.textContent='現金払い：口座残高には影響しません';else if(v.startsWith('card-')){const ci=parseInt(v.replace('card-',''));h.textContent=`${st.cards[ci]?.name||'カード'}払い：そのカードの集計に加算されます`;}}
-function updateFcPaySelect(){const sel=document.getElementById('fc-pay');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="bank">口座引き落とし（直接）</option><option value="cash">現金</option>'+st.cards.map((c,i)=>c._deleted?'':`<option value="card-${i}">${c.name}（カード払い）</option>`).join('');if([...sel.options].some(o=>o.value===cur))sel.value=cur;onFcPayChange();}
-function addFixedCost(){const name=document.getElementById('fc-name').value.trim(),amount=parseInt(document.getElementById('fc-amount').value)||0,day=parseInt(document.getElementById('fc-day').value)||0;const type=document.getElementById('fc-type').value,pay=type==='income'?'income':document.getElementById('fc-pay').value;if(!name||!amount||!day)return;st.fixedCosts.push({id:Date.now(),name,amount,day,type,pay});save();document.getElementById('fc-name').value='';document.getElementById('fc-amount').value='';document.getElementById('fc-day').value='';renderFcList();renderHome();}
-function delFixedCost(i){st.fixedCosts.splice(i,1);save();renderFcList();renderHome();}
-function renderFcList(){const el=document.getElementById('fc-list');if(!el)return;if(!st.fixedCosts.length){el.innerHTML='<div class="empty">固定費なし</div>';return;}el.innerHTML=st.fixedCosts.map((fc,i)=>{let pl=fc.type==='income'?'毎月入金':fc.pay==='bank'?'口座直接':fc.pay==='cash'?'現金':fc.pay?.startsWith('card-')?`${st.cards[parseInt(fc.pay.replace('card-',''))]?.name||''}払い`:'';return `<div class="ri"><div><div style="font-size:14px">${fc.name} <span class="badge ${fc.type==='income'?'binc':'bfixcost'}">${fc.type==='income'?'毎月入金':'毎月引き落とし'}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">毎月${fc.day}日　${pl}</div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:${fc.type==='income'?'#3B6D11':'#C45000'}">${fc.type==='income'?'+':'-'}¥${fc.amount.toLocaleString()}</span><button class="btn sm del" onclick="delFixedCost(${i})">削除</button></div></div>`;}).join('');}
 function addCatExp(){const v=document.getElementById('new-cat-exp').value.trim();if(!v||st.catExp.includes(v))return;st.catExp.push(v);save();document.getElementById('new-cat-exp').value='';renderCatTags();}
 function addCatInc(){const v=document.getElementById('new-cat-inc').value.trim();if(!v||st.catInc.includes(v))return;st.catInc.push(v);save();document.getElementById('new-cat-inc').value='';renderCatTags();}
 function delCatExp(i){if(st.catExp.length<=1)return;st.catExp.splice(i,1);save();renderCatTags();}
 function delCatInc(i){if(st.catInc.length<=1)return;st.catInc.splice(i,1);save();renderCatTags();}
 function renderCatTags(){const e=document.getElementById('cat-exp-tags'),n=document.getElementById('cat-inc-tags');if(e)e.innerHTML=st.catExp.map((c,i)=>`<span class="cat-tag">${c}<span class="cat-tag-del" onclick="delCatExp(${i})">×</span></span>`).join('');if(n)n.innerHTML=st.catInc.map((c,i)=>`<span class="cat-tag">${c}<span class="cat-tag-del" onclick="delCatInc(${i})">×</span></span>`).join('');}
-function addFixedInc(){const name=document.getElementById('fi-name').value.trim(),amount=document.getElementById('fi-amount').value,day=document.getElementById('fi-date').value;if(!name||!amount||!day)return;st.fixedIncs.push({name,amount,day});save();document.getElementById('fi-name').value='';document.getElementById('fi-amount').value='';document.getElementById('fi-date').value='';renderFiList();}
-function renderFiList(){const el=document.getElementById('fi-list');if(!el)return;if(!st.fixedIncs.length){el.innerHTML='<div class="empty">固定収入なし</div>';return;}el.innerHTML=st.fixedIncs.map((fi,i)=>`<div class="ri"><div style="font-size:14px">${fi.name}<span style="font-size:12px;color:var(--color-text-secondary);margin-left:8px">毎月${fi.day}日</span></div><div style="display:flex;align-items:center;gap:8px"><span style="color:#3B6D11;font-weight:600">+¥${parseInt(fi.amount).toLocaleString()}</span><button class="btn sm del" onclick="delFi(${i})">削除</button></div></div>`).join('');}
-function delFi(i){st.fixedIncs.splice(i,1);save();renderFiList();renderHome();}
-function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderFcList();renderFiList();renderWdHist();renderCatTags();updateFcPaySelect();renderCardList();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
+function initSettingTab(){document.getElementById('set-bal').value=st.acctBase||'';document.getElementById('set-bal-date').value=st.baseDate||TODAY;document.getElementById('set-close').value=st.shiftCloseDay||31;document.getElementById('set-pay').value=st.shiftPayDay||10;document.getElementById('set-bud').value=st.budget||'';document.getElementById('set-fuyou').value=st.fuyouLimit||'1300000';document.getElementById('set-other-inc').value=st.otherIncome||'';updateShiftCyclePreview();renderWdHist();renderCatTags();renderCardList();document.getElementById('set-close').onchange=updateShiftCyclePreview;document.getElementById('set-pay').oninput=updateShiftCyclePreview;}
 function updateShiftCyclePreview(){const cd=document.getElementById('set-close').value,pd=document.getElementById('set-pay').value;document.getElementById('shift-cycle-preview').textContent=`締め日: ${cd>=28?'月末':'毎月'+cd+'日'}　→　翌月${pd}日に口座に入金`;}
 function saveSetting(){
   st.acctBase=parseInt(document.getElementById('set-bal').value)||0;
@@ -2509,8 +2589,8 @@ function savePlan(){
 // ホームの状態表示（計算・保存ロジックには触れないUI専用の表示）
 // ============================================================
 var openLedgerModalOriginal=openLedgerModal;
-openLedgerModal=function(date){
-  openLedgerModalOriginal(date);
+openLedgerModal=function(date, opts){
+  openLedgerModalOriginal(date, opts);
   window.setTimeout(()=>document.getElementById('ldg-amount')?.focus(),80);
 };
 

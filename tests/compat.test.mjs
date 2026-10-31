@@ -9,16 +9,31 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { rowsToSt, stripMeta, createdMs } = require('../js/compat.js');
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
+// 固定費・固定収入は st に入れなくなった（D14。画面が行を直接読み書きする）。それ以外を DB の逆の変換と比べる
+const { fixedCosts, fixedIncs, ...expected } = fixture.export;
 
-test('同じ行から、DB の逆の変換（private.export_to_user_data）と完全に同じ st を作る', () => {
-  assert.deepStrictEqual(stripMeta(rowsToSt(fixture.rows)), fixture.export);
+test('同じ行から、DB の逆の変換（private.export_to_user_data）と同じ st を作る（固定費・固定収入のほか）', () => {
+  assert.deepStrictEqual(stripMeta(rowsToSt(fixture.rows)), expected);
+});
+
+test('固定費・固定収入は st に入れない（D14）', () => {
+  const st = rowsToSt(fixture.rows);
+  assert.ok(!('fixedCosts' in st));
+  assert.ok(!('fixedIncs' in st));
+});
+
+test('口座から直接払う支出は「口座」、カードはカードの名前、現金は「現金」（D11）', () => {
+  const bank = { ...fixture.rows.ledger_entries.find(l => l.kind === 'expense' && l.payment_method === 'cash'), id: 'bank-1', payment_method: 'bank' };
+  const st = rowsToSt({ ...fixture.rows, ledger_entries: [...fixture.rows.ledger_entries, bank] });
+  assert.equal(st.ledger.find(l => l._id === 'bank-1').pay, '口座');
+  assert.ok(st.ledger.filter(l => l.type === 'income').every(l => l.pay === '現金'), '収入は今までどおり（受け取り方は receive）');
 });
 
 test('st の各記録は、元の行の id を _id として持つ', () => {
   const st = rowsToSt(fixture.rows);
   assert.deepStrictEqual(st.ledger.map(l => l._id), fixture.rows.ledger_entries.map(r => r.id));
   assert.deepStrictEqual(st.cards.map(c => c._id), fixture.rows.cards.map(r => r.id));
-  for (const key of ['jobs', 'shifts', 'plans', 'fixedCosts', 'fixedIncs', 'wds', 'actualInputs']) {
+  for (const key of ['jobs', 'shifts', 'plans', 'wds', 'actualInputs']) {
     assert.ok(st[key].every(x => typeof x._id === 'string'), `${key} に _id がない記録がある`);
   }
 });
@@ -42,14 +57,14 @@ test('削除済みのカテゴリは一覧（catExp）に出さないが、記�
 
 test('行の並び順に関係なく、position, id の順で組み立てる', () => {
   const shuffled = Object.fromEntries(Object.entries(fixture.rows).map(([t, rows]) => [t, [...rows].reverse()]));
-  assert.deepStrictEqual(stripMeta(rowsToSt(shuffled)), fixture.export);
+  assert.deepStrictEqual(stripMeta(rowsToSt(shuffled)), expected);
 });
 
 test('設定の行がなければ null（まだ移行していない）', () => {
   assert.equal(rowsToSt({ ...fixture.rows, settings: [] }), null);
 });
 
-test('新しい予定・固定費の id は、登録日時をミリ秒にした数値（DB と同じく四捨五入）', () => {
+test('新しい予定の id は、登録日時をミリ秒にした数値（DB と同じく四捨五入）', () => {
   assert.equal(createdMs('2026-10-29T08:57:56.3021+00:00'), Date.parse('2026-10-29T08:57:56.302Z'));
   assert.equal(createdMs('2026-10-29T08:57:56.1235+00:00'), Date.parse('2026-10-29T08:57:56.124Z'));
   assert.equal(createdMs('2026-10-29T08:57:56+00:00'), Date.parse('2026-10-29T08:57:56.000Z'));
