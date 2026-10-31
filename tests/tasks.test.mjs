@@ -101,6 +101,7 @@ test('期限の説明', () => {
   assert.equal(dueLabel('2026-11-03', TODAY), '明日まで');
   assert.equal(dueLabel('2026-11-05', TODAY), '11/5（木）まで');
   assert.equal(dueLabel('2026-10-30', TODAY), '10/30（金）まで・3日すぎています');
+  assert.equal(dueLabel('2026-10-30', TODAY, true), '10/30（金）まで', '完了したタスクには「すぎています」と出さない');
 });
 
 test('新しいタスクの並びは、今の最後のあと', () => {

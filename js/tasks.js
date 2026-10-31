@@ -79,14 +79,14 @@
     return lastShownDay !== today && startupGroups(tasks, today).length > 0;
   }
 
-  // 期限の短い説明（一覧の行の下に出す）
+  // 期限の短い説明（一覧の行の下に出す）。done: 完了したタスク（期限を過ぎても「すぎています」と出さない）
   const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
-  function dueLabel(due, today) {
+  function dueLabel(due, today, done = false) {
     if (!due) return '';
     const d = daysBetween(today, due);
     const date = toDate(due);
     const md = `${date.getMonth() + 1}/${date.getDate()}（${WEEK[date.getDay()]}）`;
-    if (d < 0) return `${md}まで・${-d}日すぎています`;
+    if (d < 0) return done ? `${md}まで` : `${md}まで・${-d}日すぎています`;
     if (d === 0) return '今日まで';
     if (d === 1) return '明日まで';
     return `${md}まで`;
