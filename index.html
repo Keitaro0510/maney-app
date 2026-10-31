@@ -516,8 +516,9 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 .color-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent}
 .color-swatch.sel{border-color:var(--color-text-primary);transform:scale(1.15)}
 .date-mode-tabs{display:flex;gap:2px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px;margin-bottom:12px}
-.date-mode-tab{flex:1;padding:7px 0;text-align:center;font-size:13px;border-radius:7px;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
+.date-mode-tab{flex:1;min-height:44px;padding:7px 0;text-align:center;font:inherit;font-size:13px;border:0;border-radius:7px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
 .date-mode-tab.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
+.date-mode-tab:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 #cal-view-tabs .date-mode-tab{padding:10px 0}
 .cat-tag{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:100px;font-size:12px;border:0.5px solid var(--color-border-secondary);margin:3px}
 .cat-tag-del{cursor:pointer;color:var(--color-text-secondary);font-size:15px;line-height:1}
@@ -716,10 +717,10 @@ dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
 <div id="sec-cal" class="sec">
   <div class="page-title">カレンダー</div>
   <div class="card" style="padding:.75rem .875rem">
-    <div class="date-mode-tabs" id="cal-view-tabs" style="margin-bottom:8px">
-      <div class="date-mode-tab" id="cvt-day" onclick="setCalView('day')">日</div>
-      <div class="date-mode-tab" id="cvt-week" onclick="setCalView('week')">週</div>
-      <div class="date-mode-tab active" id="cvt-month" onclick="setCalView('month')">月</div>
+    <div class="date-mode-tabs" id="cal-view-tabs" role="group" aria-label="カレンダーの表示" style="margin-bottom:8px">
+      <button type="button" class="date-mode-tab" id="cvt-day" aria-pressed="false" onclick="setCalView('day')">日</button>
+      <button type="button" class="date-mode-tab" id="cvt-week" aria-pressed="false" onclick="setCalView('week')">週</button>
+      <button type="button" class="date-mode-tab active" id="cvt-month" aria-pressed="true" onclick="setCalView('month')">月</button>
     </div>
     <div class="cal-nav"><button class="btn sm" onclick="prevM()">&#8592;</button><h2 id="cal-title"></h2><button class="btn sm" onclick="nextM()">&#8594;</button></div>
     <div id="cal-month-wrap">
@@ -2000,7 +2001,11 @@ async function setCalView(v){
     calAnchor = selDay || ((calY===gY()&&calM===gM())?TODAY:toDS(calY,calM,1));
   }
   calView=v;
-  ['day','week','month'].forEach(x=>document.getElementById('cvt-'+x).classList.toggle('active',x===v));
+  ['day','week','month'].forEach(x=>{
+    const tab=document.getElementById('cvt-'+x),selected=x===v;
+    tab.classList.toggle('active',selected);
+    tab.setAttribute('aria-pressed',String(selected));
+  });
   await renderCal();
 }
 // 週ビューの日ヘッダタップ／#day-detailの「詳しく見る」から日ビューへ遷移する共通入口
