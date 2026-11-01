@@ -11,7 +11,7 @@
   // 'YYYY-MM-DD' を、その日の0時（端末の時刻）にする
   const toDate = key => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
   // a から b まで何日か（同じ日なら 0、b が明日なら 1、昨日なら -1）
-  const daysBetween = (a, b) => Math.round((toDate(b) - toDate(a)) / DAY);
+  const daysBetween = (a, b) => Math.round((toDate(b).getTime() - toDate(a).getTime()) / DAY);
 
   // 期限の早い順。期限のないものは下。同じなら、先に作ったものが上
   function sortTasks(tasks) {
@@ -28,7 +28,7 @@
   // 完了して7日たったか（たたむか）
   function isFolded(task, now) {
     if (!task.completed_at) return false;
-    return now - new Date(task.completed_at) >= FOLD_DAYS * DAY;
+    return now - new Date(task.completed_at).getTime() >= FOLD_DAYS * DAY;
   }
 
   // タスクのタブの区切り。期限で分け、完了して7日たったものは「完了したタスク」にたたむ。
