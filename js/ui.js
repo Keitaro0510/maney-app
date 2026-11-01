@@ -33,9 +33,36 @@
     return node;
   }
 
+  // id で入力欄を取る（D16）。ないとき・種類が違うときは、どの id かを書いて止める。
+  // 画面によってない要素には使わない（そこは document.getElementById で取り、null を確かめる）
+  /**
+   * @template {HTMLElement} T
+   * @param {string} id
+   * @param {{ new (): T }} type
+   * @param {string} what
+   * @returns {T}
+   */
+  function byId(id, type, what) {
+    const node = document.getElementById(id);
+    if (!(node instanceof type)) throw new Error(`${what}が見つかりません: #${id}`);
+    return node;
+  }
+  /** @param {string} id @returns {HTMLInputElement} */
+  function inputById(id) { return byId(id, HTMLInputElement, '入力欄（input）'); }
+  /** @param {string} id @returns {HTMLSelectElement} */
+  function selectById(id) { return byId(id, HTMLSelectElement, '選択欄（select）'); }
+  /** @param {string} id @returns {HTMLTextAreaElement} */
+  function textareaById(id) { return byId(id, HTMLTextAreaElement, '入力欄（textarea）'); }
+  /** @param {string} id @returns {HTMLDialogElement} */
+  function dialogById(id) { return byId(id, HTMLDialogElement, '画面（dialog）'); }
+
   // チェックのある行（タスクの一覧の1行）。完了すると横線で薄くなる（D3）。
   // title: 名前、sub: 下の小さな文（期限など）、done: 完了か、label: チェックの読み上げ用の名前、
   // onChange(checked): チェックを変えたとき。end: 行の右に置く要素（ボタンなど）
+  /**
+   * @param {{ title?: string, sub?: string, done?: boolean, label?: string,
+   *   onChange?: (checked: boolean) => void, end?: Node | null }} [options]
+   */
   function checkRow({ title, sub, done = false, label, onChange, end } = {}) {
     const input = el('input', {
       type: 'checkbox',
@@ -59,7 +86,11 @@
   // 開いている間は後ろを触れない。Esc か閉じるボタンで閉じる（外側を押しても閉じない。今の入力シートと同じ）。
   // 閉じたら、opener（開いたボタン）か、開く前にフォーカスがあった所に戻す。戻り値は閉じる関数。
   // iPhone の Safari はボタンを押してもフォーカスを移さないので、押したボタンを opener で渡す
-  function openSheet(dialog, opener = document.activeElement) {
+  /**
+   * @param {HTMLDialogElement} dialog
+   * @param {HTMLElement | null} [opener]
+   */
+  function openSheet(dialog, opener = /** @type {HTMLElement | null} */ (document.activeElement)) {
     const restore = () => {
       dialog.removeEventListener('close', restore);
       if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
@@ -72,6 +103,10 @@
   // 短い知らせ（画面の下）。action を渡すと、ボタン（「元に戻す」など）を付ける。ms で消える。
   // 新しい知らせを出すと、前の知らせは消える。戻り値は消す関数
   let toastTimer = null;
+  /**
+   * @param {string} message
+   * @param {{ actionLabel?: string, onAction?: () => void, ms?: number }} [options]
+   */
   function toast(message, { actionLabel, onAction, ms = 5000 } = {}) {
     let box = document.getElementById('ui-toast');
     if (!box) {
@@ -97,7 +132,7 @@
     return close;
   }
 
-  const MoneyUI = { escapeHtml, el, checkRow, openSheet, toast };
+  const MoneyUI = { escapeHtml, el, inputById, selectById, textareaById, dialogById, checkRow, openSheet, toast };
   root.MoneyUI = MoneyUI;
   if (typeof module !== 'undefined' && module.exports) module.exports = MoneyUI;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

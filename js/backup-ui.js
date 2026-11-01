@@ -31,7 +31,7 @@ let pendingImport = null;      // 確かめの画面に出している、読み�
 let closeImportSheetFn = null;
 
 function pickBackupFile(){
-  const input = document.getElementById('backup-file');
+  const input = MoneyUI.inputById('backup-file');
   input.value = ''; // 同じファイルを続けて選んでも、選んだことがわかるように
   input.click();
 }
@@ -53,7 +53,7 @@ async function readBackupFile(input){
 // '2026-10-31T12:00:00.000Z' → 「2026年10月31日 21:00」（端末の時刻）
 function backupTimeLabel(iso){
   const d = iso ? new Date(iso) : null;
-  if(!d || isNaN(d)) return '日時がわかりません';
+  if(!d || isNaN(d.getTime())) return '日時がわかりません';
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
@@ -80,7 +80,7 @@ function openImportSheet(fileName, opener){
   );
   document.getElementById('import-err').hidden = true;
   setImportRunning(false);
-  closeImportSheetFn = MoneyUI.openSheet(document.getElementById('import-sheet'), opener);
+  closeImportSheetFn = MoneyUI.openSheet(MoneyUI.dialogById('import-sheet'), opener);
 }
 function closeImportSheet(){
   pendingImport = null;
@@ -88,10 +88,10 @@ function closeImportSheet(){
 }
 
 function setImportRunning(running){
-  const btn = document.getElementById('import-run');
+  const btn = /** @type {HTMLButtonElement} */ (document.getElementById('import-run'));
   btn.disabled = running;
   btn.textContent = running ? '読み込んでいます…' : '置き換える';
-  document.getElementById('import-cancel').disabled = running;
+  /** @type {HTMLButtonElement} */ (document.getElementById('import-cancel')).disabled = running;
 }
 
 // 置き換える

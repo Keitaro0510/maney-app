@@ -12,7 +12,7 @@ const findTask = id => taskRows().find(t => t.id === id);
 function refreshTaskViews(){
   if(document.getElementById('sec-task').classList.contains('active')) renderTaskTab();
   if(document.getElementById('sec-home').classList.contains('active')) renderHomeTasks();
-  if(document.getElementById('task-startup').open) renderStartupTasks();
+  if(MoneyUI.dialogById('task-startup').open) renderStartupTasks();
 }
 
 const ICON_MORE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
@@ -78,7 +78,7 @@ function tomorrowKey(){
 function renderTaskAddDue(){
   const tomorrow = tomorrowKey();
   const picked = !!taskAddDue && taskAddDue !== TODAY && taskAddDue !== tomorrow;
-  document.querySelectorAll('#task-add-due button[data-due]').forEach(b => {
+  /** @type {NodeListOf<HTMLButtonElement>} */ (document.querySelectorAll('#task-add-due button[data-due]')).forEach(b => {
     const v = b.dataset.due;
     b.setAttribute('aria-pressed', String(v === 'none' ? !taskAddDue : v === 'today' ? taskAddDue === TODAY : taskAddDue === tomorrow));
   });
@@ -98,7 +98,7 @@ function pickTaskAddDue(value){ taskAddDue = value || null; renderTaskAddDue(); 
 
 // 上の欄から追加する（名前と期限だけ。メモはあとから編集で）
 function addTaskQuick(){
-  const input = document.getElementById('task-add-title');
+  const input = MoneyUI.inputById('task-add-title');
   const title = input.value.trim();
   if(!title){ input.focus(); return; }
   const ok = saveRows([{ table: 'tasks', action: 'insert', id: crypto.randomUUID(), row: {
@@ -125,20 +125,20 @@ function openTaskSheet(id, opener){
   const t = findTask(id);
   if(!t) return refreshTaskViews();
   taskEditId = id;
-  document.getElementById('task-title').value = t.title;
-  document.getElementById('task-due').value = t.due_date || '';
-  document.getElementById('task-memo').value = t.memo || '';
+  MoneyUI.inputById('task-title').value = t.title;
+  MoneyUI.inputById('task-due').value = t.due_date || '';
+  MoneyUI.textareaById('task-memo').value = t.memo || '';
   document.getElementById('task-title-err').hidden = true;
-  closeTaskSheetFn = MoneyUI.openSheet(document.getElementById('task-sheet'), opener);
+  closeTaskSheetFn = MoneyUI.openSheet(MoneyUI.dialogById('task-sheet'), opener);
 }
 function closeTaskSheet(){ if(closeTaskSheetFn) closeTaskSheetFn(); }
 
 function setTaskSheetDue(kind){
-  document.getElementById('task-due').value = kind === 'today' ? TODAY : kind === 'tomorrow' ? tomorrowKey() : '';
+  MoneyUI.inputById('task-due').value = kind === 'today' ? TODAY : kind === 'tomorrow' ? tomorrowKey() : '';
 }
 
 function saveTaskSheet(){
-  const title = document.getElementById('task-title').value.trim();
+  const title = MoneyUI.inputById('task-title').value.trim();
   if(!title){
     document.getElementById('task-title-err').hidden = false;
     document.getElementById('task-title').focus();
@@ -146,7 +146,7 @@ function saveTaskSheet(){
   }
   if(!findTask(taskEditId)){ closeTaskSheet(); return refreshTaskViews(); }
   const ok = saveRows([{ table: 'tasks', action: 'update', id: taskEditId, row: {
-    title, due_date: document.getElementById('task-due').value || null, memo: document.getElementById('task-memo').value.trim(),
+    title, due_date: MoneyUI.inputById('task-due').value || null, memo: MoneyUI.textareaById('task-memo').value.trim(),
   } }]);
   if(!ok) return;
   closeTaskSheet();
@@ -199,12 +199,12 @@ function maybeShowStartupTasks(resume = false){
 function openStartupTasks(opener, { auto = false } = {}){
   startupGroups = MoneyTasks.startupGroups(taskRows(), TODAY).map(g => ({ ...g, ids: g.tasks.map(t => t.id) }));
   renderStartupTasks();
-  const hide = document.getElementById('task-startup-hide');
+  const hide = MoneyUI.inputById('task-startup-hide');
   hide.checked = false;
   hide.closest('label').hidden = !auto;
   const day = TODAY;
   hide.onchange = () => writeStartup('tasksHideDay', hide.checked ? day : null);
-  closeStartupFn = MoneyUI.openSheet(document.getElementById('task-startup'), opener);
+  closeStartupFn = MoneyUI.openSheet(MoneyUI.dialogById('task-startup'), opener);
 }
 
 // ---------- ホームの1行（D10） ----------

@@ -450,3 +450,31 @@ D12 で「`CACHE_NAME` を手で上げるのをやめ、デプロイの版やハ
 - 版を上げ忘れることがなくなり、PR どうしで番号がぶつからない
 - アプリのファイルが変わったときだけ端末がファイルを取り直す
 - Phase 4（Vite）でビルドが要るようになっても、同じ公開の手順を使い続けられる
+
+## D16: 型の検査（checkJs）で、画面の要素の型をどう付けるか
+
+D4 の手順3で TypeScript の検査（`checkJs`）を入れたら、`js/` に 336 件の間違いが出た（2026-11-02）。
+- 128件: `MoneyUI` などのファイルどうしで使う名前を、TypeScript が知らない → `types/globals.d.ts` に、各ファイルの `module.exports` の型として書いて直した（コードは変えない）
+- 163件: `document.getElementById('ldg-amount').value` のように、取った要素の `.value`・`.checked` などが見えない。`getElementById` はどの要素かわからない（`HTMLElement`）ので、入力欄だけにあるものは「ない」と言われる。動きは正しい
+- 残り: `Date` どうしの引き算、`parseInt` に数を渡すなど。JavaScript では正しく動くもの
+
+163件の直し方:
+- **(a) 型付きの取り出し関数**: `inputById('ldg-amount').value` のような関数を作って置き換える。型の検査が効き、`.ts` に移すときもそのまま使える
+- **(b) `getElementById` の結果を `any` とみなす宣言を足す**: コードは変えないが、要素まわりは検査されない
+- **(c) 呼ぶ所ごとに JSDoc で型を書く**: `/** @type {HTMLInputElement} */ (document.getElementById('ldg-amount')).value`。1か所ずつが長くなる
+
+決定: (a)。取り出し関数は、要素があるかと種類（`instanceof`）を確かめ、違えばどの id かを書いて止める。(c) は少数の特殊な要素だけに使う。(b) は使わない（2026-11-02）
+
+作り:
+- `MoneyUI.inputById`・`selectById`・`textareaById`・`dialogById`（`js/ui.js`）。`<dialog>` は `openSheet` に渡す所などが7か所あり、少数の例外とは言えないので、同じ形の関数を足した
+- 必ずある要素に使う。画面によってない要素は、今までどおり `document.getElementById` で取って `null` を確かめる
+- `.value` を使っているから全部 `<input>`、とは限らない（`<select>`・`<textarea>` もある）。置き換える前に、id ごとに HTML の中の要素の種類を調べて分けた
+- 種類を取り違えると、今まで動いていた画面が止まる。それを公開する前に見つけるため、`tests/dom-ids.test.mjs` で「`MoneyUI.〜ById('id')` の id が、HTML の中でその種類の要素に付いているか」を確かめる（`${prefix}-close` のように組み立てる id は確かめられない）
+- `<canvas>`・`<button>`・`querySelector` で取った要素など、少数のものは (c) の JSDoc
+- `strict` はまだ入れない（引数に型を書いていない所を、全部まちがいにしない）。`.ts` に移すときに見直す
+- 型の検査は `npm run typecheck`。CI（`.github/workflows/test.yml`）でも動かし、間違いがあるとマージできない
+
+理由:
+- 163件あるので、共通の関数にまとめると、直すのも保ち続けるのも楽
+- `any` にすると、型の検査で拾えるはずの間違いも見逃す
+- 戻り値に型を書くだけでは、本当にその要素かは保証されない。あるかと種類を確かめる形にする

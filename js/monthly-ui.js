@@ -92,7 +92,7 @@ function openMonthlySheet(id, opener){
   // 来月から金額を変える（来月も数えるものだけ）
   const canChange = MoneyMonthly.canChangeAmount(r, TODAY);
   document.getElementById('monthly-amount-part').hidden = !canChange;
-  document.getElementById('monthly-new-amount').value = '';
+  MoneyUI.inputById('monthly-new-amount').value = '';
   document.getElementById('monthly-amount-err').hidden = true;
   document.getElementById('monthly-amount-title').textContent = status === 'future'
     ? '金額を変える' : `来月（${label(next).replace(/^\d+年/, '')}）から金額を変える`;
@@ -104,7 +104,7 @@ function openMonthlySheet(id, opener){
   const stopThis = MoneyMonthly.stopMonth(r, TODAY, 'this'), stopLast = MoneyMonthly.stopMonth(r, TODAY, 'last');
   const stopPart = document.getElementById('monthly-stop-part');
   stopPart.hidden = status !== 'active';
-  const bThis = document.getElementById('monthly-stop-this'), bLast = document.getElementById('monthly-stop-last');
+  const bThis = /** @type {HTMLButtonElement} */ (document.getElementById('monthly-stop-this')), bLast = /** @type {HTMLButtonElement} */ (document.getElementById('monthly-stop-last'));
   bThis.textContent = `今月（${label(now).replace(/^\d+年/, '')}）まで`;
   bLast.textContent = `先月（${label(last).replace(/^\d+年/, '')}）まで`;
   bThis.disabled = !stopThis || r.end_month === stopThis;
@@ -119,7 +119,7 @@ function openMonthlySheet(id, opener){
   state.textContent = status === 'ended' ? `${label(r.end_month)}でやめました。`
     : status === 'future' ? `${label(r.start_month)}から数えます。` : '';
 
-  closeMonthlySheetFn = MoneyUI.openSheet(document.getElementById('monthly-sheet'), opener);
+  closeMonthlySheetFn = MoneyUI.openSheet(MoneyUI.dialogById('monthly-sheet'), opener);
 }
 function closeMonthlySheet(){ if(closeMonthlySheetFn) closeMonthlySheetFn(); }
 
@@ -133,7 +133,7 @@ function saveMonthly(changes){
 function changeMonthlyAmount(){
   const r = findMonthly(monthlyEditId);
   if(!r){ closeMonthlySheet(); return renderCurrentSection(); }
-  const input = document.getElementById('monthly-new-amount');
+  const input = MoneyUI.inputById('monthly-new-amount');
   const amount = parseInt(input.value, 10);
   if(!(amount > 0)){
     document.getElementById('monthly-amount-err').hidden = false;

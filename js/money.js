@@ -240,7 +240,7 @@
       let date;
       if (d < thisMonth) date = keyOf(new Date(y, m, thisMonth));
       else { const n = addMonth(y, m, 1); date = monthKey(n.y, n.m, p); }
-      const days = Math.round((parse(date) - t) / DAY);
+      const days = Math.round((parse(date).getTime() - t.getTime()) / DAY);
       if (!best || days < best.days) best = { date, days };
     }
     return best;
