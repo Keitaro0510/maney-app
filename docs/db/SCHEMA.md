@@ -2,7 +2,7 @@
 
 Supabase（PostgreSQL）のリレーショナルデータベース。2026-10-29 に、全データを1行の JSON（`user_data`）に入れていた形から、12のテーブルに分けた形に切り替えた（テーブル分割 #11。経緯と設計は [TABLE_SPLIT.md](TABLE_SPLIT.md)）。2026-10-31 にタスクを足し、同日に固定収入を `fixed_costs` の「収入」へまとめたため、アプリが読む表は12のまま（D1・D3・D14）。
 
-古い `fixed_incomes` 表は、90日間の行の履歴と移行前のスナップショットを戻せるよう残しているが、行は移行時に空にし、アプリは読み書きしない。過去の固定収入を戻す操作は、自動的に `fixed_costs` の収入へ変換する。
+古い `fixed_incomes` 表は、空になったのを確かめて 2026-11-01 に消した（`20261101013510_drop_fixed_incomes.sql`。行の履歴にも写しにも、固定収入の行は残っていなかった）。1行だけ戻す操作（`put_row`）は、`fixed_incomes` の行を渡されたら `fixed_costs` の収入に変える部分を残している。
 
 - 定義はすべて [`supabase/migrations/`](../../supabase/migrations/) にある。テストは [`supabase/tests/`](../../supabase/tests/)
 - どのテーブルにも `id`（uuid）・`user_id`（`auth.users` を指す）・`created_at`・`updated_at`（サーバーの時刻）がある。一覧のテーブルには並び順の `position` もある（下の図では省いた）

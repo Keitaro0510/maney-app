@@ -2,7 +2,7 @@
 -- 実行: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(51);
 
 -- テスト用の2人（A と B）
 insert into auth.users (id, email) values
@@ -12,22 +12,23 @@ insert into auth.users (id, email) values
 create temp table new_tables (name text) on commit drop;
 insert into new_tables values
   ('settings'), ('cards'), ('jobs'), ('categories'), ('ledger_entries'), ('shifts'), ('plans'),
-  ('fixed_costs'), ('fixed_incomes'), ('withdrawals'), ('salary_actuals'), ('card_bill_actuals');
+  ('fixed_costs'), ('withdrawals'), ('salary_actuals'), ('card_bill_actuals');
+-- 固定収入（fixed_incomes）は固定費にまとめ、表は 20261101013510_drop_fixed_incomes.sql で消した
 
 -- ============================================================
--- 構造（16）
+-- 構造（15）
 -- ============================================================
 select has_table('public', name, name || ' がある') from new_tables;
 
 select is(
   (select count(*)::int from pg_class c join new_tables t on t.name = c.relname
    where c.relnamespace = 'public'::regnamespace and c.relrowsecurity),
-  12, 'すべてのテーブルで RLS が有効');
+  11, 'すべてのテーブルで RLS が有効');
 
 select is(
   (select count(*)::int from pg_policies p join new_tables t on t.name = p.tablename
    where p.schemaname = 'public' and p.policyname = '本人の行だけ'),
-  12, 'すべてのテーブルに「本人の行だけ」のポリシーがある');
+  11, 'すべてのテーブルに「本人の行だけ」のポリシーがある');
 
 select is(
   (select count(*)::int from new_tables
@@ -244,8 +245,6 @@ insert into public.plans (user_id, title, start_date, end_date, color, card_id) 
   ('a0000000-0000-4000-8000-000000000001', '旅行', '2026-11-01', '2026-11-02', 'green', 'a0000000-0000-4000-8000-0000000000c1');
 insert into public.fixed_costs (user_id, name, amount, day, kind, payment_method, card_id) values
   ('a0000000-0000-4000-8000-000000000001', '携帯', 3000, 15, 'expense', 'card', 'a0000000-0000-4000-8000-0000000000c1');
-insert into public.fixed_incomes (user_id, name, amount, day) values
-  ('a0000000-0000-4000-8000-000000000001', '仕送り', 30000, 25);
 insert into public.salary_actuals (user_id, job_id, pay_month, paid_on, actual_amount, estimated_amount) values
   ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-0000000000b1', '2026-11-01', '2026-11-10', 50000, 48000);
 insert into public.card_bill_actuals (user_id, card_id, bill_month, actual_amount, estimated_amount) values
@@ -264,7 +263,6 @@ select is(
         + (select count(*) from public.shifts where user_id = 'a0000000-0000-4000-8000-000000000001')
         + (select count(*) from public.plans where user_id = 'a0000000-0000-4000-8000-000000000001')
         + (select count(*) from public.fixed_costs where user_id = 'a0000000-0000-4000-8000-000000000001')
-        + (select count(*) from public.fixed_incomes where user_id = 'a0000000-0000-4000-8000-000000000001')
         + (select count(*) from public.withdrawals where user_id = 'a0000000-0000-4000-8000-000000000001')
         + (select count(*) from public.salary_actuals where user_id = 'a0000000-0000-4000-8000-000000000001')
         + (select count(*) from public.card_bill_actuals where user_id = 'a0000000-0000-4000-8000-000000000001')
