@@ -18,8 +18,10 @@ test('ASSETS にある手元のファイルは、すべてある', () => {
   for (const f of assets) assert.ok(existsSync(new URL(`../${f}`, import.meta.url)), `${f} がありません`);
 });
 
-test('index.html が読む js/ のファイルと manifest.json は、すべて ASSETS にある（足し忘れると、通信できないときに開けない）', () => {
+test('index.html が読む js/・css/ のファイルと manifest.json は、すべて ASSETS にある（足し忘れると、通信できないときに開けない）', () => {
   const scripts = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1]);
+  const styles = [...html.matchAll(/<link rel="stylesheet" href="(css\/[^"]+)"/g)].map(m => m[1]);
   assert.ok(scripts.length > 0);
-  for (const f of [...scripts, 'manifest.json', 'index.html']) assert.ok(assets.includes(f), `${f} が sw.js の ASSETS にありません`);
+  assert.ok(styles.length > 0);
+  for (const f of [...scripts, ...styles, 'manifest.json', 'index.html']) assert.ok(assets.includes(f), `${f} が sw.js の ASSETS にありません`);
 });

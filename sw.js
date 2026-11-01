@@ -7,6 +7,7 @@ const DEV = CACHE_NAME.endsWith('-dev');
 const ASSETS = [
   './',
   './index.html',
+  './css/app.css',
   './js/data.js',
   './js/compat.js',
   './js/clock.js',
@@ -18,6 +19,7 @@ const ASSETS = [
   './js/monthly-ui.js',
   './js/backup.js',
   './js/backup-ui.js',
+  './js/app.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];

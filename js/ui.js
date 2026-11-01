@@ -1,7 +1,7 @@
 // 画面の部品（D12 の手順6）。タスクの画面から使い始め、今ある画面はあとで1つずつこれに直す。
 // - 押せる所は 44px 以上。ボタンは <button>、アイコンだけのボタンには読み上げ用の名前（aria-label）を付ける
 // - 自由に入れた文字（タスクの名前など）は、innerHTML に入れずに textContent で出す。どうしても HTML にするときは escapeHtml を通す
-// 見た目（CSS）は index.html の「画面の部品」にある。
+// 見た目（CSS）は css/app.css の「画面の部品」にある。
 (function (root) {
   'use strict';
 
