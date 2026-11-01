@@ -1,11 +1,8 @@
-// データの書き出し・読み込みのファイルの形（js/backup.js、D13）のテスト。実行: node --test "tests/*.test.mjs"
+// データの書き出し・読み込みのファイルの形（src/backup.ts、D13）のテスト。実行: node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const B = require('../js/backup.js');
-const { TABLES } = require('../js/data.js');
+import * as B from '../src/backup.ts'; // Node が型を消して読む（D17）
+import { TABLES } from '../src/data.ts';
 
 const NOW = '2026-10-31T12:00:00.000Z';
 const rows = () => ({

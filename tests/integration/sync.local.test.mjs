@@ -11,14 +11,14 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { rowsToSt, stToRows, stripMeta } = require('../../js/compat.js');
-const { loadAllTables, diffRows, checkDirectChanges, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp, COMPAT_TABLES } = require('../../js/data.js');
+import { loadAllTables, diffRows, checkDirectChanges, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp, COMPAT_TABLES } from '../../src/data.ts'; // Node が型を消して読む（D17）
 
 const URL_ = process.env.MANEY_LOCAL_API_URL;
 const ANON = process.env.MANEY_LOCAL_PUBLISHABLE_KEY || process.env.MANEY_LOCAL_ANON_KEY;
 const SERVICE = process.env.MANEY_LOCAL_SERVICE_ROLE_KEY;
 const skip = !(URL_ && ANON && SERVICE) && 'ローカルの Supabase の環境変数がない';
 
-// ---------- supabase-js の代わり（data.js が使う分だけ） ----------
+// ---------- supabase-js の代わり（src/data.ts が使う分だけ） ----------
 function client(token) {
   const headers = { apikey: ANON, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   return {
