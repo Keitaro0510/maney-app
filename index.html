@@ -9,23 +9,25 @@
 <meta name="theme-color" content="#185FA5">
 <meta name="description" content="バイト学生向け家計管理アプリ">
 <title>お金管理</title>
-<link rel="manifest" href="manifest.json">
+<!-- vite-ignore: Vite に触らせない（名前に指紋を付けられると、ホーム画面のアプリが壊れる。D4） -->
+<link rel="manifest" href="manifest.json" vite-ignore>
 <!-- iOS用アイコン -->
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png" vite-ignore>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- 新しいテーブルを読み書きするデータの層と、今の画面のための互換層（テーブル分割 #11。docs/DECISIONS.md の D9） -->
-<script src="js/data.js"></script>
-<script src="js/compat.js"></script>
-<script src="js/clock.js"></script>
-<script src="js/money.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/tasks.js"></script>
-<script src="js/tasks-ui.js"></script>
-<script src="js/monthly.js"></script>
-<script src="js/monthly-ui.js"></script>
-<script src="js/backup.js"></script>
-<script src="js/backup-ui.js"></script>
+<!-- 新しいテーブルを読み書きするデータの層と、今の画面のための互換層（テーブル分割 #11。docs/DECISIONS.md の D9）。
+     js/ はまだふつうの <script>（import/export ではない）なので、Vite には触らせず、そのまま公開する（vite-ignore。D4 の手順2） -->
+<script src="js/data.js" vite-ignore></script>
+<script src="js/compat.js" vite-ignore></script>
+<script src="js/clock.js" vite-ignore></script>
+<script src="js/money.js" vite-ignore></script>
+<script src="js/ui.js" vite-ignore></script>
+<script src="js/tasks.js" vite-ignore></script>
+<script src="js/tasks-ui.js" vite-ignore></script>
+<script src="js/monthly.js" vite-ignore></script>
+<script src="js/monthly-ui.js" vite-ignore></script>
+<script src="js/backup.js" vite-ignore></script>
+<script src="js/backup-ui.js" vite-ignore></script>
 <style>
 :root{
   --color-background-primary:#ffffff;

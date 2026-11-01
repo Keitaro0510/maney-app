@@ -3,3 +3,7 @@ maney-backup-*.json
 
 # 公開するファイルを集めた場所（scripts/build-pages.sh が作る。D15）
 _site/
+
+# npm の部品と、Vite のビルドの出力（D4）
+node_modules/
+dist/

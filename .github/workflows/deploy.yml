@@ -1,5 +1,5 @@
 # 公開: main に入ったら、アプリのファイルだけを GitHub Pages に出す（D15）
-# テストを通してから、scripts/build-pages.sh で公開するファイルを _site に集め、
+# テストを通してから、scripts/build-pages.sh で公開するファイルを Vite で _site にビルドし、
 # sw.js の CACHE_NAME（'money-app-dev'）を、公開するファイルの中身の指紋に置き換える。
 # 失敗したときは公開しない（前の版が出たまま）。GitHub の Actions の画面から手で動かし直せる
 name: 公開
@@ -32,8 +32,11 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
       - name: テスト
         run: node --test "tests/*.test.mjs"
+      - name: 部品を入れる（package-lock.json のとおり）
+        run: npm ci
       - name: 公開するファイルを集め、CACHE_NAME を中身の指紋にする
         run: |
           version=$(bash scripts/build-pages.sh _site)
