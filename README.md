@@ -50,12 +50,30 @@ flowchart LR
 | 技術 | このリポジトリでの使いどころ | 到達目標 |
 |---|---|---|
 | Git のブランチ・PR・コンフリクトの解決・タグ・revert | すべての改修 | 本番を壊さずに変更を届けられる |
-| ESモジュール / Vite | 1ファイルを機能ごとのファイルに分ける | 既存のコードを安全に分割できる |
+| ESモジュール / Vite | 1ファイルを機能ごとのファイルに分ける（2026-11-01 に Vite を入れた。D4） | 既存のコードを安全に分割できる |
 | TypeScript（段階的に導入） | 計算ロジックから型を付ける | 既存のJSを少しずつTypeScriptに移せる |
 | Vitest | 残高・締め日・給与の計算のテスト | テストで守りながら改修できる |
 | Supabase（PostgreSQL・RLS・マイグレーション） | JSONB からテーブルへの移行（済み）、タスクのテーブル | 使いながらデータの構造を移せる |
 | GitHub Actions | PRごとのテスト、Pagesへのデプロイ、キャッシュ名の自動更新 | 手作業による更新ミスをなくす |
 | Web Push（任意） | 期限の通知 | iOSのホーム画面アプリに通知を送れる |
+
+## 手元で動かす
+
+最初に1回だけ、部品を入れる（Node.js 24 と npm が要る）:
+
+```bash
+npm install
+```
+
+| やること | コマンド |
+|---|---|
+| 手元で開く（直すとすぐ反映） | `npm run dev` → http://127.0.0.1:8765/ |
+| テスト | `npm test` |
+| 公開と同じ形にビルドする | `bash scripts/build-pages.sh`（`_site` に出る） |
+
+- Vite を使っている（[D4](docs/DECISIONS.md)）。今はまだ、アプリの JavaScript は `js/` のふつうの `<script>` のままで、Vite はそのまま公開する。少しずつ TypeScript と import/export に移す
+- 公開は自動: main に入ると GitHub Actions がビルドして GitHub Pages に出す（[D15](docs/DECISIONS.md)、`.github/workflows/deploy.yml`）
+- 祝日を読む Google のキーは 127.0.0.1:8765 だけを許しているので、手元ではこの場所で開く
 
 ## 資料
 

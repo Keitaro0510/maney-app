@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# GitHub Pages に出すファイルを集め、sw.js の CACHE_NAME を中身の指紋にする（D15）。
-# 公開の手順（.github/workflows/deploy.yml）と、PR のテスト（.github/workflows/test.yml）が使う。
+# GitHub Pages に出すファイルを Vite でビルドし、sw.js の CACHE_NAME を中身の指紋にする（D15・D4）。
+# 公開の手順（.github/workflows/deploy.yml）と、PR のテスト（.github/workflows/test.yml）が使う。先に npm ci（または npm install）しておく。
 #
-#   bash scripts/build-pages.sh          # _site に集める。最後に版の名前（money-app-1a2b3c4d5e6f など）を出す
-#   bash scripts/build-pages.sh 出す先    # 集める場所を変える
+#   bash scripts/build-pages.sh          # _site にビルドする。最後に版の名前（money-app-1a2b3c4d5e6f など）を出す
+#   bash scripts/build-pages.sh 出す先    # ビルドする場所を変える
 #
 # 公開するのはアプリに要るファイルだけ（文書・DB・テストは出さない）。
-# ファイルを足したら、下の「集める」と sw.js の ASSETS に足す（js/ の中は全部集める）
+# Vite を通さないファイル（js/・sw.js・manifest・アイコン）は vite.config.mjs の STATIC_FILES でコピーする。
+# ファイルを足したら、そこと sw.js の ASSETS に足す（js/ の中は全部コピーする）
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -16,9 +17,8 @@ PLACEHOLDER="'money-app-dev'"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-# ---------- 集める ----------
-cp index.html sw.js manifest.json icon-192.png icon-512.png "$OUT/"
-cp -r js "$OUT/js"
+# ---------- ビルドする ----------
+npx vite build --outDir "$OUT" --emptyOutDir --logLevel warn >&2
 
 # ---------- 確かめる ----------
 # sw.js の ASSETS にある手元のファイル（'./〜'）が、全部そろっているか
@@ -29,6 +29,11 @@ for f in $(grep -oE "'\./[^']*'" sw.js | tr -d "'"); do
     exit 1
   fi
 done
+# manifest とアイコンを、名前を変えずに指しているか（Vite に名前を変えられると、ホーム画面のアプリが壊れる）
+if ! grep -q 'rel="manifest" href="manifest.json"' "$OUT/index.html"; then
+  echo "index.html の manifest の場所が変わっています（vite-ignore を確かめる）" >&2
+  exit 1
+fi
 # 置き換える場所が1つだけあるか（2つあると、公開した版でも「手元」と見なしてしまう）
 if [ "$(grep -c "$PLACEHOLDER" "$OUT/sw.js")" != 1 ]; then
   echo "sw.js に $PLACEHOLDER が1つだけ、ではありません" >&2
