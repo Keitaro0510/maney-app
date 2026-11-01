@@ -29,3 +29,6 @@ jobs:
         with:
           node-version: 24
       - run: node --test "tests/*.test.mjs"
+      # 公開の手順（deploy.yml）と同じやり方で、公開するファイルを試しに作る（マージする前に失敗に気づけるように）
+      - name: 公開するファイルを試しに作る
+        run: bash scripts/build-pages.sh "$RUNNER_TEMP/_site"

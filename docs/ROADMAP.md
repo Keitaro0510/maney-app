@@ -23,7 +23,7 @@ Phase の番号の順ではなく、次の順で進める。
 
 手順8のあと、全部の画面を iPhone の幅で確かめて、UI の見直しをした（2026-10-31、[#71](https://github.com/Keitaro0510/maney-app/issues/71)。Codex の [#58](https://github.com/Keitaro0510/maney-app/issues/58) の続き）。
 
-そのあと Phase 4（ファイルの分割と TypeScript）と Phase 6。`CACHE_NAME` の自動化は、デプロイの版と連動させるやり方を決めてから、別に入れる。
+そのあと Phase 4（ファイルの分割と TypeScript）と Phase 6。`CACHE_NAME` の自動化は 2026-11-01 に入れた（D15）。
 
 ## Phase 0: 今の状態の地図を作る
 
@@ -51,7 +51,7 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] アプリに戻ってきたとき、月表示の日の詳細が描き直されず、古いボタンから別の記録を消しうる（`index.html:958-961`）　ブランチ: `fix/stale-day-detail`（2026-10-31。カレンダーを描き直すときに日の詳細も描き直し、ボタンは押したときに同じ記録かを ID で確かめる）
 - [x] 計算ロジック（残高の推定、カードの締め日、給与）を関数として切り出し、テストを書く（2026-10-31。`js/money.js` と `tests/money.test.mjs`。Vitest ではなく `node --test`。D11）
 - [x] GitHub Actions で PR ごとにテストを実行する（練習5。2026-10-31、[`.github/workflows/test.yml`](../.github/workflows/test.yml)。Node だけで通るテストを動かす。テストが通らないとマージできない設定は、2026-11-01 に練習4 の main の保護と一緒に入れた）
-- [ ] sw.js の `CACHE_NAME` を手で上げるのをやめ、デプロイのたびに自動で変わるようにする。CI とは分け、デプロイの版やハッシュと確実に連動させるやり方（公開を GitHub Actions に移すかどうかも）を決めてから入れる（D12）
+- [x] sw.js の `CACHE_NAME` を手で上げるのをやめ、デプロイのたびに自動で変わるようにする。CI とは分け、デプロイの版やハッシュと確実に連動させるやり方（公開を GitHub Actions に移すかどうかも）を決めてから入れる（D12）（2026-11-01。公開を GitHub Actions に移し、公開するファイルの中身の指紋を版にした。[D15](DECISIONS.md)）
 - [x] バグ4つを直し、CI で確かめた状態に `v1.0.0` のタグを付ける（練習6、D12。2026-10-31、[Releases](https://github.com/Keitaro0510/maney-app/releases/tag/v1.0.0)）
 
 ## Phase 3: タスク管理（最小版）
