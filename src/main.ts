@@ -4,6 +4,10 @@
 // - 出すのは、モジュールの関数を入れたふつうのオブジェクト（前の js/ のファイルが出していたものと同じ形）
 import * as clock from './clock.ts';
 import * as money from './money.ts';
+import * as tasks from './tasks.ts';
+import * as monthly from './monthly.ts';
 
 window.MoneyClock = { ...clock };
 window.MoneyCalc = { ...money };
+window.MoneyTasks = { ...tasks };
+window.MoneyMonthly = { ...monthly };

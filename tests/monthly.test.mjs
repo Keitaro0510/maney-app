@@ -1,10 +1,7 @@
-// 毎月のお金の計算（js/monthly.js）のテスト。実行: node --test "tests/*.test.mjs"
+// 毎月のお金の計算（src/monthly.ts）のテスト。実行: node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const M = require('../js/monthly.js');
+import * as M from '../src/monthly.ts'; // Node が型を消して読む（D17）
 
 const TODAY = '2026-11-15';
 const rule = props => ({

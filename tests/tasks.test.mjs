@@ -1,13 +1,10 @@
-// タスクの計算（js/tasks.js）のテスト。実行: node --test "tests/*.test.mjs"
+// タスクの計算（src/tasks.ts）のテスト。実行: node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const {
+import {
   daysBetween, sortTasks, isFolded, groupForTab, startupGroups, shouldShowStartup, dueLabel, nextPosition,
   tasksOnDay, countByDay, homeSummary,
-} = require('../js/tasks.js');
+} from '../src/tasks.ts'; // Node が型を消して読む（D17）
 
 const TODAY = '2026-11-02';                       // 月曜
 const NOW = new Date(2026, 10, 2, 9, 0);           // 11/2 9:00（端末の時刻）

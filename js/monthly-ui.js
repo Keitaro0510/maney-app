@@ -1,4 +1,4 @@
-// 毎月のお金の画面（D14）。計算は js/monthly.js（MoneyMonthly）、部品は js/ui.js（MoneyUI）。
+// 毎月のお金の画面（D14）。計算は src/monthly.ts（MoneyMonthly）、部品は js/ui.js（MoneyUI）。
 // 固定費（fixed_costs）の行を、互換の st を通さずに直接読み書きする（D1 と同じ。保存は saveRows）。
 // js/app.js の次のものを使う（呼ばれたときに読む）: currentRows・saveRows・server・TODAY・sw・ldgTab・renderCurrentSection
 // - 家計簿のタブの「毎月のお金」: 一覧と、1つを押したときの画面（来月から金額を変える・やめる・削除）
