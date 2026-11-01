@@ -1,0 +1,47 @@
+# 公開: main に入ったら、アプリのファイルだけを GitHub Pages に出す（D15）
+# テストを通してから、scripts/build-pages.sh で公開するファイルを _site に集め、
+# sw.js の CACHE_NAME（'money-app-dev'）を、公開するファイルの中身の指紋に置き換える。
+# 失敗したときは公開しない（前の版が出たまま）。GitHub の Actions の画面から手で動かし直せる
+name: 公開
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # GitHub の画面から手で動かすこともできる
+
+permissions:
+  contents: read
+  pages: write    # Pages に出す
+  id-token: write # Pages に出すときの本人確認
+
+# 公開は1つずつ。途中で止めない（出しかけの版を残さない）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: GitHub Pages に公開
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: テスト
+        run: node --test "tests/*.test.mjs"
+      - name: 公開するファイルを集め、CACHE_NAME を中身の指紋にする
+        run: |
+          version=$(bash scripts/build-pages.sh _site)
+          echo "公開する版: \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - name: GitHub Pages に出す
+        id: deployment
+        uses: actions/deploy-pages@v5

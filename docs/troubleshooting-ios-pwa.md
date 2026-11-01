@@ -15,7 +15,7 @@
 - iOSのPWA（ホーム画面追加）はキャッシュが特に強力に残る
 
 **解決策**
-1. `sw.js` の `CACHE_NAME` のバージョンを上げる（例: `v1` → `v2`）
+1. `sw.js` の `CACHE_NAME` のバージョンを上げる（例: `v1` → `v2`）。2026-11-01 からは、公開するときに GitHub Actions が自動で変える（D15）
 2. Supabase・Google認証のリクエストはキャッシュしない
 
 ```javascript
@@ -181,7 +181,7 @@ alter table user_data add constraint user_data_user_id_unique unique (user_id);
 
 ## チェックリスト（アプリ更新時）
 
-- [ ] index.htmlを更新したらsw.jsのCACHE_NAMEのバージョンを上げる
+- [x] index.htmlを更新したらsw.jsのCACHE_NAMEのバージョンを上げる（2026-11-01 から自動。D15）
 - [ ] デバッグ用のvconsoleを削除したか確認
 - [ ] GitHubにアップロード後、スマホのキャッシュを消してからホーム画面に再追加
 

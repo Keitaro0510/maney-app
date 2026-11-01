@@ -17,5 +17,5 @@
 - **main ブランチがそのまま GitHub Pages の本番**（ユーザーが毎日使っている）。main で直接作業しない。変更は必ずブランチを切り、PR にする（`docs/GIT_WORKFLOW.md`）
 - PR のマージは Claude が行ってよい（2026-10-29 にユーザーが許可）
 - ユーザーはブランチの運用を学んでいる。Git の操作をするときは、何をなぜするのかを短く説明する
-- `index.html` か `js/` を変えたら `sw.js` の `CACHE_NAME` を上げる（自動化するまで）
+- `sw.js` の `CACHE_NAME` は、公開するときに GitHub Actions が自動で決める（D15。`.github/workflows/deploy.yml`）。リポジトリの `'money-app-dev'` は手で変えない。`js/` にファイルを足したら、`sw.js` の `ASSETS` にも足す（テストが確かめる）
 - データの構造は `docs/db/SCHEMA.md`。テーブルを変えるときはマイグレーション（`supabase/migrations/`）とテストを書き、ローカルの Supabase で通してから本番に適用する（`docs/db/LOCAL.md`）。保存データの形を変える前に、戻す手段（`docs/db/RESTORE.md`）を確かめる

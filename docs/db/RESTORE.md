@@ -97,7 +97,7 @@ order by id desc;
    alter table public.user_data disable trigger block_user_data_writes;
    ```
 
-3. `index.html`・`sw.js`・`js/` を切り替える前の版に戻す。切り替えの PR（#29）を `git revert` して PR にする。`sw.js` の `CACHE_NAME` は上げる
+3. `index.html`・`sw.js`・`js/` を切り替える前の版に戻す。切り替えの PR（#29）を `git revert` して PR にする。`sw.js` の `CACHE_NAME` は、公開するときに自動で変わる（D15。ただし戻した `sw.js` が `'money-app-dev'` の形でなければ、その形に直す）
 4. 新しいテーブルに書いている端末がないことを確かめる（戻したあとに新しいテーブルに書かれた分は、旧版のアプリには出ない）
 
 `user_data` は、片付けの2回目（問題がなければ1〜2週間後）で消す予定。消したあとは、1の前に `user_data` のテーブルを作り直す（[`supabase/migrations/20260101000000_user_data_baseline.sql`](../../supabase/migrations/20260101000000_user_data_baseline.sql)）。

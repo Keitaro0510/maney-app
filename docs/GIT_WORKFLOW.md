@@ -55,7 +55,7 @@ git pull
 git branch -d feature/tasks-mvp
 ```
 
-**index.html を変えたら sw.js の `CACHE_NAME` も上げる**（Phase 2 で自動化するまでの約束。上げ忘れると、スマホに古い画面が残る）。
+**公開は自動**: main に入ると、GitHub Actions（`.github/workflows/deploy.yml`）がテストを通してから GitHub Pages に出す。`sw.js` の `CACHE_NAME` は、そのときに公開するファイルの中身から自動で決まるので、手で上げなくてよい（2026-11-01 から。D15）。公開の様子は GitHub の Actions の「公開」で見られる。
 
 ## ブランチ名の付け方
 

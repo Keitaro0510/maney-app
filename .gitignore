@@ -1,2 +1,5 @@
 # 個人データのバックアップ（公開リポジトリなので入れない）
 maney-backup-*.json
+
+# 公開するファイルを集めた場所（scripts/build-pages.sh が作る。D15）
+_site/

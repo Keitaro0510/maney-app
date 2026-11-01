@@ -1,4 +1,9 @@
-const CACHE_NAME = 'money-app-v68';
+// 版の名前。リポジトリでは「money-app-dev」のまま手で変えない。
+// 公開するときに GitHub Actions が、公開するファイルの中身の指紋（money-app-1a2b3c4d5e6f など）に置き換える（D15。scripts/build-pages.sh）。
+// アプリのファイルが変わったときだけ版が変わり、端末のキャッシュが新しくなる
+const CACHE_NAME = 'money-app-dev';
+// 置き換えていない（手元で開いた）ときは、キャッシュより通信を先に見る（直したファイルがすぐ出るように）
+const DEV = CACHE_NAME.endsWith('-dev');
 const ASSETS = [
   './',
   './index.html',
@@ -41,6 +46,13 @@ self.addEventListener('fetch', e => {
      e.request.url.includes('accounts.google.com') ||
      e.request.url.includes('googleapis.com')){
     e.respondWith(fetch(e.request));
+    return;
+  }
+
+  if(DEV){
+    // ブラウザが覚えている分も、サーバーに確かめ直す（no-cache）。ページを開くときは、そのまま読む
+    const req = e.request.mode === 'navigate' || e.request.method !== 'GET' ? e.request : new Request(e.request.url, { cache: 'no-cache' });
+    e.respondWith(fetch(req).catch(() => caches.match(e.request).then(cached => cached || Response.error())));
     return;
   }
 
