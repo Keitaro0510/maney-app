@@ -59,7 +59,7 @@ select ok(has_function_privilege('authenticated', 'public.import_backup(jsonb)',
 select is(private.import_tables(), array[
   'settings', 'cards', 'jobs', 'categories', 'ledger_entries', 'shifts', 'plans',
   'fixed_costs', 'withdrawals', 'salary_actuals', 'card_bill_actuals', 'tasks'],
-  '読み込むテーブルは、写しのテーブルから fixed_incomes を除いたもの（アプリの MoneyData.TABLES と同じ）');
+  '読み込むテーブルは、写しのテーブルと同じ（アプリの MoneyData.TABLES と同じ）');
 select ok(
   (select command like '%before_import%' from cron.job where jobname = 'purge-snapshots'),
   '読み込む直前の写しも、90日で消す');

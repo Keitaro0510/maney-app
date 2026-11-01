@@ -5,7 +5,7 @@
   'use strict';
 
   // 参照される側が先。
-  // 固定収入（fixed_incomes）は、固定費の「収入」にまとめたので読まない（D14。DB の表は、新しいアプリが行き渡ってから消す）
+  // 固定収入（fixed_incomes）は、固定費の「収入」にまとめた（D14。DB の表は 2026-11-01 に消した）
   const TABLES = [
     'settings', 'cards', 'jobs', 'categories', 'ledger_entries', 'shifts', 'plans',
     'fixed_costs', 'withdrawals', 'salary_actuals', 'card_bill_actuals', 'tasks',
