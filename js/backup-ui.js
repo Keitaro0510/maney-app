@@ -2,7 +2,7 @@
 // 設定の「データの書き出し・読み込み」から使う。
 // - 書き出し: 今の行（サーバーの写しに送信待ちを重ねたもの。画面に出ている内容）を JSON のファイルにする
 // - 読み込み: 今のデータを全部、ファイルの中身に置き換える（DB の public.import_backup。直前の状態は写しに残る）
-// index.html の次のものを使う（呼ばれたときに読む）: supa・outbox・currentRows・flushOutbox・loadRemote・loadingRemote・sending・
+// js/app.js の次のものを使う（呼ばれたときに読む）: supa・outbox・currentRows・flushOutbox・loadRemote・loadingRemote・sending・
 // downloadJson・TABLE_LABELS
 
 // ---------- 書き出す ----------

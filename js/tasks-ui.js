@@ -1,5 +1,5 @@
 // タスクの画面（D3・D10）。計算は js/tasks.js（MoneyTasks）、部品は js/ui.js（MoneyUI）。
-// index.html の次のものを使う（呼ばれたときに読む）: currentRows・saveRows・server・currentUser・TODAY・STORAGE_PREFIX・sw
+// js/app.js の次のものを使う（呼ばれたときに読む）: currentRows・saveRows・server・currentUser・TODAY・STORAGE_PREFIX・sw
 // - タスクのタブ（#sec-task）: 追加・編集・完了・削除。完了したものは横線で残し、7日たったらいちばん下にたたむ
 // - 開いたときの一覧（#task-startup）: 期限切れ・今日・2週間以内。開くたびに出し、「今日は表示しない」で止める
 // 完了できるのは、この2か所だけ（D10）。

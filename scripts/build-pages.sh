@@ -6,8 +6,8 @@
 #   bash scripts/build-pages.sh 出す先    # ビルドする場所を変える
 #
 # 公開するのはアプリに要るファイルだけ（文書・DB・テストは出さない）。
-# Vite を通さないファイル（js/・sw.js・manifest・アイコン）は vite.config.mjs の STATIC_FILES でコピーする。
-# ファイルを足したら、そこと sw.js の ASSETS に足す（js/ の中は全部コピーする）
+# Vite を通さないファイル（js/・css/・sw.js・manifest・アイコン）は vite.config.mjs の STATIC_FILES でコピーする。
+# ファイルを足したら、そこと sw.js の ASSETS に足す（js/・css/ の中は全部コピーする）
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -34,6 +34,13 @@ if ! grep -q 'rel="manifest" href="manifest.json"' "$OUT/index.html"; then
   echo "index.html の manifest の場所が変わっています（vite-ignore を確かめる）" >&2
   exit 1
 fi
+# 見た目とアプリの本体を、名前を変えずに指しているか（Vite に名前を変えられると、sw.js の ASSETS と合わなくなる）
+for ref in 'rel="stylesheet" href="css/app.css"' '<script src="js/app.js"'; do
+  if ! grep -q "$ref" "$OUT/index.html"; then
+    echo "index.html に $ref がありません（vite-ignore を確かめる）" >&2
+    exit 1
+  fi
+done
 # 置き換える場所が1つだけあるか（2つあると、公開した版でも「手元」と見なしてしまう）
 if [ "$(grep -c "$PLACEHOLDER" "$OUT/sw.js")" != 1 ]; then
   echo "sw.js に $PLACEHOLDER が1つだけ、ではありません" >&2

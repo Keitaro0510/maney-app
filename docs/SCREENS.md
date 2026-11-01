@@ -3,7 +3,7 @@
 今のアプリ（`index.html`）で、どこを押すとどの画面に行くかをまとめた「今の地図」。画面を作り直すとき（タスクを足す・タブを組み替える）の出発点にする。
 
 - 図は今の動きを書いたもので、こうあるべきという案ではない。問題点は [design-review/audit-claude.md](design-review/audit-claude.md) と [design-review/audit-codex.md](design-review/audit-codex.md)
-- 行番号は `index.html` のもの。画面を変えたら、この図も直す
+- 画面の HTML は `index.html`、動きは `js/app.js`（2026-11-02 に `index.html` の `<script>` から出した。D4 の手順3）。行番号は `js/app.js` のもの。画面を変えたら、この図も直す
 
 ## 用語
 
@@ -99,8 +99,8 @@ flowchart LR
 ```
 
 - タスク（D10）: 月表示のセルは「タスク2」の札（期限が過ぎた日に残っていれば赤、全部済んでいれば薄く「タスク済」）。日の詳細は名前だけ（見るだけ。完了はタスクのタブで）。日表示・週表示は「タスク 2件」の1行だけ
-- 週表示には編集・削除のボタンがない（予定の「済み」のチェック（予算に含めない。D2）だけある）。日表示と日の詳細にはある（`index.html:1631-1694` の `buildDay`）
-- 「← →」は、月表示なら1か月、週表示なら7日、日表示なら1日動く（`index.html:1709-1720`）
+- 週表示には編集・削除のボタンがない（予定の「済み」のチェック（予算に含めない。D2）だけある）。日表示と日の詳細にはある（`js/app.js:892-971` の `buildDay`）
+- 「← →」は、月表示なら1か月、週表示なら7日、日表示なら1日動く（`js/app.js:1018-1029` の `calShift`）
 
 ## 入力シートの一覧
 
@@ -147,4 +147,4 @@ flowchart LR
 | タスク | `renderTaskTab`（`js/tasks-ui.js`） | `js/tasks.js` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
-タブの切り替えは `sw()`（`index.html:1274`）。切り替えるたびに、そのタブを全部描き直す。
+タブの切り替えは `sw()`（`js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。

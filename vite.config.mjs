@@ -1,5 +1,5 @@
-// Vite の設定（D4 の手順2）。今はまだ、アプリの JavaScript は js/ のふつうの <script> のまま動かす。
-// - index.html の js/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
+// Vite の設定（D4 の手順2・3）。今はまだ、アプリの JavaScript は js/ のふつうの <script>、見た目は css/ のふつうの CSS のまま動かす。
+// - index.html の js/・css/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
 // - CSS・JavaScript を縮めない（出力の index.html を、元とほぼ同じにする。モジュールに移したら見直す）
 // - 公開するときは scripts/build-pages.sh がこのビルドを使い、sw.js の CACHE_NAME を中身の指紋にする（D15）
 import { defineConfig } from 'vite';
@@ -7,7 +7,7 @@ import { cpSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 // まだ Vite を通さないファイル（そのまま公開する）
-const STATIC_FILES = ['js', 'sw.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const STATIC_FILES = ['js', 'css', 'sw.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 function copyStaticFiles() {
   let outDir;

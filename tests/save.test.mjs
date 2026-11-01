@@ -20,7 +20,7 @@ function options() {
   return { newId: () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`, now: NOW };
 }
 
-// 画面で st を変えて保存したときの変更の列（index.html の save() と同じく、互換の st が持つテーブルだけを比べる）
+// 画面で st を変えて保存したときの変更の列（js/app.js の save() と同じく、互換の st が持つテーブルだけを比べる）
 function changesAfter(edit, base = fixture.rows) {
   const st = rowsToSt(base);
   edit(st);

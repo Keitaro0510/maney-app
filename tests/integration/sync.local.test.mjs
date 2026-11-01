@@ -76,13 +76,13 @@ function device(supa) {
       edit(d.st);
       const now = new Date().toISOString();
       const before = d.rows();
-      // index.html の save() と同じく、互換の st が持つテーブルだけを比べる（固定費・タスクは直接保存。D1・D14）
+      // js/app.js の save() と同じく、互換の st が持つテーブルだけを比べる（固定費・タスクは直接保存。D1・D14）
       const changes = diffRows(before, stToRows(d.st, before, { newId: () => crypto.randomUUID(), now }), COMPAT_TABLES);
       if (changes.length) d.outbox.push(makeOp(changes, { id: crypto.randomUUID(), epoch: d.server.epoch, now, server: d.server, outbox: d.outbox }));
       d.rebuild();
       return changes;
     },
-    // index.html の saveRows() と同じ（st を通さないテーブル）
+    // js/app.js の saveRows() と同じ（st を通さないテーブル）
     saveRows(changes) {
       const now = new Date().toISOString();
       d.outbox.push(makeOp(checkDirectChanges(changes), { id: crypto.randomUUID(), epoch: d.server.epoch, now, server: d.server, outbox: d.outbox }));
@@ -102,7 +102,7 @@ function device(supa) {
   return d;
 }
 
-// 新しいユーザーの st（index.html の st の初期値と同じ）
+// 新しいユーザーの st（js/app.js の st の初期値と同じ）
 const emptySt = () => ({
   acctBase: 0, baseDate: '2026-10-01', shiftCloseDay: 31, shiftPayDay: 10, budget: 0, jobs: [], shifts: [],
   ledger: [], cards: [], wds: [], actualInputs: [], fuyouLimit: '1300000', otherIncome: 0, plans: [],
