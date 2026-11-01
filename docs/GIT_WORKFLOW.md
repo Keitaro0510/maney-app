@@ -77,10 +77,17 @@ git branch -d feature/tasks-mvp
 3. [ ] わざとコンフリクトを起こして解決する
    - `practice/a` と `practice/b` の2つのブランチで、README の同じ行を別々に書き換える
    - a を先にマージすると、b の PR でコンフリクトが出る → 手で直してマージする（終わったら両方消す）
-4. [ ] main を保護する（GitHub の Settings → Rules → Rulesets で、「main への直接の push を禁止」「マージには PR を必須」にする）
-5. [ ] CI を入れて、テストが通らないとマージできないようにする（Phase 2）
+4. [x] main を保護する（GitHub の Settings → Rules → Rulesets で、「main への直接の push を禁止」「マージには PR を必須」にする）
+   - 2026-11-01 にルールセット「main を守る」を作った（ユーザーに頼まれて Claude が設定。`gh api` の rulesets）。中身は次の4つ
+     - PR を通さないと main に入れない（直接の push は断られる）。承認の人数は0（1人で使うので、自分でマージしてよい）
+     - テスト（`Node のテスト`）が通らないとマージできない
+     - 強制 push（`git push --force`）で main の履歴を書き換えられない
+     - main を消せない
+   - 管理者でも、ルールを飛ばす設定（bypass）は付けていない。どうしても直接直したいときは、Settings → Rules → Rulesets でルールを一時的に止める（止めたら、終わったら戻す）
+5. [x] CI を入れて、テストが通らないとマージできないようにする（Phase 2）
    - CI は 2026-10-31 に入れた（`.github/workflows/test.yml`）。PR を出すと、GitHub が自動でテストを動かす
-   - 残り: 4 の Ruleset で「テストが通ること」（`Node のテスト`）をマージの条件にする
+   - 2026-11-01 に、4 のルールセットで「テストが通ること」（`Node のテスト`）をマージの条件にした。テストが終わるまで PR の「Merge」は押せず、落ちたらマージできない
+   - 「main の最新を取り込んでからでないとマージできない」（strict）は付けていない。PR を2つ同時に出すことがほぼないため
 6. [x] 動いているバージョンにタグを付ける（`git tag v1.0.0`、`git push origin v1.0.0`）。GitHub の Releases に変更点を書く
    - 2026-10-31 に `v1.0.0` を付けた（Claude が実行）。`git tag -a v1.0.0 -m "…"` の注釈付きタグにした（メッセージ・付けた人・日時が残る）。Releases は `gh release create v1.0.0 --notes-file …`
    - 付けたタグは動かさない。直したら、新しい番号（`v1.0.1` など）を付ける
