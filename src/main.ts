@@ -1,0 +1,9 @@
+// アプリの入口（D4 の手順4・D17）。src/ の ES モジュールを読み、まだふつうの <script> の js/ から使えるように window に出す。
+// - js/ の <script> は index.html の <body> に defer で置いてあり、このモジュールのあとで、書いた順に動く
+// - トップレベルの await は使わない（待っている間に js/ が先に動いてしまう。ビルドが止めるようにしてある。vite.config.mjs）
+// - 出すのは、モジュールの関数を入れたふつうのオブジェクト（前の js/ のファイルが出していたものと同じ形）
+import * as clock from './clock.ts';
+import * as money from './money.ts';
+
+window.MoneyClock = { ...clock };
+window.MoneyCalc = { ...money };

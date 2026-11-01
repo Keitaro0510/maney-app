@@ -87,7 +87,10 @@ Phase の番号の順ではなく、次の順で進める。
 - [x] 3. TypeScript の検査（`checkJs`）を入れて、型の間違いを直す。その前に `index.html` の CSS と JavaScript をファイルに出す（2026-11-02）
   - [x] `index.html` の `<style>` を `css/app.css` に、`<script>` を `js/app.js` に出す（2026-11-02。CSS と JavaScript は分けずに1つの PR でまとめて出した。中身は1文字も変えず、`js/` と同じく `vite-ignore` でそのまま公開する）　ブランチ: `feature/extract-css-js`
   - [x] `checkJs` を入れて、型の間違いを直す（2026-11-02。336件を0件に。画面の要素は型付きの取り出し関数で取る（[D16](DECISIONS.md)）。`strict` はまだ入れない。CI で `npm run typecheck` を動かす）　ブランチ: `feature/check-js`
-- [ ] 4. 機能ごとに `.ts` と import/export に移す（home / calendar / ledger / shift / settings / tasks）。計算ロジックから
+- [ ] 4. 機能ごとに `.ts` と import/export に移す（home / calendar / ledger / shift / settings / tasks）。計算ロジックから。つなぎ方は [D17](DECISIONS.md)
+  - [x] 土台（`src/main.ts` から `window` に出す・`js/` は `<body>` に `defer`・`src/` は `strict`）と `clock`・`money`（2026-11-02。本番と同じビルドで、起動・主要な画面・オフラインでの読み直しを確かめた）　ブランチ: `feature/ts-clock-money`
+  - [ ] `tasks`・`monthly`・`backup`・`data`・`compat`
+  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）

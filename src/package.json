@@ -1,0 +1,4 @@
+{
+  "//": "src/ の .ts は ES モジュール（Node のテストが読むときの目印。D17）。js/ はまだ CommonJS の形なので、ルートの package.json には書かない",
+  "type": "module"
+}

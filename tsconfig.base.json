@@ -1,0 +1,14 @@
+// js/ 用（tsconfig.json）と src/ 用（src/tsconfig.json）で同じ設定（D16・D17）
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    // src/ の .ts は、Node（テスト）と Vite の両方がそのまま読む。拡張子付きの import にそろえる
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  }
+}

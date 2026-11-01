@@ -15,19 +15,9 @@
 <link rel="apple-touch-icon" href="icon-192.png" vite-ignore>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- 新しいテーブルを読み書きするデータの層と、今の画面のための互換層（テーブル分割 #11。docs/DECISIONS.md の D9）。
-     js/ はまだふつうの <script>（import/export ではない）なので、Vite には触らせず、そのまま公開する（vite-ignore。D4 の手順2） -->
-<script src="js/data.js" vite-ignore></script>
-<script src="js/compat.js" vite-ignore></script>
-<script src="js/clock.js" vite-ignore></script>
-<script src="js/money.js" vite-ignore></script>
-<script src="js/ui.js" vite-ignore></script>
-<script src="js/tasks.js" vite-ignore></script>
-<script src="js/tasks-ui.js" vite-ignore></script>
-<script src="js/monthly.js" vite-ignore></script>
-<script src="js/monthly-ui.js" vite-ignore></script>
-<script src="js/backup.js" vite-ignore></script>
-<script src="js/backup-ui.js" vite-ignore></script>
+<!-- アプリの入口（ES モジュール。D17）。src/ の計算を読み、下の js/ から使えるように window に出す。
+     ビルドすると Vite が assets/main.js にまとめ、この <head> の最後に置く -->
+<script type="module" src="src/main.ts"></script>
 <!-- 見た目。js/ と同じく Vite には触らせず、そのまま公開する（vite-ignore。D4 の手順3） -->
 <link rel="stylesheet" href="css/app.css" vite-ignore>
 </head>
@@ -63,7 +53,7 @@
 <!-- HOME -->
 <div id="sec-home" class="sec active">
   <div class="page-title">ホーム</div>
-  <!-- いちばん大事な数字（D11）: 給料日までに使えるお金。足りないときはマイナスのまま。数えるのは js/money.js -->
+  <!-- いちばん大事な数字（D11）: 給料日までに使えるお金。足りないときはマイナスのまま。数えるのは src/money.ts -->
   <div class="acct-box home-main">
     <div class="acct-lbl">給料日までに使えるお金</div>
     <div class="acct-val" id="home-spendable">¥0</div>
@@ -80,7 +70,7 @@
   </div>
   <!-- 今日のお知らせ（引き落とし日・給料日・締め日・今日のシフトと予定） -->
   <div id="alerts-home"></div>
-  <!-- これからのお金の動き（D11: 2週間の給料・引き落とし・予定など。js/money.js の upcoming） -->
+  <!-- これからのお金の動き（D11: 2週間の給料・引き落とし・予定など。src/money.ts の upcoming） -->
   <div class="card">
     <div class="st">これからのお金の動き（2週間）</div>
     <div id="home-upcoming"></div>
@@ -441,6 +431,17 @@
 <div class="mbg" id="job-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>バイト先を編集</h3><div class="fgr"><div class="fg"><label>名前</label><input id="je-name" placeholder="カフェなど"/></div><div class="fg"><label>通常時給 (¥)</label><input id="je-wage" type="number" placeholder="1100"/></div></div><div class="fgr3"><div class="fg"><label>深夜開始</label><input id="je-night-start" type="time"/></div><div class="fg"><label>深夜割増(%)</label><input id="je-night-rate" type="number"/></div><div class="fg"><label>交通費(片道¥)</label><input id="je-transport" type="number" placeholder="230"/></div></div><div class="fgr"><div class="fg"><label>締め日</label><input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）"/></div><div class="fg"><label>給料日（翌月）</label><input id="je-pay-day" type="number" min="1" max="31" placeholder="10"/></div></div><div class="fg"><label>カレンダーの色</label><div class="color-swatches" id="je-color-swatches"></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeJobEdit()">キャンセル</button><button class="btn primary" onclick="saveJobEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-mbg"><div class="modal"><div class="modal-handle"></div><h3>収支を記録</h3><div class="pay-chips" id="ldg-type-chips"><button type="button" class="pay-chip sel" onclick="selLdgType('expense')">支出</button><button type="button" class="pay-chip" onclick="selLdgType('income')">収入</button></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="ldg-amount" placeholder="1500"/></div><div class="fg" id="ldg-cat-wrap"><label>カテゴリ</label><div class="cat-chips" id="cat-chips"></div></div><div class="fg" id="ldg-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="ldg-pay-chips"></div><div class="hint" id="ldg-pay-hint"></div></div><div class="fg" id="ldg-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="ldg-receive-chips"></div><div class="hint" id="ldg-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label for="ldg-name" id="ldg-name-label">名前</label><input id="ldg-name" placeholder="ランチ、交通費など" aria-describedby="ldg-name-err"/><div class="task-field-err" id="ldg-name-err" role="alert" hidden>毎月のお金には名前を入れてください（家賃・動画のサブスクなど）</div></div><div class="fg"><label>日付</label><input type="date" id="ldg-date" onchange="renderLdgRepeat()"/></div><label class="ldg-repeat"><input type="checkbox" id="ldg-repeat" onchange="renderLdgRepeat()"/><span>毎月くり返す</span></label><div class="ldg-repeat-hint" id="ldg-repeat-hint" hidden></div><div class="fg" id="ldg-memo-wrap"><label>メモ</label><textarea id="ldg-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgModal()">キャンセル</button><button class="btn primary" onclick="saveLedger()">保存</button></div></div></div>
 
-<script src="js/app.js" vite-ignore></script>
+<!-- まだふつうの <script> の js/（D4 の手順4 で少しずつ src/ に移す）。Vite には触らせず、そのまま公開する（vite-ignore）。
+     defer を付けて <body> に置く: 上のモジュールのあとで、この順に動く。<head> に置くと、ビルドしたときだけモジュールより先に動いてしまう（D17） -->
+<script src="js/data.js" defer vite-ignore></script>
+<script src="js/compat.js" defer vite-ignore></script>
+<script src="js/ui.js" defer vite-ignore></script>
+<script src="js/tasks.js" defer vite-ignore></script>
+<script src="js/tasks-ui.js" defer vite-ignore></script>
+<script src="js/monthly.js" defer vite-ignore></script>
+<script src="js/monthly-ui.js" defer vite-ignore></script>
+<script src="js/backup.js" defer vite-ignore></script>
+<script src="js/backup-ui.js" defer vite-ignore></script>
+<script src="js/app.js" defer vite-ignore></script>
 </body>
 </html>

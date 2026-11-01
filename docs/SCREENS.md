@@ -140,7 +140,7 @@ flowchart LR
 
 | タブ | 描く関数 | 主な計算 |
 |---|---|---|
-| ホーム | `renderHome`（1578）、`renderHomeUpcoming`（1594）、`renderHomeMore`（1606。中で `renderBalanceChart`・`renderForecast`・`renderHomeBudget`） | `js/money.js` の `spendable`・`upcoming`・`balanceAt`・`balanceSeries`、`upcomingIncome`・`upcomingFixed`（1545-1551）、`cycle`（1524） |
+| ホーム | `renderHome`（1578）、`renderHomeUpcoming`（1594）、`renderHomeMore`（1606。中で `renderBalanceChart`・`renderForecast`・`renderHomeBudget`） | `src/money.ts` の `spendable`・`upcoming`・`balanceAt`・`balanceSeries`、`upcomingIncome`・`upcomingFixed`（1545-1551）、`cycle`（1524） |
 | カレンダー | `renderCal`（1495）、`renderCalMonth`（1506）、`renderCalWeek`（1593）、`renderCalDay`（1572）、`dayClick`（1699） | `buildDay`（1631）、`fetchHolidays`（1456） |
 | 家計簿 | `renderLedger`（2040）、`renderLedgerMetrics`（2039）、`renderCharts`（2147） | `monthLedger`（1295） |
 | シフト | `renderShiftSection`（1837）、`renderSalaryTable`（1838）、`renderFuyou`（1924）、`renderShiftList`（1836）、`renderJobList`（1930） | `calcShiftInc`（1314）、`yearConfirmedIncome`・`yearEstimatedIncome`（1894-1923） |

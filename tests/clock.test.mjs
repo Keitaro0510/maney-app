@@ -1,13 +1,10 @@
-// 日付を扱う部品（js/clock.js）のテスト。実行: node --test "tests/*.test.mjs"
+// 日付を扱う部品（src/clock.ts）のテスト。実行: node --test "tests/*.test.mjs"
 // 日付は、その端末の時刻（new Date(年, 月, 日, 時, 分)）で作る。月は 0 が1月
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const {
+import {
   dayKey, msUntilNextDay, createDayWatcher, followMonth, daysInMonth, monthDay, minutesOf, endsAfterStart,
-} = require('../js/clock.js');
+} from '../src/clock.ts'; // Node が型を消して読む（D17）
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;

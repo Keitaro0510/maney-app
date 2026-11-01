@@ -8,10 +8,9 @@ const ASSETS = [
   './',
   './index.html',
   './css/app.css',
+  './assets/main.js', // src/ をビルドしたもの（Vite が作る。リポジトリにはない。D17）
   './js/data.js',
   './js/compat.js',
-  './js/clock.js',
-  './js/money.js',
   './js/ui.js',
   './js/tasks.js',
   './js/tasks-ui.js',
@@ -23,12 +22,18 @@ const ASSETS = [
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
+// 手元（npm run dev）には assets/ がない（ビルドで作る）ので、先読みしない。ないファイルがあると先読みが全部失敗する
+const PRECACHE = DEV ? ASSETS.filter(url => !url.startsWith('./assets/')) : ASSETS;
+// キャッシュから取り出すときは、サーバーの Vary を見ない（D17）。モジュールの <script>（assets/main.js）は Origin 付きで読まれるが、
+// 先読みしたときは Origin がない。サーバーが Vary: Origin を返すと、別のものと見なされてオフラインで読めなくなる。
+// キャッシュには1つの URL に1つしか入れないので、見なくてよい
+const MATCH = { ignoreVary: true };
 
 self.addEventListener('install', e => {
   // 新しい版のファイルは、ブラウザが覚えている分（GitHub Pages は10分）を使わず、必ずサーバーから取り直す。
   // そうしないと、出した直後に開いたとき、古い index.html を新しいキャッシュに入れてしまうことがある
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS.map(url => new Request(url, { cache: 'reload' }))))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE.map(url => new Request(url, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });
@@ -54,12 +59,12 @@ self.addEventListener('fetch', e => {
   if(DEV){
     // ブラウザが覚えている分も、サーバーに確かめ直す（no-cache）。ページを開くときは、そのまま読む
     const req = e.request.mode === 'navigate' || e.request.method !== 'GET' ? e.request : new Request(e.request.url, { cache: 'no-cache' });
-    e.respondWith(fetch(req).catch(() => caches.match(e.request).then(cached => cached || Response.error())));
+    e.respondWith(fetch(req).catch(() => caches.match(e.request, MATCH).then(cached => cached || Response.error())));
     return;
   }
 
   e.respondWith(
-    caches.match(e.request).then(cached => {
+    caches.match(e.request, MATCH).then(cached => {
       if(cached) return cached;
       return fetch(e.request).then(res => {
         if(res && res.status === 200 && e.request.method === 'GET'){

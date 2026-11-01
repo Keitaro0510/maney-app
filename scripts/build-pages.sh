@@ -6,6 +6,7 @@
 #   bash scripts/build-pages.sh 出す先    # ビルドする場所を変える
 #
 # 公開するのはアプリに要るファイルだけ（文書・DB・テストは出さない）。
+# src/ の .ts は Vite が assets/main.js にまとめる（D17）。
 # Vite を通さないファイル（js/・css/・sw.js・manifest・アイコン）は vite.config.mjs の STATIC_FILES でコピーする。
 # ファイルを足したら、そこと sw.js の ASSETS に足す（js/・css/ の中は全部コピーする）
 set -euo pipefail
@@ -21,14 +22,28 @@ mkdir -p "$OUT"
 npx vite build --outDir "$OUT" --emptyOutDir --logLevel warn >&2
 
 # ---------- 確かめる ----------
+fail() { echo "$1" >&2; exit 1; }
+ASSETS=$(sed -n '/^const ASSETS = \[/,/^\];/p' sw.js | grep -oE "'\./[^']*'" | tr -d "'") # ASSETS の配列の中だけ
+in_assets() { printf '%s\n' "$ASSETS" | grep -qxF "./$1"; }
 # sw.js の ASSETS にある手元のファイル（'./〜'）が、全部そろっているか
-for f in $(grep -oE "'\./[^']*'" sw.js | tr -d "'"); do
+for f in $ASSETS; do
   [ "$f" = "./" ] && continue
-  if [ ! -f "$OUT/${f#./}" ]; then
-    echo "sw.js の ASSETS にある $f が、公開するファイルにありません" >&2
-    exit 1
-  fi
+  [ -f "$OUT/${f#./}" ] || fail "sw.js の ASSETS にある $f が、公開するファイルにありません"
 done
+# Vite が作ったファイル（assets/）は、すべて ASSETS にあるか。JS は1つだけか（D17。ほかのファイルが出ると、通信できないときに開けない）
+for f in $(cd "$OUT" && find assets -type f | LC_ALL=C sort); do
+  in_assets "$f" || fail "Vite が作った $f が、sw.js の ASSETS にありません（出力を1つの JS にするか、手順6で一覧を作る）"
+done
+[ "$(find "$OUT/assets" -type f -name '*.js' | wc -l | tr -d ' ')" = 1 ] || fail "assets/ の JS が1つではありません（D17）"
+# 出力の index.html が読む手元のファイル（<script src>・stylesheet・modulepreload）は、すべて ASSETS にあるか
+for f in $(grep -oE '<script[^>]* src="[^"]+"|<link[^>]* rel="(stylesheet|modulepreload)"[^>]* href="[^"]+"' "$OUT/index.html" | grep -oE '(src|href)="[^"]+"' | cut -d'"' -f2 | sed 's|^\./||' | grep -v '^https\?://'); do
+  in_assets "$f" || fail "index.html が読む $f が、sw.js の ASSETS にありません"
+done
+# モジュール（assets/main.js）が、js/ の <script> より先に並んでいるか。js/ はすべて defer か（D17。逆だと js/ が window.MoneyCalc などを見つけられない）
+module_at=$(grep -n '<script type="module"' "$OUT/index.html" | head -1 | cut -d: -f1)
+classic_at=$(grep -n '<script src="js/' "$OUT/index.html" | head -1 | cut -d: -f1)
+[ -n "$module_at" ] && [ -n "$classic_at" ] && [ "$module_at" -lt "$classic_at" ] || fail "index.html で、モジュールが js/ の <script> より先に並んでいません"
+if grep '<script src="js/' "$OUT/index.html" | grep -qv ' defer'; then fail "index.html の js/ の <script> に defer がないものがあります"; fi
 # manifest とアイコンを、名前を変えずに指しているか（Vite に名前を変えられると、ホーム画面のアプリが壊れる）
 if ! grep -q 'rel="manifest" href="manifest.json"' "$OUT/index.html"; then
   echo "index.html の manifest の場所が変わっています（vite-ignore を確かめる）" >&2
@@ -51,7 +66,8 @@ fi
 # 公開するファイルの名前と中身から指紋を作る（sw.js は置き換える前の中身）。アプリのファイルが変わったときだけ変わる
 hash=$(cd "$OUT" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-12)
 version="money-app-$hash"
-sed -i "s/$PLACEHOLDER/'$version'/" "$OUT/sw.js"
+# -i.bak は Linux（GitHub Actions）でも Mac でも同じに動く書き方
+sed -i.bak "s/$PLACEHOLDER/'$version'/" "$OUT/sw.js" && rm -f "$OUT/sw.js.bak"
 grep -q "'$version'" "$OUT/sw.js"
 
 echo "$version"

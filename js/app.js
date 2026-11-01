@@ -543,7 +543,7 @@ const gY=()=>_now.getFullYear(),gM=()=>_now.getMonth(),gD=()=>_now.getDate();
 const fmtMD=d=>`${d.getMonth()+1}/${d.getDate()}`;
 function addM(y,m,n){let nm=m+n,ny=y;while(nm>11){nm-=12;ny++;}while(nm<0){nm+=12;ny--;}return{y:ny,m:nm};}
 const ds2d=ds=>{const[y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d);};
-// 「毎月○日」（固定費・給料日・引き落とし日）の、その月の日と日付。月にない日（30日までの月の31日など）は月末にする（js/clock.js）
+// 「毎月○日」（固定費・給料日・引き落とし日）の、その月の日と日付。月にない日（30日までの月の31日など）は月末にする（src/clock.ts）
 const monthDay=(y,m,day)=>MoneyClock.monthDay(y,m,day);
 const monthDate=(y,m,day)=>new Date(y,m,monthDay(y,m,day));
 const monthShifts=(y,m)=>st.shifts.filter(s=>{const d=new Date(s.date);return d.getFullYear()===y&&d.getMonth()===m;});
@@ -566,7 +566,7 @@ function setActualCard(ci,bY,bM,amount,estimated){const key=cardActualKey(ci,bY,
 // ============================================================
 // シフト計算
 // ============================================================
-// 1回のシフトの給料（js/money.js。D11）
+// 1回のシフトの給料（src/money.ts。D11）
 function calcShiftInc(shift){const job=st.jobs.find(j=>j.name===shift.job);return MoneyCalc.shiftIncome({start:shift.start,end:shift.end,rest:shift.rest},job);}
 const totalShiftInc=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
 const totalShiftIncNoTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
@@ -597,7 +597,7 @@ function cardCloseDay(card, y, m){
   return cl;
 }
 
-// カードの集計は js/money.js の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
+// カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
 // 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
 function cardRowOf(card){const row=card._id&&(currentRows().cards||[]).find(c=>c.id===card._id);return row||{id:'__preview__',close_day:parseInt(card.closeDay),bill_day:parseInt(card.billDay)};}
 function cardCycleForBillMonth(card,ci,billY,billM){const n=MoneyCalc.cardCycle(currentRows(),cardRowOf(card),billY,billM);return{cs:ds2d(n.cs),ce:ds2d(n.ce),billD:n.billD,amount:n.amount};}
@@ -609,20 +609,20 @@ const cardBillForDate=(card,bY,bM)=>cardBillForGraphDate(card,st.cards.indexOf(c
 // ============================================================
 // 口座推定
 // ============================================================
-// 今日の口座の残高（推定）。js/money.js で数える（D11）
+// 今日の口座の残高（推定）。src/money.ts で数える（D11）
 function estimateAcct(){return server?MoneyCalc.balanceAt(currentRows(),TODAY):(parseInt(String(st.acctBase))||0);}
 
 // ============================================================
 // グラフ
 // ============================================================
-// 残高推移（今後90日）。js/money.js で数える（D11。予定はカード払い以外を予定の日に、先の日付の口座の記録もその日に）
+// 残高推移（今後90日）。src/money.ts で数える（D11。予定はカード払い以外を予定の日に、先の日付の口座の記録もその日に）
 function buildBalanceSeries(){const s=MoneyCalc.balanceSeries(currentRows(),TODAY,90);return{labels:s.map((p,i)=>{const d=ds2d(p.date);return i===0?'今日':`${d.getMonth()+1}/${d.getDate()}`;}),balances:s.map(p=>Math.round(p.balance))};}
 function renderBalanceChart(){const{labels,balances}=buildBalanceSeries();const ctx=/** @type {HTMLCanvasElement} */ (document.getElementById('balance-chart')).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:ctx2=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx2=>labels[ctx2[0].dataIndex],label:ctx2=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:item=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(v,i)=>labels[i]},grid:{display:false}},y:{ticks:{callback:v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});document.getElementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
 
 // ============================================================
 // ホーム
 // ============================================================
-// 今月これから入るお金（毎月のお金の収入・給料。給料日が過ぎていたら来月の給料）。数え方は js/money.js（固定費の期間も見る）
+// 今月これから入るお金（毎月のお金の収入・給料。給料日が過ぎていたら来月の給料）。数え方は src/money.ts（固定費の期間も見る）
 function upcomingIncome(){const mdl=MoneyCalc.model(currentRows()),y=gY(),m=gM(),d=gD(),parts=[];
   mdl.fixedCosts.filter(fc=>fc.kind==='income'&&MoneyCalc.activeInMonth(fc,y,m)).forEach(fc=>{if(monthDay(y,m,fc.day)>d)parts.push({label:fc.name,amount:fc.amount});});
   mdl.jobs.forEach(job=>{const pay=monthDay(y,m,MoneyCalc.payDayOf(mdl,job))>d?{y,m}:addM(y,m,1),work=addM(pay.y,pay.m,-1),s=MoneyCalc.salary(mdl,job,pay.y,pay.m);if(s.amount>0)parts.push({label:`${job.name}（${work.m+1}月分）`,amount:s.amount});});
@@ -654,7 +654,7 @@ function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomi
 
 // お金を「-¥1,200」「¥3,400」の形にする（マイナスはそのまま出す。D11）
 const yenSigned=v=>(v<0?'-':'')+'¥'+Math.abs(v).toLocaleString();
-// ホーム（D11: いちばん大事な数字・タスクの1行・記録のボタン・今日のお知らせ・これからのお金の動き・くわしく）。数えるのは js/money.js
+// ホーム（D11: いちばん大事な数字・タスクの1行・記録のボタン・今日のお知らせ・これからのお金の動き・くわしく）。数えるのは src/money.ts
 function renderHome(){const y=gY(),m=gM(),d=gD();
   const rows=currentRows(),sp=MoneyCalc.spendable(rows,TODAY),bal=estimateAcct(),pd=ds2d(sp.payday);
   const spEl=document.getElementById('home-spendable');
@@ -669,7 +669,7 @@ function renderHome(){const y=gY(),m=gM(),d=gD();
   if(MoneyUI.dialogById('home-more').open)renderHomeMore();
 }
 
-// これからのお金の動き（2週間）。給料・引き落とし・予定など、口座のお金が動くものを日付の順に（js/money.js の upcoming）
+// これからのお金の動き（2週間）。給料・引き落とし・予定など、口座のお金が動くものを日付の順に（src/money.ts の upcoming）
 const UPCOMING_KIND={salary:['給料','binc'],fixed_income:['入金','binc'],ledger_income:['入金','binc'],fixed_cost:['引き落とし','bfixcost'],card_bill:['カード','bcard'],ledger_expense:['口座払い','bfixcost'],withdrawal:['ATM','bwd'],plan:['予定','bplan']};
 function renderHomeUpcoming(rows){
   const box=document.getElementById('home-upcoming');
