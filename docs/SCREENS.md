@@ -144,7 +144,7 @@ flowchart LR
 | カレンダー | `renderCal`（1495）、`renderCalMonth`（1506）、`renderCalWeek`（1593）、`renderCalDay`（1572）、`dayClick`（1699） | `buildDay`（1631）、`fetchHolidays`（1456） |
 | 家計簿 | `renderLedger`（2040）、`renderLedgerMetrics`（2039）、`renderCharts`（2147） | `monthLedger`（1295） |
 | シフト | `renderShiftSection`（1837）、`renderSalaryTable`（1838）、`renderFuyou`（1924）、`renderShiftList`（1836）、`renderJobList`（1930） | `calcShiftInc`（1314）、`yearConfirmedIncome`・`yearEstimatedIncome`（1894-1923） |
-| タスク | `renderTaskTab`（`js/tasks-ui.js`） | `js/tasks.js` の `groupForTab`・`startupGroups`・`dueLabel` |
+| タスク | `renderTaskTab`（`js/tasks-ui.js`） | `src/tasks.ts` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
 タブの切り替えは `sw()`（`js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。

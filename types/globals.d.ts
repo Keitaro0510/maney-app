@@ -10,6 +10,6 @@ declare var MoneyCompat: typeof import('../js/compat.js');
 declare var MoneyClock: typeof import('../src/clock.ts');
 declare var MoneyCalc: typeof import('../src/money.ts');
 declare var MoneyUI: typeof import('../js/ui.js');
-declare var MoneyTasks: typeof import('../js/tasks.js');
-declare var MoneyMonthly: typeof import('../js/monthly.js');
+declare var MoneyTasks: typeof import('../src/tasks.ts');
+declare var MoneyMonthly: typeof import('../src/monthly.ts');
 declare var MoneyBackup: typeof import('../js/backup.js');
