@@ -1,0 +1,11 @@
+// 型の検査（D17）: src/ の .ts。strict で検査する。js/ は ../tsconfig.json
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    // Node は型を消すだけで変換しないので、消すだけで動く書き方にそろえる（enum・namespace などを使わない、型は import type）
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["./**/*.ts", "../types/**/*.d.ts"]
+}

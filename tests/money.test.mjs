@@ -1,12 +1,8 @@
-// お金の計算（js/money.js）のテスト。実行: node --test "tests/*.test.mjs"
+// お金の計算（src/money.ts）のテスト。実行: node --test "tests/*.test.mjs"
 // 架空の行を組み立てて、D11・D14 の数え方を確かめる。月（m）は 0 が1月
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-require('../js/clock.js');
-const M = require('../js/money.js');
+import * as M from '../src/money.ts'; // Node が型を消して読む（D17）
 
 // 基本の行: 基準日 10/1 に残高 100,000円。カード1枚（月末締め・27日払い）、バイト1つ（25日払い）
 function baseRows(extra = {}) {

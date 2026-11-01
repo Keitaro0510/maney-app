@@ -1,16 +1,11 @@
-// 型の検査（D4 の手順3・D16）。js/ はまだ .js のまま、JSDoc と TypeScript の検査（checkJs）だけを使う。
-// 実行: npm run typecheck（CI でも動かす）。出力はしない（noEmit）。公開するファイルは Vite が作る
+// 型の検査（D4 の手順3・D16）: js/ の .js（JSDoc と checkJs）。strict なし（引数に型を書いていない所を、全部まちがいにしない）。
+// src/ の .ts は src/tsconfig.json で strict に検査する（D17）。実行: npm run typecheck（両方を検査する。CI でも動かす）
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "allowJs": true,
     "checkJs": true,
-    "noEmit": true,
-    // まずは strict なし（引数に型を書いていない所を、全部まちがいにしない）。.ts に移すときに見直す
-    "strict": false,
-    "skipLibCheck": true,
-    "types": []
+    "strict": false
   },
   "include": ["js/**/*.js", "types/**/*.d.ts"]
 }
