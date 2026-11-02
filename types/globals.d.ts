@@ -17,5 +17,6 @@ declare var MoneyBackup: typeof import('../src/backup.ts');
 declare var MoneyEnv: typeof import('../src/env.ts').ENV;
 declare var MoneySync: typeof import('../src/sync.ts');
 declare var MoneyAuth: typeof import('../src/auth.ts');
+declare var MoneyDates: typeof import('../src/dates.ts');
 // Supabase のクライアント（src/supa.ts が作る。D19 の手順5）
 declare var supa: import('@supabase/supabase-js').SupabaseClient;

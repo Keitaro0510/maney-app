@@ -14,6 +14,8 @@ import { exposeLegacyState } from './state.ts';
 import * as sync from './sync.ts';
 import * as auth from './auth.ts';
 import { createSupa } from './supa.ts';
+import * as dates from './dates.ts';
+import { LEGACY_PALETTE } from './palette.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -27,6 +29,11 @@ window.MoneyEnv = ENV;
 
 // データと同期の状態（D19 の手順3）。js/ の画面は st・server などの名前で、src/state.ts の入れ物を読み書きする
 exposeLegacyState(window);
+
+// 日付の補助と今の日時（_now・TODAY）、色と最初のカテゴリ（D20 の 1）。js/ は名前で使う（期限付きの互換の層）
+window.MoneyDates = { ...dates };
+dates.exposeLegacyDates(window);
+Object.assign(window, LEGACY_PALETTE);
 
 // 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）
