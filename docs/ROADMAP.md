@@ -92,7 +92,8 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] `tasks`・`monthly`（2026-11-02。架空のデータを読み込ませた13の画面の表示が、移す前と同じことを確かめた）　ブランチ: `feature/ts-tasks-monthly`
   - [x] `data`・`backup`（2026-11-02。表示に加えて、支出の追加・記録の編集・タスクの追加の保存で積まれる送信待ちの操作と、書き出し・読み込みの確かめが、移す前と同じことを確かめた）　ブランチ: `feature/ts-data-backup`
   - [x] `compat`（2026-11-02。DB の全テーブルの行の型を `src/rows.ts` にまとめた。表示と保存の流れが移す前と同じことを確かめた）　ブランチ: `feature/ts-compat`。これで計算ロジックはすべて `src/` に移り、`js/` には画面のファイルだけが残った
-  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）
+  - [ ] 結合テスト（`tests/integration/`。ローカルの Supabase で保存を本物の DB に通す）を流す。`data`・`compat` を移したあと（#92・#93）、まだ流していない（移した Mac には Docker がなかった）。Windows の PC では `supabase.exe` がアプリケーション制御で止まるので、流し方から決める（[db/LOCAL.md](db/LOCAL.md) の「結合テスト」）
+  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）。`js/app.js`（約1,700行）の分け方と、`onclick` から呼ぶ約230の関数の扱い（手順5と重なる）を、選択肢を出して決めてから
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）
