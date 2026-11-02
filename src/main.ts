@@ -10,6 +10,7 @@ import * as tasks from './tasks.ts';
 import * as monthly from './monthly.ts';
 import * as backup from './backup.ts';
 import { ENV } from './env.ts';
+import { exposeLegacyState } from './state.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -20,6 +21,9 @@ window.MoneyTasks = { ...tasks };
 window.MoneyMonthly = { ...monthly };
 window.MoneyBackup = { ...backup };
 window.MoneyEnv = ENV;
+
+// データと同期の状態（D19 の手順3）。js/ の画面は st・server などの名前で、src/state.ts の入れ物を読み書きする
+exposeLegacyState(window);
 
 // ローカルの Supabase につなぐビルドのときだけ、メールとパスワードのログインの入口を出す（D19）。
 // 条件は ENV.target ではなく置き換えられる文字で書く（本番のビルドで、この行と local-login.ts を取り除けるように）

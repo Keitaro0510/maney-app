@@ -25,7 +25,7 @@ let TODAY=MoneyClock.dayKey(_now);
 
 // 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
 function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC]};}
-let st=defaultSt();
+st=defaultSt(); // st は src/state.ts の入れ物（window の getter・setter。D19）
 let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
@@ -55,7 +55,7 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
   }
 });
 
-let currentUser = null;
+// currentUser は src/state.ts の入れ物（D19）
 
 // ============================================================
 // 認証
@@ -110,12 +110,7 @@ function hideLoginScreen(user){
 // - 端末の保存場所のキーは maney:prod: で始める（切り替える前の版のキー mavFinal2・mavSync は使わない）
 // ============================================================
 const STORAGE_PREFIX = MoneyEnv.storagePrefix; // 本番は maney:prod:（src/env.ts）
-let server = null;         // {rows, epoch, loadedAt}
-let outbox = [];           // 送信待ちの操作
-let remoteReady = false;   // サーバーから読み込めた
-let loadingRemote = false; // サーバーから読み込んでいる途中
-let sending = false;       // 送信待ちを送っている途中
-let sendBlocked = null;    // 送るのを止めている理由（'conflict'・'stale_epoch'・'error'）。選んでもらうまで送らない
+// サーバーの写し（server）・送信待ち（outbox）・remoteReady・loadingRemote・sending・sendBlocked は、src/state.ts の入れ物（window の getter・setter。D19）
 
 const TABLE_LABELS = {
   settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',

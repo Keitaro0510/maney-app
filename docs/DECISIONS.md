@@ -613,6 +613,13 @@ PR の順と、それぞれの完了の条件:
 - ローカル用のログイン（`src/local-login.ts`）は、`main.ts` が置き換えられる文字（`__MANEY_TARGET__ === 'local'`）を条件に呼ぶので、本番のビルドでは取り除かれる。`build-pages.sh` が、本番の出力に `data-maney-local-login` とローカルの接続先がなく、本番の接続先があることを確かめる
 - ローカルにつなぐときは Service Worker を登録しない（同じ場所で、本番のビルドとローカルのビルドをキャッシュから取り違えた）
 
+作り（手順3。2026-11-02）:
+- 入れ物は `src/state.ts` の `state`。移したのはデータと同期の状態の8つ（`st`・`server`・`outbox`・`currentUser`・`remoteReady`・`loadingRemote`・`sending`・`sendBlocked`）。画面ごとの状態（`calY`・`ldgType` など）と `TODAY` は、その画面・流れを移すときに足す
+- `src/main.ts` が `exposeLegacyState(window)` で、8つの名前を `window` の getter・setter にする（消せない・上書きできない設定）。`js/` の古い `let` は消した。残っているとブラウザでは `let` がエラーで止まり、`tests/state.test.mjs` も宣言を見つける
+- `st` の初めの値は、今までどおり `js/app-core.js` が `st=defaultSt()` で入れる（入れる前に読むと止める）
+- 型: `src/` から見ると厳しい型（`St`・`Server`・`Op[]`・`User`）。`js/` から見ると、`let` で推論されていた今までの型のまま（`types/legacy/state.d.ts`。`js/` だけが読む）。厳しい型にすると `js/` の59か所が合わず、`js/` を書き換えることになる（D18）。画面を移すときに直す
+- 確かめ: `tests/state.test.mjs` が Node の vm で、ふつうの `<script>` の `st = …`・中身の変更・分割代入が入れ物に届くことを確かめる。ブラウザ（ローカルのビルド）で、保存・送信・読み込み直し・ログアウトと再ログインが今までどおり動くことと、残った `let st` がエラーになることを確かめた
+
 理由:
 - 型とテストの恩恵がいちばん大きいのは状態と流れ。DOM を残せば、依存の向きは `js/` → `src/` の一方向のまま
 - getter・setter なら `js/` を書き換えずに済み、振る舞いを変えない PR にできる
