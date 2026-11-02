@@ -35,7 +35,7 @@ npx supabase stop
 
 ## CLI が動かないとき（Docker だけで DB のテストを流す）
 
-2026-10-31 に、Windows のアプリケーション制御（スマート アプリ コントロールなど）が `supabase.exe` を止めるようになり、`npx supabase start` が `spawn UNKNOWN` で失敗した（PowerShell では「アプリケーション制御ポリシーによってこのファイルがブロックされました」）。パソコンのセキュリティの設定なので、変えずに次のやり方を使う。
+2026-10-31 に、ある Windows の PC で、アプリケーション制御（スマート アプリ コントロールなど）が `supabase.exe` を止め、`npx supabase start` が `spawn UNKNOWN` で失敗した（PowerShell では「アプリケーション制御ポリシーによってこのファイルがブロックされました」）。2026-11-02 に確かめたところ、`npx supabase start` が動く PC もある（止まるかは PC による）。止まるときは、パソコンのセキュリティの設定は変えずに次のやり方を使う。
 
 ```bash
 # Docker Desktop が動いている状態で（Git Bash などの bash から）
@@ -77,8 +77,9 @@ node --test "tests/integration/*.test.mjs"
 ```
 
 - API（PostgREST・認証）が要るので、`npx supabase start` で立てた Supabase が要る。上の「CLI が動かないとき」の Docker だけのやり方（`scripts/db-test-docker.sh`）では流せない
-- **Windows の PC では `supabase.exe` がアプリケーション制御で止まる（2026-10-31〜）ので、今はこのテストを流せない。** 流すには、別のやり方（WSL に Linux を入れてその中で動かす、Docker の入った別の PC で動かす、など）を決める必要がある（2026-11-02 時点で未決定）
-- `data`・`compat` を `src/` の TypeScript に移したあと（#92・#93）は、まだ流していない（docs/ROADMAP.md）
+- `supabase.exe` がアプリケーション制御で止まる PC では、このテストは流せない（上の「CLI が動かないとき」）。止まらない PC では、Docker Desktop を起動して `npx supabase start` すれば流せる（2026-11-02 に Windows で 7 件通った）
+- 前に立てた Docker のデータが古いと `Could not find the table` で落ちる。そのときは `npx supabase migration up` で新しいマイグレーションを当ててから流す
+- `data`・`compat` を `src/` の TypeScript に移したあと（#92・#93）も通ることを確かめた（2026-11-02）
 
 ## 本番に適用する
 
