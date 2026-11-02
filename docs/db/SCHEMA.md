@@ -151,7 +151,7 @@ erDiagram
 
 ## 保存と読み込み
 
-アプリ（`index.html`）の画面と計算のコードは、切り替える前と同じ形のデータ（`st`）を読む。テーブルと `st` のあいだは、互換層（[`js/compat.js`](../../js/compat.js)）が変換する。互換層は移行のためだけのもので、画面を作り直すとき（ROADMAP の Phase 4）に消す（[DECISIONS.md の D9](../DECISIONS.md)）。
+アプリ（`index.html`）の画面と計算のコードは、切り替える前と同じ形のデータ（`st`）を読む。テーブルと `st` のあいだは、互換層（[`src/compat.ts`](../../src/compat.ts)）が変換する。互換層は移行のためだけのもので、画面を作り直すとき（ROADMAP の Phase 4）に消す（[DECISIONS.md の D9](../DECISIONS.md)）。
 
 新しい機能のテーブル（`tasks` と、D14 の `fixed_costs`）は、互換層を通さない。画面は `currentRows()` の行を直接読み、`saveRows([...])` で直接保存する。今の画面の `save()` は、互換の `st` が持つテーブル（`MoneyData.COMPAT_TABLES`）だけを比べるので、直接保存する行を消したと見なすことはない。
 
@@ -159,7 +159,7 @@ erDiagram
 flowchart LR
   subgraph app["アプリ（端末）"]
     UI["画面と計算<br>st を読む・変える<br>tasks・毎月のお金は saveRows で直接"]
-    C["互換層<br>js/compat.js"]
+    C["互換層<br>src/compat.ts"]
     D["データの層<br>src/data.ts"]
     Q[("送信待ち<br>端末に保存")]
     S[("サーバーの写し<br>端末に保存")]

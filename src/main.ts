@@ -3,6 +3,7 @@
 // - トップレベルの await は使わない（待っている間に js/ が先に動いてしまう。ビルドが止めるようにしてある。vite.config.mjs）
 // - 出すのは、モジュールの関数を入れたふつうのオブジェクト（前の js/ のファイルが出していたものと同じ形）
 import * as data from './data.ts';
+import * as compat from './compat.ts';
 import * as clock from './clock.ts';
 import * as money from './money.ts';
 import * as tasks from './tasks.ts';
@@ -10,6 +11,7 @@ import * as monthly from './monthly.ts';
 import * as backup from './backup.ts';
 
 window.MoneyData = { ...data };
+window.MoneyCompat = { ...compat };
 window.MoneyClock = { ...clock };
 window.MoneyCalc = { ...money };
 window.MoneyTasks = { ...tasks };

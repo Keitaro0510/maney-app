@@ -1,5 +1,5 @@
 // 新しいテーブルを読み書きするデータの層（テーブル分割 #11）。
-// 画面のための変換（js/compat.js の互換層）とは分けている。Phase 4 で画面を作り直しても、この層は使い続ける。
+// 画面のための変換（src/compat.ts の互換層）とは分けている。Phase 4 で画面を作り直しても、この層は使い続ける。
 // 設計は docs/db/TABLE_SPLIT.md の「保存の仕組み」「読み込み」。
 // js/ の画面からは window.MoneyData で使う（src/main.ts。D17）
 
@@ -55,7 +55,7 @@ export const TABLES: string[] = [
 // 互換の st を通さず、画面が行を直接読み書きするテーブル（D1）。保存は saveRows の入り口から。
 // 固定費は「毎月のお金」の画面（D14。js/monthly-ui.js）から
 export const DIRECT_TABLES: string[] = ['fixed_costs', 'tasks'];
-// 互換の st（js/compat.js）が持つテーブル。今の画面の save() は、これだけを比べる
+// 互換の st（src/compat.ts）が持つテーブル。今の画面の save() は、これだけを比べる
 export const COMPAT_TABLES: string[] = TABLES.filter(t => !DIRECT_TABLES.includes(t));
 
 // Supabase が1回に返す件数には上限（既定は1,000件）があるので、それより小さく分けて読む
