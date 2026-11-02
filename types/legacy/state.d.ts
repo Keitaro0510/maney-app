@@ -27,3 +27,27 @@ declare var resyncRemote: typeof import('../../src/sync.ts').resyncRemote;
 declare var loginWithGoogle: typeof import('../../src/auth.ts').loginWithGoogle;
 declare var logout: typeof import('../../src/auth.ts').logout;
 declare var loadData: typeof import('../../src/auth.ts').loadData;
+
+// 日付の補助と今の日時（src/dates.ts）・色と最初のカテゴリ（src/palette.ts）。D20 の 1。src/main.ts が window に同じ名前で出す
+declare var _now: Date;
+declare var TODAY: string;
+declare var DAYS: typeof import('../../src/dates.ts').DAYS;
+declare var gY: typeof import('../../src/dates.ts').gY;
+declare var gM: typeof import('../../src/dates.ts').gM;
+declare var gD: typeof import('../../src/dates.ts').gD;
+declare var toDS: typeof import('../../src/dates.ts').toDS;
+declare var fmtMD: typeof import('../../src/dates.ts').fmtMD;
+declare var addM: typeof import('../../src/dates.ts').addM;
+declare var ds2d: typeof import('../../src/dates.ts').ds2d;
+declare var monthDay: typeof import('../../src/dates.ts').monthDay;
+declare var monthDate: typeof import('../../src/dates.ts').monthDate;
+declare var calcH: typeof import('../../src/dates.ts').calcH;
+declare var COLOR_NAMES: typeof import('../../src/palette.ts').COLOR_NAMES;
+declare var PLAN_COLORS: typeof import('../../src/palette.ts').PLAN_COLORS;
+declare var planColor: typeof import('../../src/palette.ts').planColor;
+declare var jobColorObj: (job: any) => import('../../src/palette.ts').PlanColor;
+declare var jobColorByName: typeof import('../../src/palette.ts').jobColorByName;
+declare var DEF_EXP: typeof import('../../src/palette.ts').DEF_EXP;
+declare var DEF_INC: typeof import('../../src/palette.ts').DEF_INC;
+declare var CAT_COL: typeof import('../../src/palette.ts').CAT_COL;
+declare var DOTC: typeof import('../../src/palette.ts').DOTC;

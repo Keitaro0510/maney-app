@@ -713,6 +713,14 @@ PR の順:
 - 基準を作り直す: 手元で `npm run test:screens -- --update-snapshots`。Linux の写真は CI でしか撮れないので、作り直すときは CI の成果物（違ったときの写真）から取り出す。別の OS（Mac など）で初めて流すときは、その OS の写真の基準を手元で作る
 - わざと文言を1文字変えると、DOM の写しの違いとして見つかることを確かめた
 
+作り（1。共通の補助と今日。2026-11-02）:
+- 移したのは、本当に共通のものだけ。`src/dates.ts`: `DAYS`・`toDS`・`fmtMD`・`addM`・`ds2d`・`monthDay`・`monthDate`・`calcH`・`gY`・`gM`・`gD`、今の日時と今日の日付（`getNow`・`getToday`・`setNow`）。`src/palette.ts`: 色（`PLAN_COLORS`・`planColor`・`COLOR_NAMES`）・バイト先の色（`jobColorObj`・`jobColorByName`）・最初のカテゴリ（`DEF_EXP`・`DEF_INC`）・グラフの色（`CAT_COL`・`DOTC`）
+- `js/` からは、`src/main.ts` が `window` に同じ名前で出す（`LEGACY_DATES`・`LEGACY_PALETTE`）。`_now` は getter・setter、`TODAY` は getter だけ（代入は止める）。`TODAY` は `_now` を `setNow` で新しくすると変わる。新しい TS のモジュールは `import` で使う
+- `onDayChange`（日付が変わったときに、カレンダー・シフト・家計簿の表示している月を動かす）は、画面の状態を動かすので `js/app-core.js` に残した。中の `_now=…`・`TODAY=…` の代入だけ `MoneyDates.setNow(now)` にした。各画面を移すときに、その画面の月の更新を、その画面のモジュールの `onDayChanged` に分ける
+- **移さなかったもの（その機能の PR で移す）**: `jobPayDay`・`jobCloseDayNum`・`closeDay`・`monthShifts`・シフトの合計（`calcShiftInc` など）・給与の実績 → シフト（5）。カードの集計・`cardCloseDay`・カードの実績・`cardRowOf`・`cycle` → 設定・カード（4）。`monthLedger`・`getLedgerForDay`・`ledgerPayLabel` → 家計簿（7）。`estimateAcct`・`buildBalanceSeries`・`renderBalanceChart`・`balChart` → ホーム（8）。`sw`・`renderCurrentSection` → ナビ（10）。これらは `st`・`currentRows()` を使う、その機能のお金の補助で、共通の側に置くと大きな袋になる
+- どこからも使われていなかった `JC`・`BC` は消した
+- 確かめ: `tests/dates.test.mjs`。`npm run test:screens`（DOM の写し 22・写真 11 が基準と一致）。ブラウザで、11/30 から 12/1 に日付が変わると、今日・表示している月・日/週の基準日が追いかけることを確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

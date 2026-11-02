@@ -4,24 +4,9 @@
 // 関数は今までどおり window から見え、HTML の onclick から呼べる。index.html の最後（<body> の終わり）で読む
 // ============================================================
 // データ・定数
+// 色・最初のカテゴリ・グラフの色は src/palette.ts、日付の補助と今の日時（_now・TODAY）は src/dates.ts（D20 の 1）。
+// js/ からは、src/main.ts が window に出した同じ名前で使う
 // ============================================================
-const DAYS=['日','月','火','水','木','金','土'];
-const JC=['s0','s1','s2','s3','s4'],BC=['bs0','bs1','bs2','bs3','bs4'];
-const DOTC=['#185FA5','#3B6D11','#993556','#BA7517','#3C3489'];
-// 色の読み上げ用の名前（色の選択肢はボタンで、文字がないため）
-const COLOR_NAMES={pink:'ピンク',blue:'青',green:'緑',orange:'オレンジ',purple:'紫',teal:'青緑'};
-const PLAN_COLORS=[{key:'pink',bg:'#FBEAF0',fg:'#993556',dot:'#E06080'},{key:'blue',bg:'#E6F1FB',fg:'#185FA5',dot:'#3A8FE0'},{key:'green',bg:'#EAF3DE',fg:'#3B6D11',dot:'#5CA020'},{key:'orange',bg:'#FAEEDA',fg:'#BA7517',dot:'#E09030'},{key:'purple',bg:'#EEEDFE',fg:'#3C3489',dot:'#7060D0'},{key:'teal',bg:'#DEF3EF',fg:'#0F6E56',dot:'#209070'}];
-const planColor=key=>PLAN_COLORS.find(c=>c.key===key)||PLAN_COLORS[0];
-function jobColorObj(job){if(!job)return PLAN_COLORS[0];if(job.color)return planColor(job.color);const idx=st.jobs.indexOf(job);return PLAN_COLORS[idx>=0?idx%PLAN_COLORS.length:0];}
-function jobColorByName(name){return jobColorObj(st.jobs.find(j=>j.name===name));}
-const DEF_EXP=['食費','交通費','外食','娯楽','日用品','通信費','固定費','その他'];
-const DEF_INC=['給与','バイト','仕送り','その他'];
-const CAT_COL={'食費':'#185FA5','交通費':'#3B6D11','外食':'#993556','娯楽':'#BA7517','日用品':'#3C3089','通信費':'#0F6E56','固定費':'#C45000','その他':'#5F5E5A','給与':'#3B6D11','バイト':'#185FA5','仕送り':'#BA7517'};
-
-// 今の日時と、今日の日付 'YYYY-MM-DD'。日付が変わったら onDayChange で新しくする
-let _now=new Date();
-const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-let TODAY=MoneyClock.dayKey(_now);
 
 // 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
 function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC]};}
@@ -146,8 +131,7 @@ function saveLocal(){}
 // 「今月」「今日」を見ていた画面は新しい今月・今日に合わせる。ほかの月・日を見ていたら、そのままにする
 function onDayChange(now, prevKey){
   const prev=_now;
-  _now=now;
-  TODAY=MoneyClock.dayKey(now);
+  MoneyDates.setNow(now); // 今の日時と今日の日付（src/dates.ts）
   const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
   ({y:calY,m:calM}=follow(calY,calM));
   ({y:shiftCalY,m:shiftCalM}=follow(shiftCalY,shiftCalM));
@@ -211,13 +195,6 @@ function sw(t){
 // ============================================================
 // ユーティリティ
 // ============================================================
-const gY=()=>_now.getFullYear(),gM=()=>_now.getMonth(),gD=()=>_now.getDate();
-const fmtMD=d=>`${d.getMonth()+1}/${d.getDate()}`;
-function addM(y,m,n){let nm=m+n,ny=y;while(nm>11){nm-=12;ny++;}while(nm<0){nm+=12;ny--;}return{y:ny,m:nm};}
-const ds2d=ds=>{const[y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d);};
-// 「毎月○日」（固定費・給料日・引き落とし日）の、その月の日と日付。月にない日（30日までの月の31日など）は月末にする（src/clock.ts）
-const monthDay=(y,m,day)=>MoneyClock.monthDay(y,m,day);
-const monthDate=(y,m,day)=>new Date(y,m,monthDay(y,m,day));
 const monthShifts=(y,m)=>st.shifts.filter(s=>{const d=new Date(s.date);return d.getFullYear()===y&&d.getMonth()===m;});
 const monthLedger=(y,m)=>st.ledger.filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m;});
 const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
@@ -246,7 +223,6 @@ const totalTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).tra
 const jobMonthShifts=(jobName,y,m)=>monthShifts(y,m).filter(s=>s.job===jobName);
 const totalShiftIncForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
 const totalShiftIncNoTransportForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
-const calcH=(s,e,rest)=>{const[sh,sm]=s.split(':').map(Number);const[eh,em]=e.split(':').map(Number);return Math.max(0,(eh*60+em-sh*60-sm-(parseInt(rest)||0))/60);};
 
 // ============================================================
 // カードサイクル
