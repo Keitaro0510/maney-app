@@ -7,10 +7,7 @@
 // 環境変数（MANEY_LOCAL_API_URL など）がなければ、このテストは飛ばす。
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { rowsToSt, stToRows, stripMeta } = require('../../js/compat.js');
+import { rowsToSt, stToRows, stripMeta } from '../../src/compat.ts'; // Node が型を消して読む（D17）
 import { loadAllTables, diffRows, checkDirectChanges, makeOp, applyOutbox, acknowledge, rewriteForOverwrite, sendOp, COMPAT_TABLES } from '../../src/data.ts'; // Node が型を消して読む（D17）
 
 const URL_ = process.env.MANEY_LOCAL_API_URL;

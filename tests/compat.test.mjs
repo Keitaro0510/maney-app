@@ -1,13 +1,10 @@
-// 互換層（js/compat.js）のテスト。実行: node --test "tests/*.test.mjs"
+// 互換層（src/compat.ts）のテスト。実行: node --test "tests/*.test.mjs"
 // tests/fixtures/compat-fixture.json は、ローカルの Supabase で作った「テーブルの行」と「DB の逆の変換の結果」
 // （作り方は tests/fixtures/compat_fixture.sql の先頭）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { rowsToSt, stripMeta, createdMs } = require('../js/compat.js');
+import { rowsToSt, stripMeta, createdMs } from '../src/compat.ts'; // Node が型を消して読む（D17）
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
 // 固定費・固定収入は st に入れなくなった（D14。画面が行を直接読み書きする）。それ以外を DB の逆の変換と比べる
 const { fixedCosts, fixedIncs, ...expected } = fixture.export;

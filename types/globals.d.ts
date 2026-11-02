@@ -6,7 +6,7 @@ declare const Chart: any;
 
 // window に出す名前。型は、src/ のものは export から（src/main.ts が出す。D17）、js/ のものは module.exports（Node のテスト用）から読む
 declare var MoneyData: typeof import('../src/data.ts');
-declare var MoneyCompat: typeof import('../js/compat.js');
+declare var MoneyCompat: typeof import('../src/compat.ts');
 declare var MoneyClock: typeof import('../src/clock.ts');
 declare var MoneyCalc: typeof import('../src/money.ts');
 declare var MoneyUI: typeof import('../js/ui.js');

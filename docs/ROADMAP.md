@@ -91,7 +91,7 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] 土台（`src/main.ts` から `window` に出す・`js/` は `<body>` に `defer`・`src/` は `strict`）と `clock`・`money`（2026-11-02。本番と同じビルドで、起動・主要な画面・オフラインでの読み直しを確かめた）　ブランチ: `feature/ts-clock-money`
   - [x] `tasks`・`monthly`（2026-11-02。架空のデータを読み込ませた13の画面の表示が、移す前と同じことを確かめた）　ブランチ: `feature/ts-tasks-monthly`
   - [x] `data`・`backup`（2026-11-02。表示に加えて、支出の追加・記録の編集・タスクの追加の保存で積まれる送信待ちの操作と、書き出し・読み込みの確かめが、移す前と同じことを確かめた）　ブランチ: `feature/ts-data-backup`
-  - [ ] `compat`
+  - [x] `compat`（2026-11-02。DB の全テーブルの行の型を `src/rows.ts` にまとめた。表示と保存の流れが移す前と同じことを確かめた）　ブランチ: `feature/ts-compat`。これで計算ロジックはすべて `src/` に移り、`js/` には画面のファイルだけが残った
   - [ ] 画面（home / calendar / ledger / shift / settings / tasks）
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）

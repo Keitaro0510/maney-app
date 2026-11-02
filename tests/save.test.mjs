@@ -2,10 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { rowsToSt, stToRows, createdMs } = require('../js/compat.js');
+import { rowsToSt, stToRows, createdMs } from '../src/compat.ts'; // Node が型を消して読む（D17）
 import {
   TABLES, DIRECT_TABLES, COMPAT_TABLES,
   diffRows, checkDirectChanges, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, discardOp, sendOp,
