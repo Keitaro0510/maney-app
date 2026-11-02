@@ -731,6 +731,13 @@ PR の順:
 - 端末に覚える値のキーは `src/sync.ts` の `userKey(name)`（`<頭><ユーザーの id>:<name>`）
 - 確かめ: `npm run test:screens`（DOM の写し・写真が基準と一致）。一時のテストで、追加・完了・編集・削除と元に戻す・空の名前・「今日は表示しない」・ホームの1行・読み込み直しがブラウザで今までどおり動き、DB に保存されることを確かめた
 
+作り（3。書き出し・読み込み。2026-11-02）:
+- `src/screens/backup.ts`（`LEGACY_BACKUP`: `exportBackup`・`pickBackupFile`・`readBackupFile`・`closeImportSheet`・`runImport`）。作り（2）のやり方どおり。`js/` から呼ばれるものはなく、`index.html` の onclick だけが呼ぶ
+- ファイルとして保存させる `downloadJson` は、共通の部品として `src/ui.ts` に移した（`js/app-core.js` の `appUi` も、これを渡す）。ファイル名の日付は `getToday()`
+- 画面のモジュールが Supabase のクライアントを使うときは `src/supa.ts` の `getSupa()`（`src/main.ts` が `createSupa` で作ったあと）
+- 画面を比べる道具の基準は、HTML のコメント1行（`js/backup-ui.js` → `src/screens/backup.ts`）だけ更新した（見た目は変わらない）
+- 確かめ: 一時のテストで、書き出し（ファイル名・中身）・変なファイルを止める・件数の比較（少ないテーブルを目立たせる）・やめる・置き換える（DB に反映、写しの番号を知らせる）が、ブラウザで今までどおり動くことを確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

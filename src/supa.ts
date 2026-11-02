@@ -4,8 +4,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Env } from './env.ts';
 
+let client: SupabaseClient | null = null;
+
+/** Supabase のクライアント（src/main.ts が作ったあと。画面のモジュールが使う） */
+export function getSupa(): SupabaseClient {
+  if (!client) throw new Error('Supabase のクライアントを、作る前に使いました（src/main.ts の createSupa より前）');
+  return client;
+}
+
 export function createSupa(env: Env): SupabaseClient {
-  return supabase.createClient(env.supaUrl, env.supaKey, {
+  client = supabase.createClient(env.supaUrl, env.supaKey, {
     auth: {
       persistSession: true,
       storageKey: env.authStorageKey, // 本番は money-app-auth（src/env.ts）
@@ -14,4 +22,5 @@ export function createSupa(env: Env): SupabaseClient {
       detectSessionInUrl: true,
     },
   });
+  return client;
 }
