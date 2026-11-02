@@ -69,6 +69,7 @@ npm install
 |---|---|
 | 手元で開く（直すとすぐ反映） | `npm run dev` → http://127.0.0.1:8765/ |
 | テスト | `npm test` |
+| 結合テスト（ローカルの Supabase を立ててから） | `npm run test:integration`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 | 公開と同じ形にビルドする | `MANEY_TARGET=prod bash scripts/build-pages.sh`（`_site` に出る。接続先の指定が要る。D19） |
 | ローカルの Supabase につないで開く | `npm run preview:local`・`npm run dev:local`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 
