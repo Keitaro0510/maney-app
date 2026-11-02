@@ -93,7 +93,10 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] `data`・`backup`（2026-11-02。表示に加えて、支出の追加・記録の編集・タスクの追加の保存で積まれる送信待ちの操作と、書き出し・読み込みの確かめが、移す前と同じことを確かめた）　ブランチ: `feature/ts-data-backup`
   - [x] `compat`（2026-11-02。DB の全テーブルの行の型を `src/rows.ts` にまとめた。表示と保存の流れが移す前と同じことを確かめた）　ブランチ: `feature/ts-compat`。これで計算ロジックはすべて `src/` に移り、`js/` には画面のファイルだけが残った
   - [x] 結合テスト（`tests/integration/`。ローカルの Supabase で保存を本物の DB に通す）を流す（2026-11-02。Windows の PC で 7 件すべて通った。`supabase.exe` が止まるかは PC による。[db/LOCAL.md](db/LOCAL.md) の「結合テスト」）
-  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）。`js/app.js`（約1,700行）の分け方と、`onclick` から呼ぶ約230の関数の扱い（手順5と重なる）を、選択肢を出して決めてから
+  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）。やり方は [D18](DECISIONS.md)（2026-11-02）
+    - [ ] `js/app.js` を、中身を変えずに `js/` の中で「共通部分 → 画面 → bootstrap」のファイルに分ける。`loadData()` を呼ぶのは bootstrap だけ
+    - [ ] 共通部分（状態・保存・同期・認証）を `src/` に移す。`js/` の画面のために一時的な `window` の互換の層を置く。結合テストと、本番と同じビルドでの保存を確かめる
+    - [ ] 画面を、状態と保存先を共有する機能のまとまりごとに `src/` に移す（`strict`。`window` に出す関数は画面ごとに一覧にする）
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）
