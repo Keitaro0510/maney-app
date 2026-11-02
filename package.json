@@ -10,10 +10,12 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p src/tsconfig.json",
     "dev:local": "node scripts/local-supabase.mjs vite",
     "build:local": "node scripts/local-supabase.mjs bash scripts/build-pages.sh _site_local",
-    "preview:local": "npm run build:local && vite preview --outDir _site_local"
+    "preview:local": "npm run build:local && vite preview --outDir _site_local",
+    "test:integration": "node scripts/local-supabase.mjs node --test \"tests/integration/*.test.mjs\""
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.118.0",
+    "supabase": "3.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

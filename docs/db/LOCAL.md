@@ -69,12 +69,14 @@ docker exec -i supabase_db_maney-app psql -U postgres -q -At -v ON_ERROR_STOP=1 
 
 ## 結合テスト（保存を本物の DB に通す）
 
-保存の流れを、ローカルの Supabase で実際に通すテスト（2台の端末の競合など）もある。ローカルの Supabase を起動してから実行する（起動していなければ、環境変数がないので飛ばす）。
+保存の流れを、ローカルの Supabase で実際に通すテスト（2台の端末の競合など）もある。ローカルの Supabase を起動してから実行する。
 
 ```bash
-eval "$(npx supabase status -o env | sed 's/^/export MANEY_LOCAL_/')"
-node --test "tests/integration/*.test.mjs"
+npm run test:integration
 ```
+
+- 接続先は `scripts/local-supabase.mjs` が `npx supabase status` から読んで入れる。読めなければ（立てていない・Docker が動いていない）失敗する（黙って飛ばさない。D19）
+- CI（`.github/workflows/test.yml` の「結合テスト」）でも、PR のたびに空の DB から立てて流す。Supabase CLI の版は `package.json` で固定している
 
 - API（PostgREST・認証）が要るので、`npx supabase start` で立てた Supabase が要る。上の「CLI が動かないとき」の Docker だけのやり方（`scripts/db-test-docker.sh`）では流せない
 - `supabase.exe` がアプリケーション制御で止まる PC では、このテストは流せない（上の「CLI が動かないとき」）。止まらない PC では、Docker Desktop を起動して `npx supabase start` すれば流せる（2026-11-02 に Windows で 7 件通った）

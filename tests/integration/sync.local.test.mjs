@@ -1,10 +1,9 @@
 // 試験版の保存を、ローカルの Supabase（docs/db/LOCAL.md）で実際に通すテスト。
 // JavaScript が作った操作を DB の apply_op が受け付けるか、2台の端末の競合を、本物の DB で確かめる。
 //
-// 実行（ローカルの Supabase を起動してから）:
-//   eval "$(npx supabase status -o env | sed 's/^/export MANEY_LOCAL_/')"
-//   node --test "tests/integration/*.test.mjs"
-// 環境変数（MANEY_LOCAL_API_URL など）がなければ、このテストは飛ばす。
+// 実行（ローカルの Supabase を起動してから）: npm run test:integration（D19。CI でも流す）
+// scripts/local-supabase.mjs が接続先（MANEY_LOCAL_*）を入れ、MANEY_INTEGRATION_REQUIRED=1 にする。
+// そのときに環境変数が足りなければ、飛ばさずに失敗する。node --test "tests/integration/*.test.mjs" を直接動かして環境変数がなければ、飛ばす。
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { rowsToSt, stToRows, stripMeta } from '../../src/compat.ts'; // Node が型を消して読む（D17）
@@ -14,6 +13,9 @@ const URL_ = process.env.MANEY_LOCAL_API_URL;
 const ANON = process.env.MANEY_LOCAL_PUBLISHABLE_KEY || process.env.MANEY_LOCAL_ANON_KEY;
 const SERVICE = process.env.MANEY_LOCAL_SERVICE_ROLE_KEY;
 const skip = !(URL_ && ANON && SERVICE) && 'ローカルの Supabase の環境変数がない';
+if (skip && process.env.MANEY_INTEGRATION_REQUIRED === '1') {
+  throw new Error(`結合テストを流せません: ${skip}（npm run test:integration から動かす。D19）`);
+}
 
 // ---------- supabase-js の代わり（src/data.ts が使う分だけ） ----------
 function client(token) {
