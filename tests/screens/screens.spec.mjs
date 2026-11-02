@@ -1,6 +1,7 @@
 // 画面を比べる道具（D20 の 0）。画面ごとの DOM の写しと、主な画面の写真を、基準と比べる。
 // 画面を src/ に移す PR（D20）は「表示を変えない」ので、基準と同じになるはず。違ったら、その PR で表示が変わっている。
 // 基準を変える（表示をわざと変えた）ときは --update-snapshots で作り直し、差分を PR で見る（D20）。
+// 比べる所は expect.soft（違っても最後まで続け、違いを一度に全部出す）
 import { test, expect } from '@playwright/test';
 import { EMAIL, PASSWORD, NOW, HOLIDAYS } from './constants.mjs';
 
@@ -43,21 +44,21 @@ async function dom(page, selector) {
 }
 
 const shot = (page, name, options = {}) =>
-  expect(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('canvas')], ...options });
+  expect.soft(page).toHaveScreenshot(name, { fullPage: true, mask: [page.locator('canvas')], ...options });
 
 test('開いたときのタスクと、ホーム', async ({ page }) => {
   await open(page);
   await expect(page.locator('#task-startup')).toBeVisible();
-  expect(await dom(page, '#task-startup')).toMatchSnapshot('task-startup.html');
+  expect.soft(await dom(page, '#task-startup')).toMatchSnapshot('task-startup.html');
   await shot(page, 'task-startup.png', { fullPage: false });
   await closeAll(page);
 
-  expect(await dom(page, '#sec-home')).toMatchSnapshot('home.html');
+  expect.soft(await dom(page, '#sec-home')).toMatchSnapshot('home.html');
   await shot(page, 'home.png');
 
   await page.evaluate(() => openHomeMore(document.body));
   await settle(page);
-  expect(await dom(page, '#home-more')).toMatchSnapshot('home-more.html');
+  expect.soft(await dom(page, '#home-more')).toMatchSnapshot('home-more.html');
   await shot(page, 'home-more.png', { fullPage: false });
 });
 
@@ -66,17 +67,17 @@ test('カレンダー（月・週・日と、日の詳細）', async ({ page }) 
   await closeAll(page);
   await page.evaluate(() => sw('cal'));
   await settle(page);
-  expect(await dom(page, '#sec-cal')).toMatchSnapshot('cal-month.html');
+  expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-month.html');
   await shot(page, 'cal-month.png');
 
   await page.evaluate(() => dayClick('2026-11-12'));
   await settle(page);
-  expect(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
+  expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
 
   for (const view of ['week', 'day']) {
     await page.evaluate(v => setCalView(v), view);
     await settle(page);
-    expect(await dom(page, '#sec-cal')).toMatchSnapshot(`cal-${view}.html`);
+    expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot(`cal-${view}.html`);
   }
 });
 
@@ -85,12 +86,12 @@ test('家計簿（記録・グラフ・毎月のお金）', async ({ page }) => 
   await closeAll(page);
   await page.evaluate(() => sw('ledger'));
   await settle(page);
-  expect(await dom(page, '#sec-ledger')).toMatchSnapshot('ledger-list.html');
+  expect.soft(await dom(page, '#sec-ledger')).toMatchSnapshot('ledger-list.html');
   await shot(page, 'ledger-list.png');
   for (const tab of ['graph', 'monthly']) {
     await page.evaluate(t => ldgTab(t), tab);
     await settle(page);
-    expect(await dom(page, '#sec-ledger')).toMatchSnapshot(`ledger-${tab}.html`);
+    expect.soft(await dom(page, '#sec-ledger')).toMatchSnapshot(`ledger-${tab}.html`);
   }
 });
 
@@ -100,7 +101,7 @@ test('シフト・設定・タスク', async ({ page }) => {
   for (const sec of ['shift', 'set', 'task']) {
     await page.evaluate(s => sw(s), sec);
     await settle(page);
-    expect(await dom(page, `#sec-${sec}`)).toMatchSnapshot(`${sec}.html`);
+    expect.soft(await dom(page, `#sec-${sec}`)).toMatchSnapshot(`${sec}.html`);
     await shot(page, `${sec}.png`);
   }
 });
@@ -123,7 +124,7 @@ test('入力画面', async ({ page }) => {
   for (const [name, openIt, selector, withShot] of modals) {
     await page.evaluate(openIt);
     await settle(page);
-    expect(await dom(page, selector)).toMatchSnapshot(`modal-${name}.html`);
+    expect.soft(await dom(page, selector)).toMatchSnapshot(`modal-${name}.html`);
     if (withShot) await shot(page, `modal-${name}.png`, { fullPage: false });
     await closeAll(page);
   }
