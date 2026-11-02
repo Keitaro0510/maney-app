@@ -17,7 +17,7 @@
 - **main ブランチがそのまま GitHub Pages の本番**（ユーザーが毎日使っている）。main で直接作業しない。変更は必ずブランチを切り、PR にする（`docs/GIT_WORKFLOW.md`）
 - PR のマージは Claude が行ってよい（2026-10-29 にユーザーが許可）
 - ユーザーはブランチの運用を学んでいる。Git の操作をするときは、何をなぜするのかを短く説明する
-- `sw.js` の `CACHE_NAME` は、公開するときに GitHub Actions が自動で決める（D15。`.github/workflows/deploy.yml`）。リポジトリの `'money-app-dev'` は手で変えない。`js/` にファイルを足したら、`sw.js` の `ASSETS` にも足す（テストが確かめる）
+- `sw.js` の `CACHE_NAME` は、公開するときに GitHub Actions が自動で決める（D15。`.github/workflows/deploy.yml`）。リポジトリの `'money-app-dev'` は手で変えない。`js/` にファイルを足したら（`index.html` に読む順で書き、`loadData()` は `js/app-bootstrap.js` だけが呼ぶ。D18）、`sw.js` の `ASSETS` にも足す（テストが確かめる）
 - 手元で動かすときは `npm install`（初回だけ）のあと `npm run dev`（http://127.0.0.1:8765/）。Vite を使っている（D4）。`js/`・`css/` がまだふつうの `<script>`・CSS のうちは、`index.html` の `<script src="js/…">` と `<link rel="stylesheet" href="css/…">` に `vite-ignore` を付ける。`css/` にファイルを足したときも `sw.js` の `ASSETS` に足す
 - 型の検査は `npm run typecheck`（`js/` と `src/` の両方。CI でも動く）。必ずある入力欄などは `MoneyUI.inputById` などで取る（D16）
 - `.ts` は `src/`（ES モジュール・`strict`）。`js/` から使うものは `src/main.ts` で `window` に出す。`js/` の `<script>` は `index.html` の `<body>` に `defer` で置く（`<head>` に置くとビルドで順番が崩れる）。トップレベルの `await` は使わない。Vite が作るのは `assets/main.js` の1つだけで、`sw.js` の `ASSETS` に書いてある（D17）

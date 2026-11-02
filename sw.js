@@ -13,7 +13,15 @@ const ASSETS = [
   './js/tasks-ui.js',
   './js/monthly-ui.js',
   './js/backup-ui.js',
-  './js/app.js',
+  './js/app-core.js',
+  './js/app-home.js',
+  './js/app-calendar.js',
+  './js/app-cards.js',
+  './js/app-shift.js',
+  './js/app-ledger.js',
+  './js/app-settings.js',
+  './js/app-plan.js',
+  './js/app-bootstrap.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];

@@ -1,0 +1,623 @@
+// 共通部分: 定数・状態・認証・データの読み込みと保存・同期・起動の関数・ナビ・計算の補助・グラフ
+// js/app.js を中身を変えずに分けたファイル（D18）。ふつうの <script> を、index.html に書いた順に読む（共通部分 → 画面 → bootstrap）。
+// アプリの画面と動き（D4 の手順3 で index.html の <script> から出した）。まだふつうの <script>（import/export ではない）なので、
+// 関数は今までどおり window から見え、HTML の onclick から呼べる。index.html の最後（<body> の終わり）で読む
+// ============================================================
+// データ・定数
+// ============================================================
+const DAYS=['日','月','火','水','木','金','土'];
+const JC=['s0','s1','s2','s3','s4'],BC=['bs0','bs1','bs2','bs3','bs4'];
+const DOTC=['#185FA5','#3B6D11','#993556','#BA7517','#3C3489'];
+// 色の読み上げ用の名前（色の選択肢はボタンで、文字がないため）
+const COLOR_NAMES={pink:'ピンク',blue:'青',green:'緑',orange:'オレンジ',purple:'紫',teal:'青緑'};
+const PLAN_COLORS=[{key:'pink',bg:'#FBEAF0',fg:'#993556',dot:'#E06080'},{key:'blue',bg:'#E6F1FB',fg:'#185FA5',dot:'#3A8FE0'},{key:'green',bg:'#EAF3DE',fg:'#3B6D11',dot:'#5CA020'},{key:'orange',bg:'#FAEEDA',fg:'#BA7517',dot:'#E09030'},{key:'purple',bg:'#EEEDFE',fg:'#3C3489',dot:'#7060D0'},{key:'teal',bg:'#DEF3EF',fg:'#0F6E56',dot:'#209070'}];
+const planColor=key=>PLAN_COLORS.find(c=>c.key===key)||PLAN_COLORS[0];
+function jobColorObj(job){if(!job)return PLAN_COLORS[0];if(job.color)return planColor(job.color);const idx=st.jobs.indexOf(job);return PLAN_COLORS[idx>=0?idx%PLAN_COLORS.length:0];}
+function jobColorByName(name){return jobColorObj(st.jobs.find(j=>j.name===name));}
+const DEF_EXP=['食費','交通費','外食','娯楽','日用品','通信費','固定費','その他'];
+const DEF_INC=['給与','バイト','仕送り','その他'];
+const CAT_COL={'食費':'#185FA5','交通費':'#3B6D11','外食':'#993556','娯楽':'#BA7517','日用品':'#3C3089','通信費':'#0F6E56','固定費':'#C45000','その他':'#5F5E5A','給与':'#3B6D11','バイト':'#185FA5','仕送り':'#BA7517'};
+
+// 今の日時と、今日の日付 'YYYY-MM-DD'。日付が変わったら onDayChange で新しくする
+let _now=new Date();
+const toDS=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+let TODAY=MoneyClock.dayKey(_now);
+
+// 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
+function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC]};}
+let st=defaultSt();
+let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
+let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
+let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
+let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
+let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
+let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
+let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
+let selShiftDays=new Set();
+let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
+let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
+let catChart=null,dayChart=null,balChart=null,wdStr='',cardEditIdx=-1;
+let planEditIdx=-1,planDateMode='single',planColorSel='pink';
+
+// ============================================================
+// Supabase設定
+// ============================================================
+const SUPA_URL = 'https://sgvyjolyfuqchugltvls.supabase.co';
+const SUPA_KEY = 'sb_publishable_xQszLlsL0IVxrnxsHK0ZtA_AHqsaDMu';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    storageKey: 'money-app-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+
+// ============================================================
+// 認証
+// ============================================================
+async function loginWithGoogle(){
+  await supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: location.href  // ログイン後に元のページに戻る
+    }
+  });
+}
+
+async function logout(){
+  if(outbox.length){
+    showSyncBanner(`送れていない変更が${outbox.length}件あります。ログアウトすると、この端末から消えます。`,
+      [{label: 'ログアウトする', onclick: reallyLogout}, {label: 'やめる', onclick: hideSyncBanner, primary: true}]);
+    return;
+  }
+  await reallyLogout();
+}
+
+async function reallyLogout(){
+  const userId = currentUser && currentUser.id;
+  await supa.auth.signOut();
+  if(userId) ['server', 'outbox'].forEach(name=>localStorage.removeItem(`${STORAGE_PREFIX}${userId}:v2:${name}`));
+  location.reload();
+}
+
+function showLoginScreen(){
+  document.getElementById('login-screen').style.display = 'flex';
+  /** @type {HTMLElement} */ (document.querySelector('.app')).style.display = 'none';
+  /** @type {HTMLElement} */ (document.querySelector('.bottom-nav')).style.display = 'none';
+  document.getElementById('top-actions').hidden = true;
+}
+
+function hideLoginScreen(user){
+  document.getElementById('login-screen').style.display = 'none';
+  /** @type {HTMLElement} */ (document.querySelector('.app')).style.display = 'block';
+  /** @type {HTMLElement} */ (document.querySelector('.bottom-nav')).style.display = 'flex';
+  document.getElementById('top-actions').hidden = false;
+  // ログイン中のアカウント（設定のいちばん下）
+  document.getElementById('account-email').textContent = user.email || '';
+}
+
+// ============================================================
+// データ（新しいテーブル。テーブル分割 #11、2026-10-29 に切り替え）
+// - サーバーの写し（server）: 新しいテーブルから読んだ行と、その updated_at。src/data.ts で読む
+// - 送信待ち（outbox）: まだ送れていない操作の列。この端末に保存し、再起動しても残す
+// - 画面のデータ（st）: サーバーの写しに送信待ちを重ねた行から、互換層（src/compat.ts）で組み立てる
+// - 保存: 画面で st を変えたら、互換層で行に戻し、前の行との違いを1つの操作にして送信待ちに入れ、順に apply_op で送る
+// - 端末の保存場所のキーは maney:prod: で始める（切り替える前の版のキー mavFinal2・mavSync は使わない）
+// ============================================================
+const STORAGE_PREFIX = 'maney:prod:';
+let server = null;         // {rows, epoch, loadedAt}
+let outbox = [];           // 送信待ちの操作
+let remoteReady = false;   // サーバーから読み込めた
+let loadingRemote = false; // サーバーから読み込んでいる途中
+let sending = false;       // 送信待ちを送っている途中
+let sendBlocked = null;    // 送るのを止めている理由（'conflict'・'stale_epoch'・'error'）。選んでもらうまで送らない
+
+const TABLE_LABELS = {
+  settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',
+  shifts: 'シフト', plans: '予定', fixed_costs: '毎月のお金', withdrawals: '引き出し',
+  salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績', tasks: 'タスク',
+};
+
+function storageKey(name){ return `${STORAGE_PREFIX}${currentUser.id}:v2:${name}`; }
+
+function loadStored(name){
+  try{
+    const s = localStorage.getItem(storageKey(name));
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+
+function store(name, value){
+  try{ localStorage.setItem(storageKey(name), JSON.stringify(value)); }
+  catch(e){
+    console.warn('端末に保存できませんでした:', e);
+    showSyncBanner('この端末に保存できませんでした（容量がいっぱいかもしれません）。送れていない変更は、アプリを閉じると消えます。',
+      [{label: '閉じる', onclick: hideSyncBanner}]);
+  }
+}
+
+// 今の行（サーバーの写しに送信待ちを重ねたもの）
+// 今の行（サーバーの写しに、送信待ちを重ねたもの）。まだサーバーから読み込めていないときは、空の行（お金の計算が止まらないように）
+function currentRows(){ return server ? MoneyData.applyOutbox(server.rows, outbox) : {}; }
+
+// 今の行から、画面のデータ（互換の st）を作り直す。設定の行がなければ false
+function rebuildSt(){
+  if(!server) return false;
+  st = MoneyCompat.rowsToSt(currentRows()) || defaultSt();
+  fixDefaults();
+  return true;
+}
+
+function renderCurrentSection(){
+  const cur = document.querySelector('.sec.active');
+  sw(cur ? cur.id.replace('sec-', '') : 'home');
+}
+
+// 送れていない変更があるときだけ、左上に件数を出す
+function updateSyncStatus(){
+  const pill = document.getElementById('sync-pill');
+  if(!pill) return;
+  pill.hidden = !outbox.length;
+  pill.textContent = `送信待ち ${outbox.length}件`;
+}
+
+// ============================================================
+// 同期の通知（送れない・別の端末との競合）
+// ============================================================
+function showSyncBanner(msg, actions){
+  document.getElementById('sync-banner-msg').textContent = msg;
+  const box = document.getElementById('sync-banner-actions');
+  box.innerHTML = '';
+  actions.forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'btn sm' + (a.primary ? ' primary' : '');
+    b.textContent = a.label;
+    b.onclick = a.onclick;
+    box.appendChild(b);
+  });
+  document.getElementById('sync-banner').classList.add('show');
+}
+
+function hideSyncBanner(){
+  document.getElementById('sync-banner').classList.remove('show');
+}
+
+// 別の端末の変更とぶつかった
+function showConflict(op, conflicts){
+  const reasons = {
+    changed: '別の端末で変更されています',
+    missing: '別の端末で削除されています',
+    exists: 'すでにあります',
+    duplicate: '同じ内容の記録が、別の端末で登録されています',
+  };
+  const lines = conflicts.map(c => `・${TABLE_LABELS[c.table] || c.table}: ${reasons[c.reason] || c.reason}`);
+  showSyncBanner(
+    '別の端末の変更とぶつかったため、この端末の変更を保存していません。\n' + lines.join('\n') + '\n\n' +
+    '・サーバーの内容にする: この端末の送れていない変更は、すべて消えます\n' +
+    '・この端末の内容で上書き: ぶつかった記録を、この端末の内容にします',
+    [
+      {label: 'サーバーの内容にする', onclick: useServerVersion},
+      {label: 'この端末の内容で上書き', onclick: ()=>overwriteWithMine(op, conflicts)},
+    ]);
+}
+
+// 競合を解く: 送信待ちを捨てて、サーバーの内容を読み込み直す
+async function useServerVersion(){
+  outbox = [];
+  store('outbox', outbox);
+  sendBlocked = null;
+  hideSyncBanner();
+  updateSyncStatus();
+  await loadRemote();
+}
+
+// 競合を解く: ぶつかった記録を、この端末の内容で上書きして送り直す
+async function overwriteWithMine(op, conflicts){
+  outbox = MoneyData.rewriteForOverwrite(outbox, op, conflicts, crypto.randomUUID());
+  store('outbox', outbox);
+  sendBlocked = null;
+  hideSyncBanner();
+  rebuildSt();
+  renderCurrentSection();
+  await flushOutbox();
+  if(!outbox.length) await loadRemote(); // 別の端末の、ほかの変更も読み込む
+}
+
+// サーバーのデータが移し直された（移行の番号が上がった）
+function showStaleEpoch(){
+  showSyncBanner(
+    `サーバーのデータが移し直されたため、この端末の送れていない変更（${outbox.length}件）は保存できません。\n` +
+    '必要なら書き出して（JSON のファイル）から、捨てて読み込み直してください。',
+    [
+      {label: '書き出す', onclick: downloadOutbox},
+      {label: '捨てて読み込み直す', onclick: useServerVersion, primary: true},
+    ]);
+}
+
+// 送信待ちを JSON のファイルにして保存する（捨てる前の退避）
+function downloadOutbox(){
+  downloadJson('maney-outbox', JSON.stringify({exportedAt: new Date().toISOString(), outbox}, null, 2));
+}
+
+function downloadJson(name, text){
+  const blob = new Blob([text], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}-${TODAY}.json`; // 端末の時刻での日付（toISOString の日付は、朝9時までは前の日になる）
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// 切り替える前の版（user_data）が端末に残したデータ。
+// 送れていなかった変更があれば、書き出せるようにする（新しい版では保存できないため）。なければ消す
+function handleLegacyLocalData(){
+  let legacy = null;
+  try{
+    const sync = JSON.parse(localStorage.getItem('mavSync') || 'null');
+    if(sync && sync.dirty) legacy = localStorage.getItem('mavFinal2');
+  }catch(e){}
+  const forget = ()=>{ localStorage.removeItem('mavFinal2'); localStorage.removeItem('mavSync'); };
+  // 試験版（next.html。切り替えのときに消した）が端末に残したキー
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('maney:next:')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  if(!legacy){ forget(); return; }
+  showSyncBanner(
+    '切り替える前の版で、サーバーに送れていなかった変更が、この端末に残っています。\n' +
+    '書き出して（JSON のファイル）、必要なら入れ直してください。',
+    [
+      {label: '書き出す', onclick: ()=>downloadJson('maney-before-cutover', legacy), primary: true},
+      {label: '捨てる', onclick: ()=>{ forget(); hideSyncBanner(); }},
+    ]);
+}
+
+// サーバーが受け付けなかった（制約違反など。送り直しても通らない）
+function showSendError(op, error){
+  showSyncBanner(
+    'サーバーがこの端末の変更を受け付けませんでした。\n' + ((error && (error.message || error.code)) || error) + '\n' +
+    '・この変更を捨てる: この変更と、これを前提にしたあとの変更を捨てます',
+    [
+      {label: 'この変更を捨てる', onclick: ()=>{
+        outbox = MoneyData.discardOp(outbox, op.id);
+        store('outbox', outbox);
+        sendBlocked = null;
+        hideSyncBanner();
+        rebuildSt();
+        renderCurrentSection();
+        flushOutbox();
+      }},
+      {label: 'もう一度送る', onclick: ()=>{ sendBlocked = null; hideSyncBanner(); flushOutbox(); }, primary: true},
+    ]);
+}
+
+// ============================================================
+// 保存: 画面で変えた st を、送信待ちの操作にする
+// UI の処理は st を変えてから save() を呼ぶ。そのあとの描画は、作り直した st で行われる
+// ============================================================
+function saveLocal(){}
+
+function save(){
+  if(!server){
+    rebuildSt();
+    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+    return;
+  }
+  try{
+    const now = new Date().toISOString();
+    const before = currentRows();
+    const after = MoneyCompat.stToRows(st, before, {newId: ()=>crypto.randomUUID(), now});
+    // 互換の st が持つテーブルだけを比べる（tasks などは st にないので、比べると全部「消えた」と見なしてしまう。D1）
+    queueChanges(MoneyData.diffRows(before, after, MoneyData.COMPAT_TABLES), now);
+  }catch(e){
+    console.warn('保存できませんでした:', e);
+    rebuildSt();
+    renderCurrentSection();
+    showSyncBanner('保存できませんでした。変えた内容は取り消しました。\n' + (e.message || e),
+      [{label: '閉じる', onclick: hideSyncBanner}]);
+    return;
+  }
+  rebuildSt(); // 新しい記録にも _id が付く（続けて編集しても、同じ行の更新になる）
+  updateSyncStatus();
+  flushOutbox();
+}
+
+// 変更の列を1つの操作にして、送信待ちに積む（端末にも保存する）
+function queueChanges(changes, now){
+  if(!changes.length) return;
+  const op = MoneyData.makeOp(changes, {id: crypto.randomUUID(), epoch: server.epoch, now, server, outbox});
+  outbox = [...outbox, op];
+  store('outbox', outbox);
+}
+
+// 互換の st を通さずに、行を直接保存する入り口（tasks など。D1）。1回の呼び出しが1つの操作になる。
+// changes: [{table, action: 'insert'|'update'|'delete', id, row}]。row にはサーバーが決める列（id・user_id・日時）を入れない。
+// base（読み込んだときの updated_at）は makeOp が付ける。保存した行は currentRows()[table] で読める。
+// 保存できたら true。できなければ知らせを出して false（送信待ちには積まない）
+function saveRows(changes){
+  if(!server){
+    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+    return false;
+  }
+  try{
+    queueChanges(MoneyData.checkDirectChanges(changes), new Date().toISOString());
+  }catch(e){
+    console.warn('保存できませんでした:', e);
+    showSyncBanner('保存できませんでした。\n' + (e.message || e), [{label: '閉じる', onclick: hideSyncBanner}]);
+    return false;
+  }
+  updateSyncStatus();
+  flushOutbox();
+  return true;
+}
+
+// 送信待ちを、古いものから1つずつ送る
+async function flushOutbox(){
+  if(!currentUser || sending || loadingRemote || sendBlocked || !outbox.length) return;
+  sending = true;
+  try{
+    while(outbox.length && !sendBlocked){
+      const op = outbox[0];
+      const res = await MoneyData.sendOp(supa, op);
+      if(res.kind === 'applied'){
+        ({server, outbox} = MoneyData.acknowledge({server, outbox}, op, res.result));
+        store('server', server);
+        store('outbox', outbox);
+      }else if(res.kind === 'conflict'){
+        sendBlocked = 'conflict';
+        showConflict(op, res.conflicts);
+      }else if(res.kind === 'stale_epoch'){
+        sendBlocked = 'stale_epoch';
+        showStaleEpoch();
+      }else if(res.kind === 'network'){
+        showSyncBanner(`通信できないため、送れていない変更が${outbox.length}件あります。この端末に残っていて、通信が戻ったら送ります。`,
+          [{label: 'もう一度送る', onclick: flushOutbox, primary: true}]);
+        break;
+      }else{
+        sendBlocked = 'error';
+        showSendError(op, res.error);
+      }
+    }
+    if(!outbox.length) hideSyncBanner();
+  }finally{
+    sending = false;
+    updateSyncStatus();
+  }
+}
+
+// ============================================================
+// 新しいテーブルから読み込む（起動時と、アプリに戻ってきたとき）
+// すべてのテーブルを読み終えて件数が合ったときだけ、サーバーの写しを置き換える
+// 送信待ちは、新しい写しに重ね直す
+// ============================================================
+async function loadRemote(){
+  if(!currentUser || loadingRemote || sending) return;
+  loadingRemote = true;
+  try{
+    server = await MoneyData.loadAllTables(supa);
+    store('server', server);
+    remoteReady = true;
+    rebuildSt();
+    if(!sendBlocked) hideSyncBanner();
+    renderCurrentSection();
+    console.log('サーバーから読み込みました', server.loadedAt);
+  }catch(e){
+    console.warn('新しいテーブルを読み込めませんでした:', e);
+    showSyncBanner(
+      (server ? '新しいテーブルを読み込めませんでした。前に読み込んだ内容を表示しています。' : '新しいテーブルを読み込めませんでした。')
+        + '\n' + (e.message || e),
+      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
+  }finally{
+    loadingRemote = false;
+  }
+}
+
+// アプリに戻ってきたとき・通信が戻ったとき: 送信待ちを送ってから、読み込み直す
+// （入力中の画面があるときは読み込まない。送るのは入力中でもよい）
+async function resyncRemote(){
+  if(!currentUser) return;
+  await flushOutbox();
+  if(outbox.length) return;
+  if(document.querySelector('.mbg.open')) return;
+  await loadRemote();
+}
+// 日付が変わったとき（裏に置いたまま日をまたいだ・開いたまま0時をまたいだ）: 「今日」を新しくして描き直す。
+// 「今月」「今日」を見ていた画面は新しい今月・今日に合わせる。ほかの月・日を見ていたら、そのままにする
+function onDayChange(now, prevKey){
+  const prev=_now;
+  _now=now;
+  TODAY=MoneyClock.dayKey(now);
+  const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
+  ({y:calY,m:calM}=follow(calY,calM));
+  ({y:shiftCalY,m:shiftCalM}=follow(shiftCalY,shiftCalM));
+  ({y:shiftListY,m:shiftListM}=follow(shiftListY,shiftListM));
+  ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
+  if(calAnchor===prevKey) calAnchor=TODAY;
+  if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
+}
+const todayWatcher=MoneyClock.createDayWatcher(()=>new Date(), onDayChange);
+
+// 0時を過ぎたら確かめる（開いたまま日をまたいだとき）。裏にいる間は止まるが、戻ったときに下で確かめる
+function scheduleDayCheck(){
+  setTimeout(()=>{ todayWatcher.check(); scheduleDayCheck(); }, MoneyClock.msUntilNextDay(new Date())+1000);
+}
+scheduleDayCheck();
+
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState !== 'visible') return;
+  todayWatcher.check();
+  // 戻ってきたとき: 読み込み直してから、開いたときのタスクの一覧を出すか決める（前に出してから1時間以上なら出す。D10）
+  resyncRemote().then(()=>maybeShowStartupTasks(true));
+});
+window.addEventListener('focus', ()=>todayWatcher.check());
+window.addEventListener('online', resyncRemote);
+
+// ============================================================
+// 起動
+// ============================================================
+
+// ログインした直後: 端末に保存したサーバーの写しと送信待ちをすぐ表示し、そのあとサーバーから読み込んで送る
+async function startWithUser(user){
+  currentUser = user;
+  hideLoginScreen(currentUser);
+  server = loadStored('server');
+  outbox = loadStored('outbox') || [];
+  rebuildSt();
+  updateSyncStatus();
+  renderHome();
+  renderCal();
+  await loadRemote();
+  maybeShowStartupTasks(); // 開いたときのタスクの一覧（D10。開くたびに出す）
+  await flushOutbox();
+  handleLegacyLocalData();
+}
+
+async function loadData(){
+  fixDefaults();
+
+  const { data: { session } } = await supa.auth.getSession();
+  let initialLoadDone = false;
+
+  if(session){
+    initialLoadDone = true;
+    await startWithUser(session.user);
+  } else {
+    showLoginScreen();
+  }
+
+  // 認証状態の変化を監視（ログイン後のリダイレクト時に発火）
+  supa.auth.onAuthStateChange(async (event, session) => {
+    if(event === 'SIGNED_IN' && session){
+      // 初回ログイン時だけ読み込む（アプリ復帰時の再発火を防ぐ）
+      if(!initialLoadDone){
+        initialLoadDone = true;
+        await startWithUser(session.user);
+      }
+    } else if(event === 'SIGNED_OUT'){
+      currentUser = null;
+      initialLoadDone = false;
+      remoteReady = false;
+      server = null;
+      outbox = [];
+      showLoginScreen();
+    }
+  });
+}
+
+function fixDefaults(){
+  ['wds','actualInputs','plans'].forEach(k=>{if(!st[k])st[k]=[];});
+  if(!st.catExp||!st.catExp.length)st.catExp=[...DEF_EXP];
+  if(!st.catInc||!st.catInc.length)st.catInc=[...DEF_INC];
+  // 予定に時刻フィールドを追加(2026-08-10〜)。既存予定はtimeStart:''(終日)として正規化する
+  st.plans.forEach(p=>{
+    if(typeof p.timeStart!=='string')p.timeStart='';
+    if(typeof p.timeEnd!=='string')p.timeEnd='';
+  });
+}
+
+// ============================================================
+// ナビゲーション
+// ============================================================
+function sw(t){
+  ['home','cal','ledger','shift','task','set'].forEach(x=>{
+    document.getElementById('sec-'+x).classList.toggle('active',x===t);
+    const n=document.getElementById('nav-'+x);
+    if(n){n.classList.toggle('active',x===t);if(x===t)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');}
+  });
+  // 設定は右上のボタンから開く（D10）。開いている間はボタンを色付きにする
+  const sb=document.getElementById('settings-btn');
+  if(sb){sb.classList.toggle('active',t==='set');if(t==='set')sb.setAttribute('aria-current','page');else sb.removeAttribute('aria-current');}
+  if(t==='home')renderHome();
+  else if(t==='cal')renderCal();
+  else if(t==='ledger'){updateLdgNav_();renderLedger();renderLedgerMetrics();if(document.getElementById('ldg-monthly-sec').style.display!=='none')renderMonthlyTab();}
+  else if(t==='shift')renderShiftSection();
+  else if(t==='task')renderTaskTab();
+  else if(t==='set')initSettingTab();
+}
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+const gY=()=>_now.getFullYear(),gM=()=>_now.getMonth(),gD=()=>_now.getDate();
+const fmtMD=d=>`${d.getMonth()+1}/${d.getDate()}`;
+function addM(y,m,n){let nm=m+n,ny=y;while(nm>11){nm-=12;ny++;}while(nm<0){nm+=12;ny--;}return{y:ny,m:nm};}
+const ds2d=ds=>{const[y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d);};
+// 「毎月○日」（固定費・給料日・引き落とし日）の、その月の日と日付。月にない日（30日までの月の31日など）は月末にする（src/clock.ts）
+const monthDay=(y,m,day)=>MoneyClock.monthDay(y,m,day);
+const monthDate=(y,m,day)=>new Date(y,m,monthDay(y,m,day));
+const monthShifts=(y,m)=>st.shifts.filter(s=>{const d=new Date(s.date);return d.getFullYear()===y&&d.getMonth()===m;});
+const monthLedger=(y,m)=>st.ledger.filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m;});
+const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
+const closeDay=(y,m)=>parseInt(String(st.shiftCloseDay))>=28?new Date(y,m+1,0).getDate():parseInt(String(st.shiftCloseDay));
+function jobPayDay(job){return parseInt(job&&job.payDay)||parseInt(String(st.shiftPayDay))||10;}
+function jobCloseDayNum(job,y,m){const cl=parseInt(job&&job.closeDay)||parseInt(String(st.shiftCloseDay))||31;return cl>=28?new Date(y,m+1,0).getDate():cl;}
+
+// ============================================================
+// 実績
+// ============================================================
+const salaryKeyForShiftMonth=(jobName,y,m)=>{const pm=addM(y,m,1);return `${jobName}|${pm.y}-${String(pm.m+1).padStart(2,'0')}`;};
+const getActualSalary=(jobName,y,m)=>st.actualInputs.find(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKeyForShiftMonth(jobName,y,m));
+function setActualSalary(jobName,y,m,amount){const key=salaryKeyForShiftMonth(jobName,y,m),pm=addM(y,m,1),job=st.jobs.find(j=>j.name===jobName),date=toDS(pm.y,pm.m,monthDay(pm.y,pm.m,jobPayDay(job)));const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===key);const entry={type:'shift',job:jobName,salaryKey:key,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,y,m)};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
+const cardActualKey=(ci,bY,bM)=>`card-${ci}-${bY}-${String(bM+1).padStart(2,'0')}`;
+const getActualCard=(ci,bY,bM)=>st.actualInputs.find(a=>a.type==='card'&&a.cardKey===cardActualKey(ci,bY,bM));
+function setActualCard(ci,bY,bM,amount,estimated){const key=cardActualKey(ci,bY,bM),ei=st.actualInputs.findIndex(a=>a.type==='card'&&a.cardKey===key);const entry={type:'card',cardKey:key,cardIdx:ci,billY:bY,billM:bM,actualAmount:amount,estimatedAmount:estimated};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
+
+// ============================================================
+// シフト計算
+// ============================================================
+// 1回のシフトの給料（src/money.ts。D11）
+function calcShiftInc(shift){const job=st.jobs.find(j=>j.name===shift.job);return MoneyCalc.shiftIncome({start:shift.start,end:shift.end,rest:shift.rest},job);}
+const totalShiftInc=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
+const totalShiftIncNoTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
+const totalTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).transport,0);
+const jobMonthShifts=(jobName,y,m)=>monthShifts(y,m).filter(s=>s.job===jobName);
+const totalShiftIncForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
+const totalShiftIncNoTransportForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
+const calcH=(s,e,rest)=>{const[sh,sm]=s.split(':').map(Number);const[eh,em]=e.split(':').map(Number);return Math.max(0,(eh*60+em-sh*60-sm-(parseInt(rest)||0))/60);};
+
+// ============================================================
+// カードサイクル
+// ============================================================
+// その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
+function cardBillAmount(card, ci, y, m){
+  const actual = getActualCard(ci, y, m);
+  return actual ? parseInt(actual.actualAmount) : cardCycleForBillMonth(card, ci, y, m).amount;
+}
+// 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
+function ledgerPayLabel(l){
+  if(l.type === 'income') return l.receive || '現金';
+  const card = l.cardIdx >= 0 ? st.cards[l.cardIdx] : null;
+  return card ? card.name : (l.pay || '');
+}
+// カードの締め日を実際の日付で取得（31=末日として扱う）
+function cardCloseDay(card, y, m){
+  const cl = parseInt(card.closeDay);
+  if(cl >= 28) return new Date(y, m+1, 0).getDate(); // その月の末日
+  return cl;
+}
+
+// カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
+// 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
+function cardRowOf(card){const row=card._id&&(currentRows().cards||[]).find(c=>c.id===card._id);return row||{id:'__preview__',close_day:parseInt(card.closeDay),bill_day:parseInt(card.billDay)};}
+function cardCycleForBillMonth(card,ci,billY,billM){const n=MoneyCalc.cardCycle(currentRows(),cardRowOf(card),billY,billM);return{cs:ds2d(n.cs),ce:ds2d(n.ce),billD:n.billD,amount:n.amount};}
+// idx: 0 は確定（次に引き落とされる分）、1 は集計中（その次）
+function cycle(card,idx){const row=cardRowOf(card),mo=MoneyCalc.cardCycleMonths(row,TODAY),bm=idx===0?mo.confirmed:mo.pending,n=MoneyCalc.cardCycle(currentRows(),row,bm.y,bm.m);return{label:idx===0?'確定':'集計中',cs:ds2d(n.cs),ce:ds2d(n.ce),billY:n.billY,billM:n.billM,billD:n.billD,amount:n.amount};}
+const cardBillForGraphDate=(card,ci,billY,billM)=>cardCycleForBillMonth(card,ci,billY,billM).amount;
+const cardBillForDate=(card,bY,bM)=>cardBillForGraphDate(card,st.cards.indexOf(card),bY,bM);
+
+// ============================================================
+// 口座推定
+// ============================================================
+// 今日の口座の残高（推定）。src/money.ts で数える（D11）
+function estimateAcct(){return server?MoneyCalc.balanceAt(currentRows(),TODAY):(parseInt(String(st.acctBase))||0);}
+
+// ============================================================
+// グラフ
+// ============================================================
+// 残高推移（今後90日）。src/money.ts で数える（D11。予定はカード払い以外を予定の日に、先の日付の口座の記録もその日に）
+function buildBalanceSeries(){const s=MoneyCalc.balanceSeries(currentRows(),TODAY,90);return{labels:s.map((p,i)=>{const d=ds2d(p.date);return i===0?'今日':`${d.getMonth()+1}/${d.getDate()}`;}),balances:s.map(p=>Math.round(p.balance))};}
+function renderBalanceChart(){const{labels,balances}=buildBalanceSeries();const ctx=/** @type {HTMLCanvasElement} */ (document.getElementById('balance-chart')).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:ctx2=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx2=>labels[ctx2[0].dataIndex],label:ctx2=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:item=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(v,i)=>labels[i]},grid:{display:false}},y:{ticks:{callback:v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});document.getElementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
+

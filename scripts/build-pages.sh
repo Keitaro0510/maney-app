@@ -50,7 +50,7 @@ if ! grep -q 'rel="manifest" href="manifest.json"' "$OUT/index.html"; then
   exit 1
 fi
 # 見た目とアプリの本体を、名前を変えずに指しているか（Vite に名前を変えられると、sw.js の ASSETS と合わなくなる）
-for ref in 'rel="stylesheet" href="css/app.css"' '<script src="js/app.js"'; do
+for ref in 'rel="stylesheet" href="css/app.css"' '<script src="js/app-core.js"' '<script src="js/app-bootstrap.js"'; do
   if ! grep -q "$ref" "$OUT/index.html"; then
     echo "index.html に $ref がありません（vite-ignore を確かめる）" >&2
     exit 1
