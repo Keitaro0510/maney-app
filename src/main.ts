@@ -16,6 +16,8 @@ import * as auth from './auth.ts';
 import { createSupa } from './supa.ts';
 import * as dates from './dates.ts';
 import { LEGACY_PALETTE } from './palette.ts';
+import * as ui from './ui.ts';
+import { LEGACY_TASKS } from './screens/tasks.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -34,6 +36,12 @@ exposeLegacyState(window);
 window.MoneyDates = { ...dates };
 dates.exposeLegacyDates(window);
 Object.assign(window, LEGACY_PALETTE);
+
+// 画面の部品（D20 の 2。js/ui.js から移した）。js/ の画面は MoneyUI.〜 で使う
+window.MoneyUI = { ...ui };
+
+// 画面（D20 の 2〜）。src/screens/ のモジュールのうち、js/ と index.html が名前で呼ぶものを window に出す（期限付きの互換の層）
+Object.assign(window, LEGACY_TASKS);
 
 // 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）

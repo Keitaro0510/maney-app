@@ -125,8 +125,8 @@ flowchart LR
 | ATMで現金を引き出す | ホーム | `withdrawals`（日付は今日に決まる） | 774、1812 |
 | バイト先を編集 | シフト（バイト先一覧） | `jobs`（名前を変えると、シフトと給与の実績の名前も書き換える） | 793、1933 |
 | カードを編集 | 設定（クレジットカード） | `cards` | 790、1788 |
-| タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。互換の `st` を通さない） | `js/tasks-ui.js` の `openTaskSheet` |
-| 今日のタスク（`<dialog>`。開くたびに出す。自動で出したときは「今日は表示しない」のチェック。D10） | 起動したあと・日付が変わったとき・ほかのアプリから戻ってきたとき（前に出してから1時間以上）・ホームのタスクの1行 | `tasks`（完了のチェック） | `js/tasks-ui.js` の `maybeShowStartupTasks` |
+| タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。互換の `st` を通さない） | `src/screens/tasks.ts` の `openTaskSheet` |
+| 今日のタスク（`<dialog>`。開くたびに出す。自動で出したときは「今日は表示しない」のチェック。D10） | 起動したあと・日付が変わったとき・ほかのアプリから戻ってきたとき（前に出してから1時間以上）・ホームのタスクの1行 | `tasks`（完了のチェック） | `src/screens/tasks.ts` の `maybeShowStartupTasks` |
 
 ## その場の操作（画面を移らない）
 
@@ -156,7 +156,7 @@ flowchart LR
 | カレンダー | `renderCal`（1495）、`renderCalMonth`（1506）、`renderCalWeek`（1593）、`renderCalDay`（1572）、`dayClick`（1699） | `buildDay`（1631）、`fetchHolidays`（1456） |
 | 家計簿 | `renderLedger`（2040）、`renderLedgerMetrics`（2039）、`renderCharts`（2147） | `monthLedger`（1295） |
 | シフト | `renderShiftSection`（1837）、`renderSalaryTable`（1838）、`renderFuyou`（1924）、`renderShiftList`（1836）、`renderJobList`（1930） | `calcShiftInc`（1314）、`yearConfirmedIncome`・`yearEstimatedIncome`（1894-1923） |
-| タスク | `renderTaskTab`（`js/tasks-ui.js`） | `src/tasks.ts` の `groupForTab`・`startupGroups`・`dueLabel` |
+| タスク | `renderTaskTab`（`src/screens/tasks.ts`） | `src/tasks.ts` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
 タブの切り替えは `sw()`（`js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。

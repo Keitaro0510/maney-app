@@ -3,7 +3,7 @@
 // 本物の DB を通す場合（送る・通信の失敗・2台の端末の競合）は tests/integration/sync-flow.local.test.mjs で確かめる。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { syncDevice } from './sync-device.mjs';
 import { TABLE_LABELS } from '../src/sync.ts'; // Node が型を消して読む（D17）
 
@@ -199,7 +199,7 @@ test('initSync の前に使うと止める', async () => {
 test('js/ のファイルは、window に出した流れの名前を宣言していない（宣言すると window の名前を上書きしてしまう）', () => {
   const names = ['TABLE_LABELS', 'currentRows', 'rebuildSt', 'loadStored', 'save', 'saveRows', 'flushOutbox', 'loadRemote', 'resyncRemote'];
   const dir = new URL('../js/', import.meta.url);
-  for (const f of ['app-core.js', 'app-home.js', 'app-calendar.js', 'app-cards.js', 'app-shift.js', 'app-ledger.js', 'app-settings.js', 'app-plan.js', 'app-bootstrap.js', 'ui.js', 'tasks-ui.js', 'monthly-ui.js', 'backup-ui.js']) {
+  for (const f of readdirSync(dir).filter(f => f.endsWith('.js'))) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     for (const n of names) assert.doesNotMatch(src, new RegExp(`^((async )?function|let|var|const)\\s+${n}\\b`, 'm'), `js/${f} に ${n} の宣言があります`);
   }

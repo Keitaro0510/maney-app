@@ -202,7 +202,7 @@
 </div>
 
 <!-- SETTINGS -->
-<!-- TASKS（D10。動きは js/tasks-ui.js） -->
+<!-- TASKS（D10。動きは src/screens/tasks.ts） -->
 <div id="sec-task" class="sec">
   <div class="page-title">タスク</div>
   <form class="task-add" onsubmit="event.preventDefault();addTaskQuick()">
@@ -433,8 +433,6 @@
 
 <!-- まだふつうの <script> の js/（D4 の手順4 で少しずつ src/ に移す）。Vite には触らせず、そのまま公開する（vite-ignore）。
      defer を付けて <body> に置く: 上のモジュールのあとで、この順に動く。<head> に置くと、ビルドしたときだけモジュールより先に動いてしまう（D17） -->
-<script src="js/ui.js" defer vite-ignore></script>
-<script src="js/tasks-ui.js" defer vite-ignore></script>
 <script src="js/monthly-ui.js" defer vite-ignore></script>
 <script src="js/backup-ui.js" defer vite-ignore></script>
 <script src="js/app-core.js" defer vite-ignore></script>

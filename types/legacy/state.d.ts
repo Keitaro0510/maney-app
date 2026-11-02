@@ -51,3 +51,10 @@ declare var DEF_EXP: typeof import('../../src/palette.ts').DEF_EXP;
 declare var DEF_INC: typeof import('../../src/palette.ts').DEF_INC;
 declare var CAT_COL: typeof import('../../src/palette.ts').CAT_COL;
 declare var DOTC: typeof import('../../src/palette.ts').DOTC;
+
+// タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
+declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
+declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
+declare var renderHomeTasks: typeof import('../../src/screens/tasks.ts').renderHomeTasks;
+declare var maybeShowStartupTasks: typeof import('../../src/screens/tasks.ts').maybeShowStartupTasks;
+declare var openStartupTasks: typeof import('../../src/screens/tasks.ts').openStartupTasks;
