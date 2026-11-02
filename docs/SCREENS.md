@@ -3,7 +3,19 @@
 今のアプリ（`index.html`）で、どこを押すとどの画面に行くかをまとめた「今の地図」。画面を作り直すとき（タスクを足す・タブを組み替える）の出発点にする。
 
 - 図は今の動きを書いたもので、こうあるべきという案ではない。問題点は [design-review/audit-claude.md](design-review/audit-claude.md) と [design-review/audit-codex.md](design-review/audit-codex.md)
-- 画面の HTML は `index.html`、動きは `js/app.js`（2026-11-02 に `index.html` の `<script>` から出した。D4 の手順3）。行番号は `js/app.js` のもの。画面を変えたら、この図も直す
+- 画面の HTML は `index.html`、動きは `js/app-*.js`（`js/app.js` を2026-11-02に分けた。D18）。**この文書の `js/app.js:行番号` は、分ける前の `js/app.js` の行**。今のファイルは次の表で探す（各ファイルの先頭に2行の説明がある）。画面を変えたら、この図も直す
+
+  | 分ける前の行 | ファイル |
+  |---|---|
+  | 1〜621 | `js/app-core.js`（共通部分） |
+  | 622〜699 | `js/app-home.js` |
+  | 700〜1059 | `js/app-calendar.js`（祝日・カレンダー） |
+  | 1060〜1135 | `js/app-cards.js`（カード設定・ATM） |
+  | 1136〜1269 | `js/app-shift.js` |
+  | 1270〜1507 | `js/app-ledger.js` |
+  | 1508〜1538 | `js/app-settings.js` |
+  | 1539〜1662 | `js/app-plan.js` |
+  | 1663〜1708 | `js/app-bootstrap.js`（起動） |
 
 ## 用語
 
