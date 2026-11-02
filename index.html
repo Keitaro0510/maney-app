@@ -255,7 +255,7 @@
     <div id="card-list-sec" style="margin-top:10px"></div>
   </div>
   <div class="card" style="margin-top:10px"><div class="st">ATM引き出し履歴</div><div id="wd-hist"></div></div>
-  <!-- データの書き出し・読み込み（D13。js/backup-ui.js） -->
+  <!-- データの書き出し・読み込み（D13。src/screens/backup.ts） -->
   <div class="card"><div class="st">データの書き出し・読み込み</div>
     <div class="backup-note">すべてのデータを JSON のファイルに書き出します。何かあったときに、このファイルを読み込むと、書き出したときの状態に戻せます。</div>
     <div class="backup-actions">
@@ -381,7 +381,7 @@
   </section>
 </dialog>
 
-<!-- ファイルから読み込む前の確かめ（D13。js/backup-ui.js） -->
+<!-- ファイルから読み込む前の確かめ（D13。src/screens/backup.ts） -->
 <dialog class="sheet" id="import-sheet" aria-labelledby="import-sheet-title" aria-describedby="import-warn">
   <div class="sheet-head">
     <h2 id="import-sheet-title">ファイルから読み込む</h2>
@@ -434,7 +434,6 @@
 <!-- まだふつうの <script> の js/（D4 の手順4 で少しずつ src/ に移す）。Vite には触らせず、そのまま公開する（vite-ignore）。
      defer を付けて <body> に置く: 上のモジュールのあとで、この順に動く。<head> に置くと、ビルドしたときだけモジュールより先に動いてしまう（D17） -->
 <script src="js/monthly-ui.js" defer vite-ignore></script>
-<script src="js/backup-ui.js" defer vite-ignore></script>
 <script src="js/app-core.js" defer vite-ignore></script>
 <script src="js/app-home.js" defer vite-ignore></script>
 <script src="js/app-calendar.js" defer vite-ignore></script>

@@ -3,6 +3,7 @@
 // - 自由に入れた文字（タスクの名前など）は、innerHTML に入れずに textContent で出す。どうしても HTML にするときは escapeHtml を通す
 // - まだ js/ の画面のために、src/main.ts が window.MoneyUI に出す
 // 見た目（CSS）は css/app.css の「画面の部品」にある。
+import { getToday } from './dates.ts';
 
 /** HTML に入れる文字を、そのまま表示されるようにする（< や " で画面やボタンが壊れないように） */
 export function escapeHtml(value: unknown): string {
@@ -51,6 +52,16 @@ export function textareaById(id: string): HTMLTextAreaElement { return byId(id, 
 export function dialogById(id: string): HTMLDialogElement { return byId(id, HTMLDialogElement, '画面（dialog）'); }
 /** 必ずある要素（div・section など）。ないときは、どの id かを書いて止める */
 export function elementById(id: string): HTMLElement { return byId(id, HTMLElement, '要素'); }
+
+/** JSON のファイルにして保存させる。ファイル名は `<name>-<今日の日付>.json`（端末の時刻での日付。toISOString の日付は、朝9時までは前の日になる） */
+export function downloadJson(name: string, text: string): void {
+  const blob = new Blob([text], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}-${getToday()}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
 
 /**
  * チェックのある行（タスクの一覧の1行）。完了すると横線で薄くなる（D3）。

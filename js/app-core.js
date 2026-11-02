@@ -70,7 +70,7 @@ const appUi = {
   renderCurrentSection,
   updateSyncStatus,
   hasOpenModal: ()=>!!document.querySelector('.mbg.open'),
-  downloadJson,
+  downloadJson: MoneyUI.downloadJson, // ファイルとして保存させる部品（src/ui.ts）
   showLogin: showLoginScreen,
   hideLogin: hideLoginScreen,
   renderFirst: ()=>{ renderHome(); renderCal(); },
@@ -113,15 +113,6 @@ function showSyncBanner(msg, actions){
 
 function hideSyncBanner(){
   document.getElementById('sync-banner').classList.remove('show');
-}
-
-function downloadJson(name, text){
-  const blob = new Blob([text], {type: 'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${name}-${TODAY}.json`; // 端末の時刻での日付（toISOString の日付は、朝9時までは前の日になる）
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 
 // 前の版の保存の入り口（何もしない。呼んでいる所が残っている）。保存は save()（src/sync.ts）
