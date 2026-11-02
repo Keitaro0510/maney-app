@@ -704,6 +704,15 @@ PR の順:
 
 各 PR では `strict` の型を付け、その画面の、今は `js/` 用にゆるくしている型（`types/legacy/`）もその PR で直す。`onclick` の置き換え（手順5）は別に行う（D18）。
 
+作り（0。画面を比べる道具。2026-11-02）:
+- Playwright（`@playwright/test` 1.64.1、Chromium）。`npm run test:screens`（`scripts/local-supabase.mjs` 経由。ローカルの Supabase を立ててから）。設定は `playwright.config.mjs`、テストは `tests/screens/`
+- 準備（`tests/screens/global-setup.mjs`）: テスト用のユーザー（`tests/screens/constants.mjs`。ローカルだけ）を作り直し、`tests/screens/seed.sql` の架空のデータを入れる。id と日時はすべて固定（日時を今にするトリガーは、その間だけ止める）
+- 公開と同じ形のビルド（`MANEY_TARGET=local`）を、手元の開発用（8765）とは別の 8775 で配る。時刻は 2026-11-12 10:00（日本時間）に固定（`page.clock.setFixedTime`）、祝日の取得は固定の答え、Service Worker は止める。画面の幅は 390px
+- 比べるもの: 画面ごと・入力画面ごとの DOM の写し 22（`__snapshots__/*.html`。OS によらない。canvas の属性は外し、`style` はブラウザの書き方にそろえる（写真を撮ると Playwright が入力欄の `style` を書き直すため））と、主な画面の写真 11（`__screenshots__/*-win32.png`・`*-linux.png`。文字の描き方が OS で違うので OS ごと。canvas は隠す。違いは 0.2% まで許す）。比べる所は `expect.soft`（違いを一度に全部出す）
+- CI（結合テストの仕事）でも流す。CI では基準がないと失敗にする（黙って作らない）。違ったら写真と差分を成果物に残す
+- 基準を作り直す: 手元で `npm run test:screens -- --update-snapshots`。Linux の写真は CI でしか撮れないので、作り直すときは CI の成果物（違ったときの写真）から取り出す。別の OS（Mac など）で初めて流すときは、その OS の写真の基準を手元で作る
+- わざと文言を1文字変えると、DOM の写しの違いとして見つかることを確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

@@ -63,12 +63,6 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: 画面を比べる
         run: npm run test:screens
-      - name: 一時的（Linux の基準の写真を残す）
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux-screenshots
-          path: tests/screens/__screenshots__/*-linux.png
       - name: 違ったときの写真と差分を残す
         if: failure()
         uses: actions/upload-artifact@v7
