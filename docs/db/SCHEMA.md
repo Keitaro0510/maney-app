@@ -160,7 +160,7 @@ flowchart LR
   subgraph app["アプリ（端末）"]
     UI["画面と計算<br>st を読む・変える<br>tasks・毎月のお金は saveRows で直接"]
     C["互換層<br>js/compat.js"]
-    D["データの層<br>js/data.js"]
+    D["データの層<br>src/data.ts"]
     Q[("送信待ち<br>端末に保存")]
     S[("サーバーの写し<br>端末に保存")]
   end

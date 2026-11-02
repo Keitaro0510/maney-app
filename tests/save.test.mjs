@@ -6,10 +6,10 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { rowsToSt, stToRows, createdMs } = require('../js/compat.js');
-const {
+import {
   TABLES, DIRECT_TABLES, COMPAT_TABLES,
   diffRows, checkDirectChanges, makeOp, applyChanges, applyOutbox, isReady, acknowledge, rewriteForOverwrite, discardOp, sendOp,
-} = require('../js/data.js');
+} from '../src/data.ts'; // Node が型を消して読む（D17）
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/compat-fixture.json', import.meta.url), 'utf8'));
 const NOW = '2026-10-30T00:00:00.000Z';
