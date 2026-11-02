@@ -12,6 +12,8 @@ import * as backup from './backup.ts';
 import { ENV } from './env.ts';
 import { exposeLegacyState } from './state.ts';
 import * as sync from './sync.ts';
+import * as auth from './auth.ts';
+import { createSupa } from './supa.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -30,6 +32,12 @@ exposeLegacyState(window);
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）
 window.MoneySync = { ...sync };
 Object.assign(window, sync.LEGACY_SYNC);
+
+// Supabase のクライアントと、ログインと起動の流れ（D19 の手順5）。js/app-core.js が MoneyAuth.initAuth で画面の関数を渡す。
+// js/ と index.html が名前で呼ぶもの（supa・loginWithGoogle・logout・loadData）は、同じ名前で window に出す（期限付きの互換の層）
+window.supa = createSupa(ENV);
+window.MoneyAuth = { ...auth };
+Object.assign(window, auth.LEGACY_AUTH);
 
 // ローカルの Supabase につなぐビルドのときだけ、メールとパスワードのログインの入口を出す（D19）。
 // 条件は ENV.target ではなく置き換えられる文字で書く（本番のビルドで、この行と local-login.ts を取り除けるように）
