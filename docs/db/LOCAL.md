@@ -51,9 +51,9 @@ bash scripts/db-test-docker.sh 05_tasks   # 名前に 05_tasks を含むテス�
 - ログインしたユーザーとして動かすときは、`set local role authenticated;` と `request.jwt.claims` を設定する（`01_tables.test.sql` を参照）
 - リポジトリは公開しているので、本番のデータはテストに使わない。架空のデータを作る
 
-## 試験版のアプリ（JavaScript）のテスト
+## アプリのテスト（Node）
 
-`js/` の中のデータの層と互換層は、Node だけでテストできる（インストールはいらない）。
+`src/` のデータの層（`data.ts`）・互換層（`compat.ts`）・計算は、Node だけでテストできる。Node は `.ts` の型を消してそのまま読む（D17）ので、Node.js 24 が要る（22.18 より古いと読めない）。
 
 ```bash
 node --test "tests/*.test.mjs"
@@ -67,12 +67,18 @@ node --test "tests/*.test.mjs"
 docker exec -i supabase_db_maney-app psql -U postgres -q -At -v ON_ERROR_STOP=1 < tests/fixtures/compat_fixture.sql > tests/fixtures/compat-fixture.json
 ```
 
-保存の流れを、ローカルの Supabase で実際に通すテスト（2台の端末の競合など）もある。ローカルの Supabase を起動してから実行する（起動していなければ飛ばす）。
+## 結合テスト（保存を本物の DB に通す）
+
+保存の流れを、ローカルの Supabase で実際に通すテスト（2台の端末の競合など）もある。ローカルの Supabase を起動してから実行する（起動していなければ、環境変数がないので飛ばす）。
 
 ```bash
 eval "$(npx supabase status -o env | sed 's/^/export MANEY_LOCAL_/')"
 node --test "tests/integration/*.test.mjs"
 ```
+
+- API（PostgREST・認証）が要るので、`npx supabase start` で立てた Supabase が要る。上の「CLI が動かないとき」の Docker だけのやり方（`scripts/db-test-docker.sh`）では流せない
+- **Windows の PC では `supabase.exe` がアプリケーション制御で止まる（2026-10-31〜）ので、今はこのテストを流せない。** 流すには、別のやり方（WSL に Linux を入れてその中で動かす、Docker の入った別の PC で動かす、など）を決める必要がある（2026-11-02 時点で未決定）
+- `data`・`compat` を `src/` の TypeScript に移したあと（#92・#93）は、まだ流していない（docs/ROADMAP.md）
 
 ## 本番に適用する
 

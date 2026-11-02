@@ -71,7 +71,9 @@ npm install
 | テスト | `npm test` |
 | 公開と同じ形にビルドする | `bash scripts/build-pages.sh`（`_site` に出る） |
 
-- Vite を使っている（[D4](docs/DECISIONS.md)）。今はまだ、アプリの JavaScript は `js/` のふつうの `<script>` のままで、Vite はそのまま公開する。少しずつ TypeScript と import/export に移す
+- Vite を使っている（[D4](docs/DECISIONS.md)）。計算とデータの層は `src/` の TypeScript（ES モジュール）に移した。画面はまだ `js/` のふつうの `<script>` のままで、Vite はそのまま公開する。少しずつ移す（[D17](docs/DECISIONS.md)）
+- 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
+- Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` は止まった。止まっても `npm test` と CI の型の検査は動く）
 - 公開は自動: main に入ると GitHub Actions がビルドして GitHub Pages に出す（[D15](docs/DECISIONS.md)、`.github/workflows/deploy.yml`）
 - 祝日を読む Google のキーは 127.0.0.1:8765 だけを許しているので、手元ではこの場所で開く
 
