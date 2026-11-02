@@ -7,5 +7,7 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["./**/*.ts", "../types/**/*.d.ts"]
+  "include": ["./**/*.ts", "../types/**/*.d.ts"],
+  // types/legacy/ は js/ から見た型（js/ の関数を使う）。src/ では読まない
+  "exclude": ["../types/legacy/**"]
 }
