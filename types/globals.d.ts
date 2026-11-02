@@ -15,3 +15,4 @@ declare var MoneyTasks: typeof import('../src/tasks.ts');
 declare var MoneyMonthly: typeof import('../src/monthly.ts');
 declare var MoneyBackup: typeof import('../src/backup.ts');
 declare var MoneyEnv: typeof import('../src/env.ts').ENV;
+declare var MoneySync: typeof import('../src/sync.ts');

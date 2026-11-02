@@ -11,6 +11,7 @@ import * as monthly from './monthly.ts';
 import * as backup from './backup.ts';
 import { ENV } from './env.ts';
 import { exposeLegacyState } from './state.ts';
+import * as sync from './sync.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -24,6 +25,11 @@ window.MoneyEnv = ENV;
 
 // データと同期の状態（D19 の手順3）。js/ の画面は st・server などの名前で、src/state.ts の入れ物を読み書きする
 exposeLegacyState(window);
+
+// 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
+// まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）
+window.MoneySync = { ...sync };
+Object.assign(window, sync.LEGACY_SYNC);
 
 // ローカルの Supabase につなぐビルドのときだけ、メールとパスワードのログインの入口を出す（D19）。
 // 条件は ENV.target ではなく置き換えられる文字で書く（本番のビルドで、この行と local-login.ts を取り除けるように）
