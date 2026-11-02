@@ -7,7 +7,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.mjs\"",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/tsconfig.json",
+    "dev:local": "node scripts/local-supabase.mjs vite",
+    "build:local": "node scripts/local-supabase.mjs bash scripts/build-pages.sh _site_local",
+    "preview:local": "npm run build:local && vite preview --outDir _site_local"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.118.0",

@@ -69,7 +69,8 @@ npm install
 |---|---|
 | 手元で開く（直すとすぐ反映） | `npm run dev` → http://127.0.0.1:8765/ |
 | テスト | `npm test` |
-| 公開と同じ形にビルドする | `bash scripts/build-pages.sh`（`_site` に出る） |
+| 公開と同じ形にビルドする | `MANEY_TARGET=prod bash scripts/build-pages.sh`（`_site` に出る。接続先の指定が要る。D19） |
+| ローカルの Supabase につないで開く | `npm run preview:local`・`npm run dev:local`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 
 - Vite を使っている（[D4](docs/DECISIONS.md)）。計算とデータの層は `src/` の TypeScript（ES モジュール）に移した。画面はまだ `js/` のふつうの `<script>` のままで、Vite はそのまま公開する。少しずつ移す（[D17](docs/DECISIONS.md)）
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する

@@ -3,7 +3,9 @@
 // ============================================================
 // Service Worker登録
 // ============================================================
-if('serviceWorker' in navigator){
+// ローカルの Supabase につなぐビルドでは登録しない（D19）。手元の 127.0.0.1:8765 は本番につなぐ npm run dev と同じ場所なので、
+// 登録すると、あとで開いたときに、もう一方のビルドをキャッシュから出してしまう
+if('serviceWorker' in navigator && MoneyEnv.target === 'prod'){
   window.addEventListener('load',()=>{
     navigator.serviceWorker.register('./sw.js').then(reg=>{
       console.log('SW registered');

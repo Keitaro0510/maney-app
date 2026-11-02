@@ -9,6 +9,8 @@ import * as money from './money.ts';
 import * as tasks from './tasks.ts';
 import * as monthly from './monthly.ts';
 import * as backup from './backup.ts';
+import { ENV } from './env.ts';
+import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
 window.MoneyCompat = { ...compat };
@@ -17,3 +19,8 @@ window.MoneyCalc = { ...money };
 window.MoneyTasks = { ...tasks };
 window.MoneyMonthly = { ...monthly };
 window.MoneyBackup = { ...backup };
+window.MoneyEnv = ENV;
+
+// ローカルの Supabase につなぐビルドのときだけ、メールとパスワードのログインの入口を出す（D19）。
+// 条件は ENV.target ではなく置き換えられる文字で書く（本番のビルドで、この行と local-login.ts を取り除けるように）
+if (__MANEY_TARGET__ === 'local') mountLocalLogin(ENV);
