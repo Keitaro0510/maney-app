@@ -629,6 +629,16 @@ PR の順と、それぞれの完了の条件:
 - テスト: `tests/sync-device.mjs` が「1台の端末」を作る（状態は1つしかないので、操作の間だけ入れ物に入れる。2台の競合を1つの Node で試せる）。`tests/sync.test.mjs`（偽の Supabase）が、受け付けられない・保存の失敗・読み込む前の保存・入力中の読み直し・読み込みの失敗を、`tests/integration/sync-flow.local.test.mjs`（ローカルの Supabase）が、送る・通信の失敗と送り直し・2台の競合（上書き／サーバーの内容）・移し直しを、本物の流れで確かめる。結合テストの共通の部分は `tests/integration/helpers.mjs`
 - ブラウザ（ローカルのビルド）で、通信の失敗（`fetch` を止めた）と競合（DB を直接書き換えた）のバナーが出て、ボタンで直ることを確かめた
 
+作り（手順5。2026-11-02）:
+- Supabase のクライアントは `src/supa.ts` の `createSupa`。`src/main.ts` が1回作って `window.supa` に出す（`js/backup-ui.js` が名前で使う。`js/app-core.js` は `initSync`・`initAuth` に渡す）
+- ログインと起動の流れは `src/auth.ts`（`loginWithGoogle`・`logout`・`reallyLogout`・`startWithUser`・`loadData`（ログインの状態の変化の監視を含む）・`handleLegacyLocalData`）。`window` に出すのは `index.html` と `js/` が名前で呼ぶ3つ（`LEGACY_AUTH`: `loginWithGoogle`・`logout`・`loadData`）
+- 画面に頼むこと（`AuthUi`）: `UiPort` の一部に、`showLogin`・`hideLogin`・`renderFirst`（ホームとカレンダー）・`showStartupTasks`・`reload` を足した。`js/app-core.js` は1つの `appUi` を作って、`initSync` と `initAuth` の両方に渡す。ログイン画面の DOM（`showLoginScreen`・`hideLoginScreen`）と `fixDefaults` は `js/` に残した
+- 日付が変わったときと、アプリに戻ったとき（`visibilitychange`・`online`）の監視は、時計と画面の話なので `js/app-core.js` に残した（中で呼ぶ `resyncRemote` は `src/sync.ts`）
+- テスト: `tests/auth.test.mjs`（偽の Supabase）が、開いたときの起動の順番・ログインした直後に1回だけ起動・ログアウトの知らせで状態を空にする・ログアウトで端末の写しを消す・送信待ちがあるときの確認・Google のログインの戻り先・前の版のデータを確かめる
+- ブラウザ（ローカルのビルド）で、ログイン済みでの起動・設定のログアウトボタン（端末の写しとログインの状態が消える）・再ログイン・アプリに戻ったときの読み直し（入力画面を開いている間は読み込まない）を確かめた
+
+これで D19 の共通部分（状態・保存・同期・認証）は、すべて `src/` に移った。`js/app-core.js` に残るのは、定数・画面ごとの状態・画面の DOM の実装・日付の監視・計算の補助（カードの周期・口座の推定など。画面を移すときに移す）
+
 理由:
 - 型とテストの恩恵がいちばん大きいのは状態と流れ。DOM を残せば、依存の向きは `js/` → `src/` の一方向のまま
 - getter・setter なら `js/` を書き換えずに済み、振る舞いを変えない PR にできる

@@ -42,48 +42,13 @@ let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 // ============================================================
 // Supabase設定
 // ============================================================
-// 接続先は、ビルドのときに決まる（src/env.ts。D19）。本番の値は vite.config.mjs
-const SUPA_URL = MoneyEnv.supaUrl;
-const SUPA_KEY = MoneyEnv.supaKey;
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
-  auth: {
-    persistSession: true,
-    storageKey: MoneyEnv.authStorageKey, // 本番は money-app-auth（src/env.ts）
-    storage: window.localStorage,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+// Supabase のクライアント（supa）は src/supa.ts が作り、src/main.ts が window に出す（接続先は src/env.ts。D19 の手順5）
 
 // currentUser は src/state.ts の入れ物（D19）
 
 // ============================================================
-// 認証
+// ログイン画面（出す・閉じるだけ。ログインと起動の流れは src/auth.ts）
 // ============================================================
-async function loginWithGoogle(){
-  await supa.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: location.href  // ログイン後に元のページに戻る
-    }
-  });
-}
-
-async function logout(){
-  if(outbox.length){
-    showSyncBanner(`送れていない変更が${outbox.length}件あります。ログアウトすると、この端末から消えます。`,
-      [{label: 'ログアウトする', onclick: reallyLogout}, {label: 'やめる', onclick: hideSyncBanner, primary: true}]);
-    return;
-  }
-  await reallyLogout();
-}
-
-async function reallyLogout(){
-  const userId = currentUser && currentUser.id;
-  await supa.auth.signOut();
-  if(userId) ['server', 'outbox'].forEach(name=>localStorage.removeItem(`${STORAGE_PREFIX}${userId}:v2:${name}`));
-  location.reload();
-}
 
 function showLoginScreen(){
   document.getElementById('login-screen').style.display = 'flex';
@@ -113,17 +78,23 @@ const STORAGE_PREFIX = MoneyEnv.storagePrefix; // 本番は maney:prod:（src/en
 // サーバーの写し（server）・送信待ち（outbox）・remoteReady・loadingRemote・sending・sendBlocked は、src/state.ts の入れ物（window の getter・setter。D19）
 // 保存・送信・読み込みの流れ（save・saveRows・currentRows・flushOutbox・loadRemote など）と TABLE_LABELS は src/sync.ts（D19 の手順4）。
 // js/ からは window に出した同じ名前で呼ぶ。ここでは、流れが使う Supabase・st の既定値・画面の関数を渡す
-MoneySync.initSync({
-  supa, storagePrefix: STORAGE_PREFIX, defaultSt, fixDefaults,
-  ui: {
-    showBanner: showSyncBanner,
-    hideBanner: hideSyncBanner,
-    renderCurrentSection,
-    updateSyncStatus,
-    hasOpenModal: ()=>!!document.querySelector('.mbg.open'),
-    downloadJson,
-  },
-});
+// 流れ（src/sync.ts・src/auth.ts）が画面に頼むことの実装（UiPort。D19）
+const appUi = {
+  showBanner: showSyncBanner,
+  hideBanner: hideSyncBanner,
+  renderCurrentSection,
+  updateSyncStatus,
+  hasOpenModal: ()=>!!document.querySelector('.mbg.open'),
+  downloadJson,
+  showLogin: showLoginScreen,
+  hideLogin: hideLoginScreen,
+  renderFirst: ()=>{ renderHome(); renderCal(); },
+  showStartupTasks: ()=>maybeShowStartupTasks(),
+  reload: ()=>location.reload(),
+};
+MoneySync.initSync({ supa, storagePrefix: STORAGE_PREFIX, defaultSt, fixDefaults, ui: appUi });
+// ログインと起動の流れ（loginWithGoogle・logout・loadData など）は src/auth.ts（D19 の手順5）。loadData は js/app-bootstrap.js が最後に呼ぶ
+MoneyAuth.initAuth({ supa, storagePrefix: STORAGE_PREFIX, fixDefaults, ui: appUi });
 
 function renderCurrentSection(){
   const cur = document.querySelector('.sec.active');
@@ -168,27 +139,6 @@ function downloadJson(name, text){
   setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
 }
 
-// 切り替える前の版（user_data）が端末に残したデータ。
-// 送れていなかった変更があれば、書き出せるようにする（新しい版では保存できないため）。なければ消す
-function handleLegacyLocalData(){
-  let legacy = null;
-  try{
-    const sync = JSON.parse(localStorage.getItem('mavSync') || 'null');
-    if(sync && sync.dirty) legacy = localStorage.getItem('mavFinal2');
-  }catch(e){}
-  const forget = ()=>{ localStorage.removeItem('mavFinal2'); localStorage.removeItem('mavSync'); };
-  // 試験版（next.html。切り替えのときに消した）が端末に残したキー
-  try{ Object.keys(localStorage).filter(k=>k.startsWith('maney:next:')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
-  if(!legacy){ forget(); return; }
-  showSyncBanner(
-    '切り替える前の版で、サーバーに送れていなかった変更が、この端末に残っています。\n' +
-    '書き出して（JSON のファイル）、必要なら入れ直してください。',
-    [
-      {label: '書き出す', onclick: ()=>downloadJson('maney-before-cutover', legacy), primary: true},
-      {label: '捨てる', onclick: ()=>{ forget(); hideSyncBanner(); }},
-    ]);
-}
-
 // 前の版の保存の入り口（何もしない。呼んでいる所が残っている）。保存は save()（src/sync.ts）
 function saveLocal(){}
 
@@ -224,56 +174,8 @@ window.addEventListener('focus', ()=>todayWatcher.check());
 window.addEventListener('online', resyncRemote);
 
 // ============================================================
-// 起動
+// st の足りない項目を埋める（src/sync.ts・src/auth.ts に渡す）
 // ============================================================
-
-// ログインした直後: 端末に保存したサーバーの写しと送信待ちをすぐ表示し、そのあとサーバーから読み込んで送る
-async function startWithUser(user){
-  currentUser = user;
-  hideLoginScreen(currentUser);
-  server = loadStored('server');
-  outbox = loadStored('outbox') || [];
-  rebuildSt();
-  updateSyncStatus();
-  renderHome();
-  renderCal();
-  await loadRemote();
-  maybeShowStartupTasks(); // 開いたときのタスクの一覧（D10。開くたびに出す）
-  await flushOutbox();
-  handleLegacyLocalData();
-}
-
-async function loadData(){
-  fixDefaults();
-
-  const { data: { session } } = await supa.auth.getSession();
-  let initialLoadDone = false;
-
-  if(session){
-    initialLoadDone = true;
-    await startWithUser(session.user);
-  } else {
-    showLoginScreen();
-  }
-
-  // 認証状態の変化を監視（ログイン後のリダイレクト時に発火）
-  supa.auth.onAuthStateChange(async (event, session) => {
-    if(event === 'SIGNED_IN' && session){
-      // 初回ログイン時だけ読み込む（アプリ復帰時の再発火を防ぐ）
-      if(!initialLoadDone){
-        initialLoadDone = true;
-        await startWithUser(session.user);
-      }
-    } else if(event === 'SIGNED_OUT'){
-      currentUser = null;
-      initialLoadDone = false;
-      remoteReady = false;
-      server = null;
-      outbox = [];
-      showLoginScreen();
-    }
-  });
-}
 
 function fixDefaults(){
   ['wds','actualInputs','plans'].forEach(k=>{if(!st[k])st[k]=[];});

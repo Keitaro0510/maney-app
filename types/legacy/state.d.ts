@@ -22,3 +22,8 @@ declare var saveRows: typeof import('../../src/sync.ts').saveRows;
 declare var flushOutbox: typeof import('../../src/sync.ts').flushOutbox;
 declare var loadRemote: typeof import('../../src/sync.ts').loadRemote;
 declare var resyncRemote: typeof import('../../src/sync.ts').resyncRemote;
+
+// ログインと起動の流れ（src/auth.ts。D19 の手順5）。src/main.ts が window に同じ名前で出す
+declare var loginWithGoogle: typeof import('../../src/auth.ts').loginWithGoogle;
+declare var logout: typeof import('../../src/auth.ts').logout;
+declare var loadData: typeof import('../../src/auth.ts').loadData;
