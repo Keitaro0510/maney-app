@@ -1,0 +1,39 @@
+<dialog class="sheet" id="monthly-sheet" aria-labelledby="monthly-sheet-title">
+<div class="sheet-head">
+<h2 id="monthly-sheet-title">
+</h2>
+<button type="button" class="icon-btn" aria-label="閉じる" onclick="closeMonthlySheet()">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M6 6l12 12M18 6L6 18">
+</path>
+</svg>
+</button>
+</div>
+<div class="monthly-info" id="monthly-sheet-info">
+</div>
+<div class="monthly-state" id="monthly-state" hidden="">
+</div>
+<section class="monthly-part" id="monthly-amount-part">
+<h3 id="monthly-amount-title">来月から金額を変える</h3>
+<div class="monthly-amount-form">
+<input id="monthly-new-amount" type="number" inputmode="numeric" min="1" placeholder="新しい金額" aria-labelledby="monthly-amount-title" aria-describedby="monthly-amount-hint monthly-amount-err">
+<button type="button" class="ui-btn primary" onclick="changeMonthlyAmount()">変える</button>
+</div>
+<div class="monthly-hint" id="monthly-amount-hint">
+</div>
+<div class="task-field-err" id="monthly-amount-err" role="alert" hidden="">金額を入れてください</div>
+</section>
+<section class="monthly-part" id="monthly-stop-part">
+<h3>やめる</h3>
+<div class="monthly-stop-btns">
+<button type="button" class="ui-btn" id="monthly-stop-this" onclick="stopMonthly('this')">今月まで</button>
+<button type="button" class="ui-btn" id="monthly-stop-last" onclick="stopMonthly('last')">先月まで</button>
+</div>
+<div class="monthly-hint" id="monthly-stop-hint">
+</div>
+</section>
+<section class="monthly-part">
+<button type="button" class="ui-btn danger" onclick="deleteMonthly()">削除</button>
+<div class="monthly-hint">まちがえて作ったときだけ。前の月の分も計算から消えます</div>
+</section>
+</dialog>

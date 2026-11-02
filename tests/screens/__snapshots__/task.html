@@ -1,0 +1,148 @@
+<div id="sec-task" class="sec active">
+<div class="page-title">タスク</div>
+<form class="task-add" onsubmit="event.preventDefault();addTaskQuick()">
+<input id="task-add-title" class="task-add-input" placeholder="やることを入れる" aria-label="新しいタスクの名前" enterkeyhint="done" autocomplete="off">
+<button type="submit" class="ui-btn primary">追加</button>
+</form>
+<div class="task-due-chips" id="task-add-due" role="group" aria-label="新しいタスクの期限">
+<span class="task-due-label">期限</span>
+<button type="button" class="task-chip" data-due="none" onclick="setTaskAddDue('none')" aria-pressed="true">なし</button>
+<button type="button" class="task-chip" data-due="today" onclick="setTaskAddDue('today')" aria-pressed="false">今日</button>
+<button type="button" class="task-chip" data-due="tomorrow" onclick="setTaskAddDue('tomorrow')" aria-pressed="false">明日</button>
+<label class="task-chip" data-due="pick">
+<span class="task-chip-text">日付…</span>
+<input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)">
+</label>
+</div>
+<div id="task-list">
+<section class="card task-section task-overdue">
+<h2 class="task-section-title">
+<span>期限切れ</span>
+<span class="task-count">1件</span>
+</h2>
+<div class="check-row overdue">
+<label class="check">
+<input type="checkbox" aria-label="「レポートを出す」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">レポートを出す</div>
+<div class="check-sub">11/10（火）まで・2日すぎています</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「レポートを出す」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+<div class="check-row done">
+<label class="check">
+<input type="checkbox" aria-label="「本を返す」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">本を返す</div>
+<div class="check-sub">11/11（水）まで</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「本を返す」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</section>
+<section class="card task-section task-today">
+<h2 class="task-section-title">
+<span>今日</span>
+<span class="task-count">1件</span>
+</h2>
+<div class="check-row">
+<label class="check">
+<input type="checkbox" aria-label="「家賃の振込」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">家賃の振込</div>
+<div class="check-sub">今日まで　口座から</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「家賃の振込」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</section>
+<section class="card task-section task-soon">
+<h2 class="task-section-title">
+<span>2週間以内</span>
+<span class="task-count">1件</span>
+</h2>
+<div class="check-row">
+<label class="check">
+<input type="checkbox" aria-label="「シフトの希望を出す」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">シフトの希望を出す</div>
+<div class="check-sub">11/20（金）まで</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「シフトの希望を出す」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</section>
+<section class="card task-section task-none">
+<h2 class="task-section-title">
+<span>期限なし</span>
+<span class="task-count">1件</span>
+</h2>
+<div class="check-row">
+<label class="check">
+<input type="checkbox" aria-label="「部屋の片付け」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">部屋の片付け</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「部屋の片付け」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</section>
+<details class="card task-folded">
+<summary>完了したタスク（1件）</summary>
+<div class="task-folded-note">完了して7日たったタスクです</div>
+<div class="check-row done">
+<label class="check">
+<input type="checkbox" aria-label="「古い用事」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">古い用事</div>
+<div class="check-sub">10/20（火）まで</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「古い用事」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</details>
+</div>
+</div>

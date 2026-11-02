@@ -1,0 +1,37 @@
+<dialog class="sheet" id="task-sheet" aria-labelledby="task-sheet-title">
+<div class="sheet-head">
+<h2 id="task-sheet-title">タスクを編集</h2>
+<button type="button" class="icon-btn" aria-label="閉じる" onclick="closeTaskSheet()">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M6 6l12 12M18 6L6 18">
+</path>
+</svg>
+</button>
+</div>
+<div class="fg">
+<label for="task-title">やること</label>
+<input id="task-title" autocomplete="off" aria-describedby="task-title-err" style="font-size: 16px;">
+<div class="task-field-err" id="task-title-err" role="alert" hidden="">やることを入れてください</div>
+</div>
+<div class="fg">
+<label for="task-due">期限（なくてもよい）</label>
+<input id="task-due" type="date" style="font-size: 16px;">
+<div class="task-sheet-due">
+<button type="button" class="task-chip" onclick="setTaskSheetDue('none')">期限なし</button>
+<button type="button" class="task-chip" onclick="setTaskSheetDue('today')">今日</button>
+<button type="button" class="task-chip" onclick="setTaskSheetDue('tomorrow')">明日</button>
+</div>
+</div>
+<div class="fg">
+<label for="task-memo">メモ</label>
+<textarea id="task-memo" rows="3" style="height: auto; font-size: 16px;">
+</textarea>
+</div>
+<div class="task-sheet-actions">
+<button type="button" class="ui-btn danger" onclick="deleteTaskFromSheet()">削除</button>
+<span class="spacer">
+</span>
+<button type="button" class="ui-btn" onclick="closeTaskSheet()">キャンセル</button>
+<button type="button" class="ui-btn primary" onclick="saveTaskSheet()">保存</button>
+</div>
+</dialog>

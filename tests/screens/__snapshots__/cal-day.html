@@ -1,0 +1,280 @@
+<div id="sec-cal" class="sec active">
+<div class="page-title">カレンダー</div>
+<div class="card" style="padding: 0.75rem 0.875rem;">
+<div class="date-mode-tabs" id="cal-view-tabs" role="group" aria-label="カレンダーの表示" style="margin-bottom: 8px;">
+<button type="button" class="date-mode-tab active" id="cvt-day" aria-pressed="true" onclick="setCalView('day')">日</button>
+<button type="button" class="date-mode-tab" id="cvt-week" aria-pressed="false" onclick="setCalView('week')">週</button>
+<button type="button" class="date-mode-tab" id="cvt-month" aria-pressed="false" onclick="setCalView('month')">月</button>
+</div>
+<div class="cal-nav">
+<button class="btn sm" onclick="prevM()">←</button>
+<h2 id="cal-title">
+<span style="color: var(--color-text-primary);">2026年11月12日(木)</span>
+<span class="badge bs0" style="font-size: 10px;">今日</span>
+</h2>
+<button class="btn sm" onclick="nextM()">→</button>
+</div>
+<div id="cal-month-wrap" style="display: none;">
+<div class="cal-grid" id="cal-hdr">
+<div class="chdr">日</div>
+<div class="chdr">月</div>
+<div class="chdr">火</div>
+<div class="chdr">水</div>
+<div class="chdr">木</div>
+<div class="chdr">金</div>
+<div class="chdr">土</div>
+</div>
+<div class="cal-grid" id="cal-body" style="margin-top: 3px;">
+<div class="cday" data-day="2026-11-01" role="button" tabindex="0" aria-label="2026年11月1日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-01')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-01')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">1</div>
+</div>
+<div class="cday" data-day="2026-11-02" role="button" tabindex="0" aria-label="2026年11月2日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-02')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-02')}">
+<div class="dnum" style="color: var(--color-text-secondary);">2</div>
+<div class="pill fixedcost">毎月</div>
+</div>
+<div class="cday" data-day="2026-11-03" role="button" tabindex="0" aria-label="2026年11月3日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-03')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-03')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">3</div>
+<div class="pill holiday">文化の日</div>
+</div>
+<div class="cday" data-day="2026-11-04" role="button" tabindex="0" aria-label="2026年11月4日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-04')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-04')}">
+<div class="dnum" style="color: var(--color-text-secondary);">4</div>
+</div>
+<div class="cday" data-day="2026-11-05" role="button" tabindex="0" aria-label="2026年11月5日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-05')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-05')}">
+<div class="dnum" style="color: var(--color-text-secondary);">5</div>
+<div class="pill fixedcost">毎月</div>
+<div class="pill" style="background: rgb(251, 234, 240); color: rgb(153, 53, 86); opacity: 0.4;">13:00 歯医者</div>
+</div>
+<div class="cday" data-day="2026-11-06" role="button" tabindex="0" aria-label="2026年11月6日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-06')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-06')}">
+<div class="dnum" style="color: var(--color-text-secondary);">6</div>
+</div>
+<div class="cday" data-day="2026-11-07" role="button" tabindex="0" aria-label="2026年11月7日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-07')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-07')}">
+<div class="dnum" style="color: rgb(24, 95, 165);">7</div>
+<div class="pill" style="background: rgb(230, 241, 251); color: rgb(24, 95, 165);">17:00</div>
+</div>
+<div class="cday" data-day="2026-11-08" role="button" tabindex="0" aria-label="2026年11月8日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-08')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-08')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">8</div>
+</div>
+<div class="cday" data-day="2026-11-09" role="button" tabindex="0" aria-label="2026年11月9日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-09')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-09')}">
+<div class="dnum" style="color: var(--color-text-secondary);">9</div>
+<div class="pill wd">ATM</div>
+</div>
+<div class="cday" data-day="2026-11-10" role="button" tabindex="0" aria-label="2026年11月10日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-10')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-10')}">
+<div class="dnum" style="color: var(--color-text-secondary);">10</div>
+<div class="pill task overdue">タスク1</div>
+<div class="pill hikiotoshi">引落</div>
+</div>
+<div class="cday" data-day="2026-11-11" role="button" tabindex="0" aria-label="2026年11月11日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-11')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-11')}">
+<div class="dnum" style="color: var(--color-text-secondary);">11</div>
+<div class="pill task done" title="タスク（済み）">タスク</div>
+<div class="pill fixedcost">毎月</div>
+</div>
+<div class="cday today selected" data-day="2026-11-12" role="button" tabindex="0" aria-label="2026年11月12日の詳細を表示" aria-expanded="true" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-12')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-12')}">
+<div class="dnum" style="color: var(--color-text-secondary);">12</div>
+<div class="pill task">タスク1</div>
+<div class="pill" style="background: rgb(250, 238, 218); color: rgb(186, 117, 23);">19:00 飲み会</div>
+</div>
+<div class="cday" data-day="2026-11-13" role="button" tabindex="0" aria-label="2026年11月13日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-13')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-13')}">
+<div class="dnum" style="color: var(--color-text-secondary);">13</div>
+</div>
+<div class="cday" data-day="2026-11-14" role="button" tabindex="0" aria-label="2026年11月14日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-14')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-14')}">
+<div class="dnum" style="color: rgb(24, 95, 165);">14</div>
+<div class="pill" style="background: rgb(230, 241, 251); color: rgb(24, 95, 165);">09:00</div>
+</div>
+<div class="cday" data-day="2026-11-15" role="button" tabindex="0" aria-label="2026年11月15日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-15')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-15')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">15</div>
+<div class="pill shime">締め日</div>
+</div>
+<div class="cday" data-day="2026-11-16" role="button" tabindex="0" aria-label="2026年11月16日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-16')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-16')}">
+<div class="dnum" style="color: var(--color-text-secondary);">16</div>
+</div>
+<div class="cday" data-day="2026-11-17" role="button" tabindex="0" aria-label="2026年11月17日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-17')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-17')}">
+<div class="dnum" style="color: var(--color-text-secondary);">17</div>
+</div>
+<div class="cday" data-day="2026-11-18" role="button" tabindex="0" aria-label="2026年11月18日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-18')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-18')}">
+<div class="dnum" style="color: var(--color-text-secondary);">18</div>
+</div>
+<div class="cday" data-day="2026-11-19" role="button" tabindex="0" aria-label="2026年11月19日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-19')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-19')}">
+<div class="dnum" style="color: var(--color-text-secondary);">19</div>
+</div>
+<div class="cday" data-day="2026-11-20" role="button" tabindex="0" aria-label="2026年11月20日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-20')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-20')}">
+<div class="dnum" style="color: var(--color-text-secondary);">20</div>
+<div class="pill task">タスク1</div>
+</div>
+<div class="cday" data-day="2026-11-21" role="button" tabindex="0" aria-label="2026年11月21日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-21')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-21')}">
+<div class="dnum" style="color: rgb(24, 95, 165);">21</div>
+<div class="pill" style="background: rgb(234, 243, 222); color: rgb(59, 109, 17);">旅行</div>
+</div>
+<div class="cday" data-day="2026-11-22" role="button" tabindex="0" aria-label="2026年11月22日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-22')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-22')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">22</div>
+<div class="pill" style="background: rgb(234, 243, 222); color: rgb(59, 109, 17);">旅行</div>
+</div>
+<div class="cday" data-day="2026-11-23" role="button" tabindex="0" aria-label="2026年11月23日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-23')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-23')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">23</div>
+<div class="pill holiday">勤労感謝の日</div>
+<div class="pill" style="background: rgb(234, 243, 222); color: rgb(59, 109, 17);">旅行</div>
+</div>
+<div class="cday" data-day="2026-11-24" role="button" tabindex="0" aria-label="2026年11月24日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-24')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-24')}">
+<div class="dnum" style="color: var(--color-text-secondary);">24</div>
+</div>
+<div class="cday" data-day="2026-11-25" role="button" tabindex="0" aria-label="2026年11月25日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-25')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-25')}">
+<div class="dnum" style="color: var(--color-text-secondary);">25</div>
+<div class="pill payday">給料日</div>
+<div class="pill fixedcost">毎月</div>
+</div>
+<div class="cday" data-day="2026-11-26" role="button" tabindex="0" aria-label="2026年11月26日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-26')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-26')}">
+<div class="dnum" style="color: var(--color-text-secondary);">26</div>
+</div>
+<div class="cday" data-day="2026-11-27" role="button" tabindex="0" aria-label="2026年11月27日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-27')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-27')}">
+<div class="dnum" style="color: var(--color-text-secondary);">27</div>
+<div class="pill hikiotoshi">引落</div>
+<div class="pill fixedcost">毎月</div>
+</div>
+<div class="cday" data-day="2026-11-28" role="button" tabindex="0" aria-label="2026年11月28日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-28')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-28')}">
+<div class="dnum" style="color: rgb(24, 95, 165);">28</div>
+</div>
+<div class="cday" data-day="2026-11-29" role="button" tabindex="0" aria-label="2026年11月29日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-29')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-29')}">
+<div class="dnum" style="color: rgb(163, 45, 45);">29</div>
+</div>
+<div class="cday" data-day="2026-11-30" role="button" tabindex="0" aria-label="2026年11月30日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-11-30')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-11-30')}">
+<div class="dnum" style="color: var(--color-text-secondary);">30</div>
+<div class="pill shime">締め日</div>
+</div>
+<div class="cday otherm" data-day="2026-12-01" role="button" tabindex="0" aria-label="2026年12月1日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-12-01')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-12-01')}">
+<div class="dnum" style="color: var(--color-text-secondary);">1</div>
+</div>
+<div class="cday otherm" data-day="2026-12-02" role="button" tabindex="0" aria-label="2026年12月2日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-12-02')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-12-02')}">
+<div class="dnum" style="color: var(--color-text-secondary);">2</div>
+</div>
+<div class="cday otherm" data-day="2026-12-03" role="button" tabindex="0" aria-label="2026年12月3日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-12-03')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-12-03')}">
+<div class="dnum" style="color: var(--color-text-secondary);">3</div>
+</div>
+<div class="cday otherm" data-day="2026-12-04" role="button" tabindex="0" aria-label="2026年12月4日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-12-04')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-12-04')}">
+<div class="dnum" style="color: var(--color-text-secondary);">4</div>
+</div>
+<div class="cday otherm" data-day="2026-12-05" role="button" tabindex="0" aria-label="2026年12月5日の詳細を表示" aria-expanded="false" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('2026-12-05')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('2026-12-05')}">
+<div class="dnum" style="color: rgb(24, 95, 165);">5</div>
+</div>
+</div>
+<p class="cal-detail-hint" id="cal-detail-hint">日付を押すと、下にその日の予定・シフト・記録が表示されます。</p>
+</div>
+<div id="cal-list" style="display: block;">
+<div class="card" style="margin-bottom: 8px;">
+<div class="st">終日・日付イベント</div>
+<div class="ri-with-time">
+<span class="ri-time">
+</span>
+<div class="ri">
+<span class="badge btask">タスク</span>
+<span class="task-ri-count">1件</span>
+</div>
+</div>
+<div class="ri-with-time">
+<span class="ri-time">
+</span>
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0px;">
+<span class="badge bexp">食費</span>
+<div style="min-width: 0px;">
+<div style="font-size: 14px;">コンビニ</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">現金</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
+<button class="btn sm edit" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
+<button class="btn sm del" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
+</div>
+</div>
+</div>
+<div class="st" style="margin-top: 14px;">時間指定</div>
+<div class="ri-with-time">
+<span class="ri-time">19:00〜21:30</span>
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 4px;">
+<label class="plan-done" title="済みにすると、予算を見込みの支出に入れません">
+<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
+</label>
+<div>
+<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+<div style="width: 10px; height: 10px; border-radius: 50%; background: rgb(224, 144, 48); flex-shrink: 0;">
+</div>
+<span style="font-size: 14px;">飲み会</span>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 13px; font-weight: 600; color: rgb(186, 117, 23);">-¥4,000</span>
+<button class="btn sm edit" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
+<button class="btn sm del" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
+</div>
+</div>
+</div>
+</div>
+<div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
+<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(selDay)">＋ 予定</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(selDay)">＋ シフト</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(selDay)">＋ 支出</button>
+</div>
+</div>
+</div>
+<div class="card" id="day-detail" style="display: none;">
+<div id="day-detail-content">
+<div class="st day-detail-head">
+<span>2026年11月12日(木)</span>
+<span class="day-detail-actions">
+<button type="button" class="day-detail-open" onclick="jumpToDay('2026-11-12')">詳しく見る <span aria-hidden="true">→</span>
+</button>
+<button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" onclick="closeDayDetail()">×</button>
+</span>
+</div>
+<div class="ri task-ri">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0px;">
+<span class="badge btask">タスク</span>
+<span class="task-ri-title">家賃の振込</span>
+</div>
+</div>
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0px;">
+<span class="badge bexp">食費</span>
+<div style="min-width: 0px;">
+<div style="font-size: 14px;">コンビニ</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">現金</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
+<button class="btn sm edit" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
+<button class="btn sm del" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
+</div>
+</div>
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 4px;">
+<label class="plan-done" title="済みにすると、予算を見込みの支出に入れません">
+<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
+</label>
+<div>
+<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+<div style="width: 10px; height: 10px; border-radius: 50%; background: rgb(224, 144, 48); flex-shrink: 0;">
+</div>
+<span style="font-size: 14px;">飲み会</span>
+</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 13px; font-weight: 600; color: rgb(186, 117, 23);">-¥4,000</span>
+<button class="btn sm edit" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
+<button class="btn sm del" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
+</div>
+</div>
+</div>
+<div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
+<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(selDay)">＋ 予定</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(selDay)">＋ シフト</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(selDay)">＋ 支出</button>
+</div>
+</div>
+<div style="display: flex; gap: 8px; margin-top: 4px;">
+<button class="btn primary full" onclick="openShiftModal(null)" style="margin-top: 0px;">＋ シフトを追加</button>
+<button class="btn plan-btn full" onclick="openPlanModal(null)" style="margin-top: 0px;">＋ 予定を追加</button>
+</div>
+</div>

@@ -1,0 +1,237 @@
+<div id="sec-ledger" class="sec active">
+<div class="page-title">家計簿</div>
+<div class="tab2" id="ldg-main-tabs" role="group" aria-label="家計簿の表示">
+<button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('list')">記録一覧</button>
+<button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('graph')">グラフ</button>
+<button type="button" class="tb2 active" aria-pressed="true" onclick="ldgTab('monthly')">毎月のお金</button>
+</div>
+<div class="month-nav" id="ldg-month-nav" style="display: none;">
+<button class="btn sm" onclick="ldgMonthPrev()">←</button>
+<div style="text-align: center;">
+<div class="month-nav-label" id="ldg-month-label">2026年11月</div>
+</div>
+<button class="btn sm" onclick="ldgMonthNext()">→</button>
+</div>
+<div class="month-nav" id="ldg-year-nav" style="display: none;">
+<button class="btn sm" onclick="ldgYearPrev()">←</button>
+<div style="text-align: center;">
+<div class="month-nav-label" id="ldg-year-label">2026年</div>
+</div>
+<button class="btn sm" onclick="ldgYearNext()">→</button>
+</div>
+<div id="ldg-list-sec" style="display: none;">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); gap: 8px; margin-bottom: 0.75rem;">
+<div class="met">
+<div class="met-l">支出</div>
+<div class="met-v" id="ldg-exp" style="color: rgb(163, 45, 45);">¥8,300</div>
+</div>
+<div class="met">
+<div class="met-l">収入</div>
+<div class="met-v" id="ldg-inc" style="color: rgb(59, 109, 17);">¥5,000</div>
+</div>
+<div class="met">
+<div class="met-v" id="ldg-bal" style="color: rgb(163, 45, 45);">-¥3,300</div>
+<div class="met-l">収支</div>
+</div>
+</div>
+<button class="btn primary full" onclick="openLedgerModal(null)" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 支出・収入を記録</button>
+<div id="ldg-list">
+<div class="ldg-day-group">
+<div class="ldg-day-header" id="ldg-group-2026-11-12-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-12" onclick="toggleLdgGroup('ldg-group-2026-11-12')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-12')}">
+<div class="ldg-day-header-left">
+<span class="ldg-day-date">11/12(木)</span>
+<span class="ldg-day-summary">1件</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<div class="ldg-day-total">
+<span style="color: rgb(163, 45, 45);">-¥800</span>
+</div>
+<span class="ldg-day-arrow" id="ldg-group-2026-11-12-arrow" aria-hidden="true">▼</span>
+</div>
+</div>
+<div class="ldg-day-detail" id="ldg-group-2026-11-12" role="region" aria-labelledby="ldg-group-2026-11-12-header">
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span class="badge bexp">食費</span>
+<div>
+<div style="font-size: 14px;">コンビニ</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">現金</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
+<button class="btn sm edit" onclick="openLdgEdit(7)">編集</button>
+<button class="btn sm del" onclick="delLedger(7)">削除</button>
+</div>
+</div>
+</div>
+</div>
+<div class="ldg-day-group">
+<div class="ldg-day-header" id="ldg-group-2026-11-08-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-08" onclick="toggleLdgGroup('ldg-group-2026-11-08')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-08')}">
+<div class="ldg-day-header-left">
+<span class="ldg-day-date">11/8(日)</span>
+<span class="ldg-day-summary">1件</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<div class="ldg-day-total">
+<span style="color: rgb(163, 45, 45);">-¥6,000</span>
+</div>
+<span class="ldg-day-arrow" id="ldg-group-2026-11-08-arrow" aria-hidden="true">▼</span>
+</div>
+</div>
+<div class="ldg-day-detail" id="ldg-group-2026-11-08" role="region" aria-labelledby="ldg-group-2026-11-08-header">
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span class="badge bexp">その他</span>
+<div>
+<div style="font-size: 14px;">振込</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">口座 · 口座から</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥6,000</span>
+<button class="btn sm edit" onclick="openLdgEdit(6)">編集</button>
+<button class="btn sm del" onclick="delLedger(6)">削除</button>
+</div>
+</div>
+</div>
+</div>
+<div class="ldg-day-group">
+<div class="ldg-day-header" id="ldg-group-2026-11-04-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-04" onclick="toggleLdgGroup('ldg-group-2026-11-04')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-04')}">
+<div class="ldg-day-header-left">
+<span class="ldg-day-date">11/4(水)</span>
+<span class="ldg-day-summary">1件</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<div class="ldg-day-total">
+<span style="color: rgb(163, 45, 45);">-¥1,500</span>
+</div>
+<span class="ldg-day-arrow" id="ldg-group-2026-11-04-arrow" aria-hidden="true">▼</span>
+</div>
+</div>
+<div class="ldg-day-detail" id="ldg-group-2026-11-04" role="region" aria-labelledby="ldg-group-2026-11-04-header">
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span class="badge bexp">食費</span>
+<div>
+<div style="font-size: 14px;">ランチ</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">Bカード</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥1,500</span>
+<button class="btn sm edit" onclick="openLdgEdit(5)">編集</button>
+<button class="btn sm del" onclick="delLedger(5)">削除</button>
+</div>
+</div>
+</div>
+</div>
+<div class="ldg-day-group">
+<div class="ldg-day-header" id="ldg-group-2026-11-01-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-01" onclick="toggleLdgGroup('ldg-group-2026-11-01')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-01')}">
+<div class="ldg-day-header-left">
+<span class="ldg-day-date">11/1(日)</span>
+<span class="ldg-day-summary">1件</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<div class="ldg-day-total">
+<span style="color: rgb(59, 109, 17);">+¥5,000</span>
+</div>
+<span class="ldg-day-arrow" id="ldg-group-2026-11-01-arrow" aria-hidden="true">▼</span>
+</div>
+</div>
+<div class="ldg-day-detail" id="ldg-group-2026-11-01" role="region" aria-labelledby="ldg-group-2026-11-01-header">
+<div class="ri">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span class="badge binc">その他</span>
+<div>
+<div style="font-size: 14px;">お祝い</div>
+<div style="font-size: 12px; color: var(--color-text-secondary);">現金</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px;">
+<span style="font-size: 14px; font-weight: 600; color: rgb(59, 109, 17);">+¥5,000</span>
+<button class="btn sm edit" onclick="openLdgEdit(4)">編集</button>
+<button class="btn sm del" onclick="delLedger(4)">削除</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="ldg-graph-sec" style="display: none;">
+<div class="tab2" id="ldg-graph-mode-tabs" role="group" aria-label="グラフの期間">
+<button type="button" class="tb2 active" aria-pressed="true" onclick="setLdgGraphMode('month')">月</button>
+<button type="button" class="tb2" aria-pressed="false" onclick="setLdgGraphMode('year')">年</button>
+</div>
+<div class="card">
+<div class="st" id="cat-chart-title">カテゴリ別支出</div>
+<div class="chart-wrap">
+<canvas id="cat-chart">
+</canvas>
+</div>
+</div>
+<div class="card">
+<div class="st" id="day-chart-title">日別支出推移</div>
+<div class="chart-wrap">
+<canvas id="day-chart">
+</canvas>
+</div>
+</div>
+</div>
+<!-- 毎月のお金（D14。動きは js/monthly-ui.js） -->
+<div id="ldg-monthly-sec" style="display: block;">
+<div class="monthly-lead">家賃・サブスク・仕送りなど、毎月同じ日に動くお金です。残高の見込みに入ります（家計簿の記録には1件ずつは出ません）。</div>
+<button class="btn primary full" onclick="openLedgerModal(null,{repeat:true})" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 毎月のお金を入れる</button>
+<div id="monthly-list">
+<section class="card monthly-section">
+<h2 class="monthly-section-title">続いているもの</h2>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">音楽</span>
+<span class="monthly-sub">毎月2日・Aカードで払う</span>
+</span>
+<span class="monthly-amount out">-¥980</span>
+</button>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">新しい固定費</span>
+<span class="monthly-sub">毎月5日・Bカードで払う</span>
+</span>
+<span class="monthly-amount out">-¥1,200</span>
+</button>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">奨学金</span>
+<span class="monthly-sub">毎月11日・口座に入金</span>
+</span>
+<span class="monthly-amount in">+¥20,000</span>
+</button>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">仕送り</span>
+<span class="monthly-sub">毎月25日・口座に入金・2026年11月から</span>
+</span>
+<span class="monthly-amount in">+¥30,000</span>
+</button>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">家賃</span>
+<span class="monthly-sub">毎月27日・口座から引き落とし</span>
+</span>
+<span class="monthly-amount out">-¥50,000</span>
+</button>
+</section>
+<details class="card monthly-section monthly-ended">
+<summary>やめたもの（1件）</summary>
+<div class="monthly-note">やめる前の月の分は、残高の計算に入ったままです</div>
+<button type="button" class="monthly-row">
+<span class="monthly-body">
+<span class="monthly-name">ジム</span>
+<span class="monthly-sub">毎月13日・現金で払う・2026年9月〜2026年10月</span>
+</span>
+<span class="monthly-amount out">-¥7,700</span>
+</button>
+</details>
+</div>
+</div>
+</div>

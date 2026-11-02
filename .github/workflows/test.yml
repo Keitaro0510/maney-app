@@ -44,7 +44,7 @@ jobs:
   integration:
     name: 結合テスト（ローカルの Supabase）
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -58,3 +58,17 @@ jobs:
         run: npx supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
       - name: 結合テスト
         run: npm run test:integration
+      # 画面を比べる道具（D20 の 0）。同じローカルの Supabase を使う。画面の写真の基準は OS ごと（Linux の基準は __screenshots__/*-linux.png）
+      - name: 画面を比べる道具のブラウザを入れる
+        run: npx playwright install --with-deps chromium
+      - name: 画面を比べる
+        run: npm run test:screens
+      - name: 違ったときの写真と差分を残す
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screens-results
+          path: |
+            test-results/screens
+            playwright-report
+          retention-days: 7

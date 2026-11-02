@@ -98,6 +98,20 @@ npm run dev:local       # 手元の開発用（npm run dev のローカル版）
 - ローカルにつなぐときは Service Worker を登録しない。前に本番のビルドを開いて登録したままだと、古いビルドが出ることがある。そのときは開発者ツールの Application → Service workers で Unregister し、読み込み直す
 - 保存した行は `docker exec supabase_db_maney-app psql -U postgres -c "select * from public.ledger_entries"` などで見られる（Studio でもよい）
 
+## 画面を比べる（D20）
+
+画面を `src/` に移す PR が、表示を変えていないことを確かめる。ローカルの Supabase を立ててから:
+
+```bash
+npx playwright install chromium            # 初回だけ（ブラウザを入れる）
+npm run test:screens                       # 基準と比べる
+npm run test:screens -- --update-snapshots # 表示をわざと変えたときに、基準を作り直す（差分を PR で見る）
+```
+
+- テスト用のユーザー（`screens@example.test`）を毎回作り直し、`tests/screens/seed.sql` の架空のデータを入れる。今日は 2026-11-12 10:00 に固定
+- 画面の写真の基準は OS ごと（`*-win32.png`・`*-linux.png`）。Linux の写真は CI でしか撮れない。違ったときは、CI の成果物（`screens-results`）に写真と差分が残る
+- 違いを見るには `npx playwright show-report`（CI の成果物の `playwright-report` も同じ形）
+
 ## 本番に適用する
 
 テストが通ったマイグレーションだけを、本番に適用する。今は Supabase MCP の `apply_migration` を使っている。
