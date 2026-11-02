@@ -78,9 +78,15 @@ export const TABLE_LABELS: Record<string, string> = {
 
 // ---------- 端末の保存場所 ----------
 
-export function storageKey(name: string): string {
+/** ログイン中のユーザーの、端末の保存場所のキー（`<頭><ユーザーの id>:<name>`）。タスクの「今日は表示しない」なども使う */
+export function userKey(name: string): string {
   if (!state.currentUser) throw new Error('ログインしていないので、端末の保存場所を決められません');
-  return `${need().storagePrefix}${state.currentUser.id}:v2:${name}`;
+  return `${need().storagePrefix}${state.currentUser.id}:${name}`;
+}
+
+/** サーバーの写し・送信待ちのキー */
+export function storageKey(name: string): string {
+  return userKey(`v2:${name}`);
 }
 
 export function loadStored<T = unknown>(name: string): T | null {

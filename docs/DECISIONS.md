@@ -721,6 +721,16 @@ PR の順:
 - どこからも使われていなかった `JC`・`BC` は消した
 - 確かめ: `tests/dates.test.mjs`。`npm run test:screens`（DOM の写し 22・写真 11 が基準と一致）。ブラウザで、11/30 から 12/1 に日付が変わると、今日・表示している月・日/週の基準日が追いかけることを確かめた
 
+作り（2。タスク。試しの1つめで決めた、画面の移し方。2026-11-02）:
+- 画面のモジュールは `src/screens/<機能>.ts`（タスクは `src/screens/tasks.ts`）。計算のモジュール（`src/tasks.ts` など）とは分ける。状態（`taskAddDue`・`taskEditId` など）はモジュールの中の変数（D20 の 3(a)）
+- 使うものは import する: 状態は `src/state.ts`、保存は `src/sync.ts`、今日は `src/dates.ts`、部品は `src/ui.ts`。`MoneyTasks`・`MoneyUI`・`TODAY` などの `window` の名前は使わない
+- **画面の部品 `js/ui.js` も `src/ui.ts` に移した**（どの画面も使う共通の部品なので、最初の画面と一緒に）。必ずある div などを取る `elementById` を足した。`js/` の画面は今までどおり `MoneyUI.〜` で使う（`src/main.ts` が `window.MoneyUI` に出す）
+- `window` に出す関数の一覧: 画面のモジュールが `LEGACY_<機能>`（例: `LEGACY_TASKS`）を export し、「ほかの画面」「index.html の onclick など」「画面を比べる道具」の分けで書く。`src/main.ts` が `Object.assign(window, …)` で出す。js/ から見た型は `types/legacy/state.d.ts` に足す
+- **逆向きの呼び出し**（`src/` からまだ `js/` にある関数を呼ぶ）は、`src/js-bridge.ts` に一覧でまとめる（今は `sw` だけ）。その関数を移したら、そこから消して import にする
+- `tests/legacy-window.test.mjs`: HTML の onclick など（index.html と、js/・src/ が文字で組み立てる HTML）が呼ぶ関数が、js/ にあるか `LEGACY_〜` で `window` に出していることを確かめる（出し忘れると押しても動かない）。`js/` が同じ名前を宣言していないことと、画面のモジュールが `js-bridge.ts` の外から `js/` を呼んでいないことも
+- 端末に覚える値のキーは `src/sync.ts` の `userKey(name)`（`<頭><ユーザーの id>:<name>`）
+- 確かめ: `npm run test:screens`（DOM の写し・写真が基準と一致）。一時のテストで、追加・完了・編集・削除と元に戻す・空の名前・「今日は表示しない」・ホームの1行・読み込み直しがブラウザで今までどおり動き、DB に保存されることを確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

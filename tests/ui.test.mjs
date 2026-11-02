@@ -1,11 +1,8 @@
-// 画面の部品（js/ui.js）のテスト。実行: node --test "tests/*.test.mjs"
+// 画面の部品（src/ui.ts。D20 の 2 で js/ui.js から移した）のテスト。実行: node --test "tests/*.test.mjs"
 // 画面（document）を使う部品は、手元のブラウザで確かめる。ここでは文字のエスケープと、id で要素を取る関数（小さな偽の document で）
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { escapeHtml } = require('../js/ui.js');
+import { escapeHtml, inputById, selectById, textareaById, dialogById } from '../src/ui.ts'; // Node が型を消して読む（D17）
 
 test('HTML で意味を持つ文字を、そのまま表示される形にする', () => {
   assert.equal(escapeHtml('<b>レポート</b> & "課題" \'2\''), '&lt;b&gt;レポート&lt;/b&gt; &amp; &quot;課題&quot; &#39;2&#39;');
@@ -29,7 +26,6 @@ test('すでにエスケープした文字も、もう一度エスケープす�
 
 // ---------- id で要素を取る（D16）----------
 // Node には画面がないので、document と要素の種類を小さく作って試す
-const { inputById, selectById, textareaById, dialogById } = require('../js/ui.js');
 
 function withFakeDom(elements, fn) {
   const saved = {};

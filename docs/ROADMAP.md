@@ -106,7 +106,7 @@ Phase の番号の順ではなく、次の順で進める。
     - [ ] 画面を、状態と保存先を共有する機能のまとまりごとに `src/` に移す（`strict`。`window` に出す関数は画面ごとに一覧にする）。まとまりと順番は [D20](DECISIONS.md)（2026-11-02）
       - [x] 0. 画面を比べる道具（ローカルの Supabase・固定した時刻とデータで DOM の写しと画面の写真を比べる。CI でも）（2026-11-02。Playwright。`npm run test:screens`。DOM の写し 22・写真 11（Windows と Linux））　ブランチ: `feature/screen-compare`
       - [x] 1. 共通の補助と今日（2026-11-02。`src/dates.ts`・`src/palette.ts`。機能のお金の補助は、その機能の PR で移す）　ブランチ: `feature/common-helpers`
-      - [ ] 2. タスク（試しの1つめ）
+      - [x] 2. タスク（試しの1つめ）（2026-11-02。`src/screens/tasks.ts`。画面の部品 `src/ui.ts` も移した。移し方は D20 の「作り（2）」）　ブランチ: `feature/tasks-screen`
       - [ ] 3. 書き出し・読み込み
       - [ ] 4. 設定・カード・ATM
       - [ ] 5. シフト・バイト先・給与の実績

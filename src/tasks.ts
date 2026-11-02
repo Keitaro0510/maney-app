@@ -1,4 +1,4 @@
-// タスクの計算（D3・D10）。画面は js/tasks-ui.js。ここは画面を使わないので、Node でテストできる。
+// タスクの計算（D3・D10）。画面は src/screens/tasks.ts。ここは画面を使わないので、Node でテストできる。
 // 日付は 'YYYY-MM-DD' の文字列（端末の時刻での日付）。completed_at は ISO の日時。
 // js/ の画面からは window.MoneyTasks で使う（src/main.ts。D17）
 

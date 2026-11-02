@@ -2,7 +2,7 @@
 // 本物のログイン（ローカルの Supabase）・ログアウト・アプリに戻ったときの読み直しは、ブラウザで確かめる（docs/db/LOCAL.md）。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { state } from '../src/state.ts'; // Node が型を消して読む（D17）
 import { initSync } from '../src/sync.ts';
 import { initAuth, loadData, logout, handleLegacyLocalData, loginWithGoogle } from '../src/auth.ts';
@@ -171,7 +171,7 @@ test('切り替える前の版のデータ: 送れていない変更があれば
 
 test('js/ のファイルは、window に出したログインと起動の名前を宣言していない', () => {
   const dir = new URL('../js/', import.meta.url);
-  for (const f of ['app-core.js', 'app-home.js', 'app-calendar.js', 'app-cards.js', 'app-shift.js', 'app-ledger.js', 'app-settings.js', 'app-plan.js', 'app-bootstrap.js', 'ui.js', 'tasks-ui.js', 'monthly-ui.js', 'backup-ui.js']) {
+  for (const f of readdirSync(dir).filter(f => f.endsWith('.js'))) {
     const src = readFileSync(new URL(f, dir), 'utf8');
     for (const n of ['supa', 'loginWithGoogle', 'logout', 'loadData', 'startWithUser', 'reallyLogout']) {
       assert.doesNotMatch(src, new RegExp(`^((async )?function|let|var|const)\\s+${n}\\b`, 'm'), `js/${f} に ${n} の宣言があります`);
