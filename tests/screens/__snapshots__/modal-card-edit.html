@@ -1,0 +1,29 @@
+<div class="mbg open" id="card-edit-mbg">
+<div class="modal">
+<div class="modal-handle">
+</div>
+<h3>カードを編集</h3>
+<div class="fg">
+<label for="ce-name">カード名</label>
+<input id="ce-name" style="">
+</div>
+<div class="fgr">
+<div class="fg">
+<label for="ce-close">締め日</label>
+<div style="display:flex;align-items:center;gap:8px">
+<input id="ce-close" type="number" inputmode="numeric" min="1" max="31" style="flex: 1 1 0%;" disabled="">
+<label style="display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap;margin-bottom:0">
+<input type="checkbox" id="ce-close-eom" onchange="toggleCardCloseEom('ce')" style=""> 末日</label>
+</div>
+</div>
+<div class="fg">
+<label for="ce-bill">引き落とし日</label>
+<input id="ce-bill" type="number" inputmode="numeric" min="1" max="31" style="">
+</div>
+</div>
+<div style="display:flex;gap:8px;justify-content:flex-end">
+<button class="btn" onclick="closeCardEdit()">キャンセル</button>
+<button class="btn primary" onclick="saveCardEdit()">保存</button>
+</div>
+</div>
+</div>

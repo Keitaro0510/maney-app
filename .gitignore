@@ -8,3 +8,6 @@ _site/
 node_modules/
 dist/
 _site_local/
+_site_screens/
+test-results/
+playwright-report/

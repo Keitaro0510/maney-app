@@ -1,0 +1,75 @@
+<dialog class="sheet" id="task-startup" aria-labelledby="task-startup-title" open="">
+<div class="sheet-head">
+<div>
+<h2 id="task-startup-title">今日のタスク</h2>
+<div class="task-startup-date" id="task-startup-date">11月12日（木）</div>
+</div>
+<button type="button" class="icon-btn" aria-label="閉じる" onclick="closeStartupTasks()">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M6 6l12 12M18 6L6 18">
+</path>
+</svg>
+</button>
+</div>
+<div id="task-startup-list">
+<h3 class="task-startup-group task-overdue">期限切れ（1件）</h3>
+<div class="check-row overdue">
+<label class="check">
+<input type="checkbox" aria-label="「レポートを出す」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">レポートを出す</div>
+<div class="check-sub">11/10（火）まで・2日すぎています</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「レポートを出す」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+<h3 class="task-startup-group task-today">今日（1件）</h3>
+<div class="check-row">
+<label class="check">
+<input type="checkbox" aria-label="「家賃の振込」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">家賃の振込</div>
+<div class="check-sub">今日まで　口座から</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「家賃の振込」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+<h3 class="task-startup-group task-soon">2週間以内（1件）</h3>
+<div class="check-row">
+<label class="check">
+<input type="checkbox" aria-label="「シフトの希望を出す」を完了にする">
+<span class="check-box" aria-hidden="true">
+</span>
+</label>
+<div class="check-body">
+<div class="check-title">シフトの希望を出す</div>
+<div class="check-sub">11/20（金）まで</div>
+</div>
+<button type="button" class="icon-btn task-edit" aria-label="「シフトの希望を出す」を編集">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M9 6l6 6-6 6">
+</path>
+</svg>
+</button>
+</div>
+</div>
+<button type="button" class="ui-btn task-startup-all" onclick="openTaskTabFromStartup()">すべてのタスクを見る</button>
+<label class="task-startup-hide">
+<input type="checkbox" id="task-startup-hide">
+<span>今日は表示しない</span>
+</label>
+</dialog>

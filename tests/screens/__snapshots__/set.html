@@ -1,0 +1,327 @@
+<div id="sec-set" class="sec active">
+<div class="page-title">設定</div>
+<div class="card">
+<div class="st">口座・残高設定</div>
+<div class="fg">
+<label for="set-bal">口座残高（今日時点）</label>
+<input id="set-bal" type="number" inputmode="numeric" placeholder="150000" style="">
+</div>
+<div class="fg">
+<label for="set-bal-date">基準日</label>
+<input type="date" id="set-bal-date" style="">
+</div>
+<div class="fg">
+<label for="set-bud">月の目標予算 (¥)</label>
+<input id="set-bud" type="number" inputmode="numeric" placeholder="80000" style="">
+</div>
+</div>
+<div class="card">
+<div class="st">バイト給料サイクル（新規バイト先の初期値）</div>
+<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">締め日・給料日はバイト先ごとに個別設定できます（シフトタブのバイト先追加/編集）。ここでは新しいバイト先を追加するときの初期値を設定します。</div>
+<div class="fgr">
+<div class="fg">
+<label for="set-close">締め日</label>
+<select id="set-close">
+<option value="31">月末（末日）</option>
+<option value="15">15日</option>
+<option value="20">20日</option>
+<option value="25">25日</option>
+</select>
+</div>
+<div class="fg">
+<label for="set-pay">支払日（翌月何日）</label>
+<input id="set-pay" type="number" inputmode="numeric" min="1" max="31" value="10" style="">
+</div>
+</div>
+<div class="info-box" id="shift-cycle-preview">締め日: 月末　→　翌月10日に口座に入金</div>
+</div>
+<div class="card">
+<div class="st">扶養設定</div>
+<div class="fg">
+<label for="set-fuyou">扶養の壁</label>
+<select id="set-fuyou">
+<option value="1030000">103万円の壁</option>
+<option value="1300000">130万円の壁</option>
+<option value="both">両方表示</option>
+</select>
+</div>
+<div class="fg">
+<label for="set-other-inc">今年の確定収入（バイト以外の給与）</label>
+<input id="set-other-inc" type="number" inputmode="numeric" placeholder="0" style="">
+</div>
+</div>
+<div class="card">
+<div class="st">毎月のお金（固定費・毎月の収入）</div>
+<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.6">家計簿のタブの「毎月のお金」に移りました。支出・収入を記録するときに「毎月くり返す」を選んでも入れられます。</div>
+<button class="btn" onclick="openMonthlyTab()">毎月のお金を開く</button>
+</div>
+<div class="card">
+<div class="st">支出カテゴリ</div>
+<div id="cat-exp-tags" style="margin-bottom:12px">
+<span class="cat-tag">食費<button type="button" class="cat-tag-del" aria-label="「食費」を消す" onclick="delCatExp(0)">×</button>
+</span>
+<span class="cat-tag">交通費<button type="button" class="cat-tag-del" aria-label="「交通費」を消す" onclick="delCatExp(1)">×</button>
+</span>
+<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" onclick="delCatExp(2)">×</button>
+</span>
+</div>
+<div style="display:flex;gap:8px">
+<input id="new-cat-exp" placeholder="新しいカテゴリ名" style="flex: 1 1 0%; padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary);">
+<button class="btn primary" onclick="addCatExp()">追加</button>
+</div>
+<div class="st" style="margin-top:14px">収入カテゴリ</div>
+<div id="cat-inc-tags" style="margin-bottom:12px">
+<span class="cat-tag">給与<button type="button" class="cat-tag-del" aria-label="「給与」を消す" onclick="delCatInc(0)">×</button>
+</span>
+<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" onclick="delCatInc(1)">×</button>
+</span>
+</div>
+<div style="display:flex;gap:8px">
+<input id="new-cat-inc" placeholder="新しいカテゴリ名" style="flex: 1 1 0%; padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary);">
+<button class="btn primary" onclick="addCatInc()">追加</button>
+</div>
+</div>
+<!-- カードタブ（設定内） -->
+<div class="card">
+<div class="st">クレジットカード</div>
+<div class="fg">
+<label for="cn-name">カード名</label>
+<input id="cn-name" placeholder="楽天カード、エポスカードなど" style="">
+</div>
+<div class="fgr">
+<div class="fg">
+<label for="cn-close">締め日</label>
+<div style="display:flex;align-items:center;gap:8px">
+<input id="cn-close" type="number" inputmode="numeric" min="1" max="31" placeholder="15" style="flex: 1 1 0%;">
+<label style="display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap;margin-bottom:0">
+<input type="checkbox" id="cn-close-eom" onchange="toggleCardCloseEom('cn')" style=""> 末日</label>
+</div>
+</div>
+<div class="fg">
+<label for="cn-bill">引き落とし日</label>
+<input id="cn-bill" type="number" inputmode="numeric" min="1" max="31" placeholder="27" style="">
+</div>
+</div>
+<div id="cn-cycle-preview" class="cycle-box" style="display:none">
+</div>
+<button class="btn primary" onclick="addCard()">追加</button>
+<div id="card-list-sec" style="margin-top:10px">
+<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+<span style="font-size:15px;font-weight:600">Aカード</span>
+<div style="display:flex;gap:6px">
+<button class="btn sm edit" onclick="openCardEdit(0)">編集</button>
+<button class="btn sm del" onclick="delCard(0)">削除</button>
+</div>
+</div>
+<div class="fgr" style="margin-bottom:10px">
+<div>
+<div style="font-size:11px;color:var(--color-text-secondary)">締め日</div>
+<div style="font-size:14px;font-weight:600">毎月末日</div>
+</div>
+<div>
+<div style="font-size:11px;color:var(--color-text-secondary)">引き落とし日</div>
+<div style="font-size:14px;font-weight:600">毎月27日</div>
+</div>
+</div>
+<div class="bill-row">
+<div>
+<span class="badge bfixed">確定</span>
+<div class="bill-label">2026年11月27日 口座引き落とし</div>
+<div class="bill-label">10/1〜10/31 の利用分</div>
+</div>
+<div class="bill-amount" style="color:#A32D2D">¥3,980</div>
+</div>
+<div class="bill-row">
+<div>
+<span class="badge bpending">集計中</span>
+<div class="bill-label">2026年12月27日 引き落とし予定</div>
+<div class="bill-label">11/1〜11/30 の利用分</div>
+</div>
+<div class="bill-amount" style="color:#BA7517">¥980</div>
+</div>
+<div style="margin-top:10px">
+<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">引き落とし実績入力</div>
+<div class="salary-row">
+<span class="salary-month">2026/6月</span>
+<span class="salary-est">推定 ¥980<br>
+<span style="font-size:10px">6月27日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,5,980,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/7月</span>
+<span class="salary-est">推定 ¥980<br>
+<span style="font-size:10px">7月27日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,6,980,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/8月</span>
+<span class="salary-est">推定 ¥980<br>
+<span style="font-size:10px">8月27日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,7,980,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/9月</span>
+<span class="salary-est">推定 ¥980<br>
+<span style="font-size:10px">9月27日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,8,980,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/10月</span>
+<span class="salary-est">推定 ¥980<br>
+<span style="font-size:10px">10月27日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="4100" onchange="onCardBillChange(0,2026,9,980,this.value)">
+<span class="act-badge">入力済</span>
+</div>
+</div>
+</div>
+</div>
+<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px;margin-top:10px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+<span style="font-size:15px;font-weight:600">Bカード</span>
+<div style="display:flex;gap:6px">
+<button class="btn sm edit" onclick="openCardEdit(1)">編集</button>
+<button class="btn sm del" onclick="delCard(1)">削除</button>
+</div>
+</div>
+<div class="fgr" style="margin-bottom:10px">
+<div>
+<div style="font-size:11px;color:var(--color-text-secondary)">締め日</div>
+<div style="font-size:14px;font-weight:600">毎月15日</div>
+</div>
+<div>
+<div style="font-size:11px;color:var(--color-text-secondary)">引き落とし日</div>
+<div style="font-size:14px;font-weight:600">毎月10日</div>
+</div>
+</div>
+<div class="bill-row">
+<div>
+<span class="badge bfixed">確定</span>
+<span class="act-badge">実額入力済</span>
+<div class="bill-label">2026年11月10日 口座引き落とし</div>
+<div class="bill-label">9/16〜10/15 の利用分</div>
+</div>
+<div class="bill-amount" style="color:#A32D2D">¥2,700</div>
+</div>
+<div class="bill-row">
+<div>
+<span class="badge bpending">集計中</span>
+<div class="bill-label">2026年12月10日 引き落とし予定</div>
+<div class="bill-label">10/16〜11/15 の利用分</div>
+</div>
+<div class="bill-amount" style="color:#BA7517">¥2,700</div>
+</div>
+<div style="margin-top:10px">
+<div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">引き落とし実績入力</div>
+<div class="salary-row">
+<span class="salary-month">2026/6月</span>
+<span class="salary-est">推定 ¥1,200<br>
+<span style="font-size:10px">6月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,5,1200,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/7月</span>
+<span class="salary-est">推定 ¥1,200<br>
+<span style="font-size:10px">7月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,6,1200,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/8月</span>
+<span class="salary-est">推定 ¥1,200<br>
+<span style="font-size:10px">8月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,7,1200,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/9月</span>
+<span class="salary-est">推定 ¥1,200<br>
+<span style="font-size:10px">9月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,8,1200,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/10月</span>
+<span class="salary-est">推定 ¥1,200<br>
+<span style="font-size:10px">10月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,9,1200,this.value)">
+</div>
+</div>
+<div class="salary-row">
+<span class="salary-month">2026/11月</span>
+<span class="salary-est">推定 ¥2,400<br>
+<span style="font-size:10px">11月10日引き落とし</span>
+</span>
+<div style="display:flex;align-items:center;gap:6px">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="2700" onchange="onCardBillChange(1,2026,10,2400,this.value)">
+<span class="act-badge">入力済</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="card" style="margin-top:10px">
+<div class="st">ATM引き出し履歴</div>
+<div id="wd-hist">
+<div class="wd-hist-item">
+<span style="color:var(--color-text-secondary)">2026-11-09</span>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="color:#3C3489;font-weight:600">-¥5,000</span>
+<button class="btn sm del" onclick="delWd(1)">削除</button>
+</div>
+</div>
+<div class="wd-hist-item">
+<span style="color:var(--color-text-secondary)">2026-10-15</span>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="color:#3C3489;font-weight:600">-¥10,000</span>
+<button class="btn sm del" onclick="delWd(0)">削除</button>
+</div>
+</div>
+</div>
+</div>
+<!-- データの書き出し・読み込み（D13。js/backup-ui.js） -->
+<div class="card">
+<div class="st">データの書き出し・読み込み</div>
+<div class="backup-note">すべてのデータを JSON のファイルに書き出します。何かあったときに、このファイルを読み込むと、書き出したときの状態に戻せます。</div>
+<div class="backup-actions">
+<button type="button" class="ui-btn" onclick="exportBackup()">書き出す</button>
+<button type="button" class="ui-btn" id="backup-import-btn" onclick="pickBackupFile()">ファイルから読み込む</button>
+</div>
+<input type="file" id="backup-file" accept=".json,application/json" hidden="" onchange="readBackupFile(this)" style="">
+<div class="backup-err" id="backup-err" role="alert" hidden="">
+</div>
+</div>
+<!-- アカウント（いちばん下。D10） -->
+<div class="card">
+<div class="st">アカウント</div>
+<div class="account-email">ログイン中: <span id="account-email">screens@example.test</span>
+</div>
+<button type="button" class="ui-btn danger" onclick="logout()">ログアウト</button>
+</div>
+</div>

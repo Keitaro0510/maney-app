@@ -1,0 +1,63 @@
+<div id="sec-home" class="sec active">
+<div class="page-title">ホーム</div>
+<!-- いちばん大事な数字（D11）: 給料日までに使えるお金。足りないときはマイナスのまま。数えるのは src/money.ts -->
+<div class="acct-box home-main">
+<div class="acct-lbl">給料日までに使えるお金</div>
+<div class="acct-val" id="home-spendable">¥181,700</div>
+<div class="home-main-sub" id="home-spendable-sub">1日あたり ¥13,976・給料まで 13日（11/25）</div>
+<div class="home-main-balance">
+<span>口座の残高（推定）</span>
+<span id="home-balance">¥185,700</span>
+</div>
+<div class="home-main-note">現金の支出は、ATM で引き出したときに口座から引いています</div>
+</div>
+<!-- タスクの1行（D10）。今日・期限切れがあるときだけ出す。押すと、開いたときと同じ一覧を開く -->
+<button type="button" class="home-tasks" id="home-tasks" onclick="openStartupTasks(this)" aria-label="タスク: 今日 1件、期限切れ 1件。一覧を開く">
+<span class="home-tasks-label">タスク</span>
+<span class="home-tasks-counts">
+<span>今日 1件</span>
+<span class="overdue">期限切れ 1件</span>
+</span>
+<span class="home-tasks-more" aria-hidden="true">›</span>
+</button>
+<div class="home-actions">
+<button class="btn primary quick-ledger" onclick="openLedgerModal(null)">
+<span aria-hidden="true">＋</span> 支出を記録</button>
+<button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
+<button class="btn quick-wd" onclick="openWd()">ATM</button>
+</div>
+<!-- 今日のお知らせ（引き落とし日・給料日・締め日・今日のシフトと予定） -->
+<div id="alerts-home">
+<section class="card home-alerts" aria-labelledby="home-alerts-title">
+<h2 class="home-alerts-title" id="home-alerts-title">今日のお知らせ</h2>
+<div class="abar plan" style="--dot:#E09030">📅 <strong>飲み会</strong> 予算 ¥4,000</div>
+</section>
+</div>
+<!-- これからのお金の動き（D11: 2週間の給料・引き落とし・予定など。src/money.ts の upcoming） -->
+<div class="card">
+<div class="st">これからのお金の動き（2週間）</div>
+<div id="home-upcoming">
+<div class="up-row">
+<span class="up-date">11/25(水)</span>
+<span class="badge binc">入金</span>
+<span class="up-label">仕送り</span>
+<span class="up-amount in">+¥30,000</span>
+</div>
+<div class="up-row">
+<span class="up-date">11/25(水)</span>
+<span class="badge binc">給料</span>
+<span class="up-label">カフェの給料</span>
+<span class="up-amount in">+¥6,900</span>
+</div>
+</div>
+</div>
+<!-- くわしく（ふだんはたたむ。開いたときに描く） -->
+<!-- くわしく（D11）: 押すと下から画面が出る。中身は #home-more（#71） -->
+<button type="button" class="home-tasks home-more-btn" id="home-more-btn" aria-haspopup="dialog" onclick="openHomeMore(this)">
+<span class="home-more-copy">
+<span class="home-more-title">くわしく見る</span>
+<span class="home-more-hint">残高の推移・今月の収支・予算</span>
+</span>
+<span class="home-tasks-more" aria-hidden="true">›</span>
+</button>
+</div>

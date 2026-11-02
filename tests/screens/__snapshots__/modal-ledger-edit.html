@@ -1,0 +1,56 @@
+<div class="mbg open" id="ldg-edit-mbg">
+<div class="modal">
+<div class="modal-handle">
+</div>
+<h3>記録を編集</h3>
+<div class="pay-chips" id="lde-type-chips">
+<button type="button" class="pay-chip sel" onclick="selLdeType('expense')" aria-pressed="true">支出</button>
+<button type="button" class="pay-chip" onclick="selLdeType('income')" aria-pressed="false">収入</button>
+</div>
+<div class="fg">
+<label for="lde-amount">金額 (¥)</label>
+<input type="number" inputmode="numeric" id="lde-amount" style="">
+</div>
+<div class="fg">
+<label>カテゴリ</label>
+<div class="cat-chips" id="lde-cat-chips" role="group" aria-label="カテゴリ">
+<button type="button" class="chip sel" onclick="selLdeCat('食費')" aria-pressed="true">食費</button>
+<button type="button" class="chip" onclick="selLdeCat('交通費')" aria-pressed="false">交通費</button>
+<button type="button" class="chip" onclick="selLdeCat('その他')" aria-pressed="false">その他</button>
+</div>
+</div>
+<div class="fg" id="lde-pay-wrap" style="display: block;">
+<label>支払い方法</label>
+<div class="pay-chips" id="lde-pay-chips" role="group" aria-label="支払い方法">
+<button type="button" class="pay-chip" onclick="selLdePayAt(0)" aria-pressed="false">現金</button>
+<button type="button" class="pay-chip" onclick="selLdePayAt(1)" aria-pressed="false">口座</button>
+<button type="button" class="pay-chip" onclick="selLdePayAt(2)" aria-pressed="false">Aカード</button>
+<button type="button" class="pay-chip sel" onclick="selLdePayAt(3)" aria-pressed="true">Bカード</button>
+</div>
+<div class="hint" id="lde-pay-hint">カードの引き落とし日に、口座から引きます</div>
+</div>
+<div class="fg" id="lde-receive-wrap" style="display:none">
+<label>受取方法</label>
+<div class="pay-chips" id="lde-receive-chips" role="group" aria-label="受取方法">
+</div>
+<div class="hint" id="lde-receive-hint">現金受取は口座残高に影響しません</div>
+</div>
+<div class="fg">
+<label for="lde-name">名前</label>
+<input id="lde-name" style="">
+</div>
+<div class="fg">
+<label for="lde-date">日付</label>
+<input type="date" id="lde-date" style="">
+</div>
+<div class="fg">
+<label for="lde-memo">メモ</label>
+<textarea id="lde-memo" placeholder="任意" style="">
+</textarea>
+</div>
+<div style="display:flex;gap:8px;justify-content:flex-end">
+<button class="btn" onclick="closeLdgEdit()">キャンセル</button>
+<button class="btn primary" onclick="saveLdgEdit()">保存</button>
+</div>
+</div>
+</div>

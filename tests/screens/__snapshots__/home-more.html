@@ -1,0 +1,65 @@
+<dialog class="sheet home-more" id="home-more" aria-labelledby="home-more-title" open="">
+<div class="sheet-head">
+<h2 id="home-more-title">くわしく</h2>
+<button type="button" class="icon-btn" aria-label="閉じる" onclick="closeHomeMore()">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path d="M6 6l12 12M18 6L6 18">
+</path>
+</svg>
+</button>
+</div>
+<div class="st">残高推移（今後90日）</div>
+<div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">給料・カード・毎月のお金・予定（カード払い以外）を入れた見込み</div>
+<div class="chart-wrap">
+<canvas id="balance-chart">
+</canvas>
+</div>
+<div class="graph-legend">
+<div class="legend-item">
+<div class="legend-dot" style="background:#185FA5">
+</div>口座残高</div>
+<div class="legend-item" style="display:flex;align-items:center;gap:4px">
+<div style="width:16px;height:2px;border-top:2px dashed rgba(163,45,45,0.4)">
+</div>¥0ライン</div>
+</div>
+<div id="balance-warn" style="margin-top:8px">
+</div>
+<div class="st" style="margin-top:18px">今月の収支見通し</div>
+<div id="forecast-content">
+<div class="forecast-row">
+<span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span>
+<span style="font-weight:600">¥185,700</span>
+</div>
+<div class="forecast-row">
+<span style="color:#3B6D11">＋ 予定収入</span>
+<span style="color:#3B6D11;font-weight:600">+¥36,900</span>
+</div>
+<div class="forecast-row">
+<span style="color:#A32D2D">− 確定引き落とし・毎月のお金</span>
+<span style="color:#A32D2D;font-weight:600">-¥53,980</span>
+</div>
+<div class="forecast-row">
+<span style="color:#BA7517">− 集計中カード（見込み）</span>
+<span style="color:#BA7517;font-weight:600">-¥33,680</span>
+</div>
+<div class="forecast-row">
+<span style="color:#993556">− 予定支出（1件）</span>
+<span style="color:#993556;font-weight:600">-¥4,000</span>
+</div>
+<div class="forecast-sep">
+</div>
+<div class="forecast-row">
+<span style="font-weight:600">収支見通し</span>
+<span class="forecast-total" style="color:#3B6D11">+¥130,940</span>
+</div>
+</div>
+<div class="st" style="margin-top:18px">今月の予算の進み</div>
+<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--color-text-secondary)">
+<span id="h-budlbl">予算 ¥80,000</span>
+<span id="h-budused">支出 ¥8,300</span>
+</div>
+<div class="pwrap">
+<div class="pbar" id="h-prog" style="width: 10%; background: rgb(59, 109, 17);">
+</div>
+</div>
+</dialog>

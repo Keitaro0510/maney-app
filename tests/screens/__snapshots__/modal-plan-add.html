@@ -1,0 +1,94 @@
+<div class="mbg open" id="plan-mbg">
+<div class="modal">
+<div class="modal-handle">
+</div>
+<h3 id="plan-modal-title">予定を追加</h3>
+<div class="fg">
+<label for="plan-title">タイトル</label>
+<input id="plan-title" placeholder="旅行、ライブなど" style="">
+</div>
+<div class="date-mode-tabs" role="group" aria-label="日にち">
+<button type="button" class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')" aria-pressed="true">1日</button>
+<button type="button" class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')" aria-pressed="false">期間（連続日程）</button>
+</div>
+<div id="date-single-wrap" class="fg" style="display: block;">
+<label for="plan-date">日付</label>
+<input type="date" id="plan-date" style="">
+</div>
+<div id="date-range-wrap" style="display:none">
+<div class="fgr">
+<div class="fg">
+<label for="plan-date-start">開始日</label>
+<input type="date" id="plan-date-start" style="">
+</div>
+<div class="fg">
+<label for="plan-date-end">終了日</label>
+<input type="date" id="plan-date-end" style="">
+</div>
+</div>
+<div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">
+</div>
+</div>
+<div class="plan-time-card is-all-day" id="plan-time-wrap">
+<div class="plan-time-header">
+<span class="plan-time-title">予定の時間</span>
+<div class="plan-time-toggle" role="group" aria-label="予定の時間設定">
+<button type="button" id="plan-mode-allday" class="active" onclick="setPlanTimeMode(true)" aria-pressed="true">終日</button>
+<button type="button" id="plan-mode-timed" onclick="setPlanTimeMode(false)" aria-pressed="false">時刻指定</button>
+</div>
+</div>
+<input type="checkbox" id="plan-allday" checked="" onchange="togglePlanAllDay()" hidden="" style="">
+<div class="plan-time-inputs" id="plan-time-inputs">
+<label class="plan-time-field">
+<span>開始</span>
+<input type="time" id="plan-time-start" style="">
+</label>
+<label class="plan-time-field">
+<span>終了（任意）</span>
+<input type="time" id="plan-time-end" style="">
+</label>
+</div>
+<div class="plan-time-note" id="plan-time-hint">この予定は終日として表示されます。</div>
+</div>
+<div class="fg">
+<label for="plan-budget">予算（合計 ¥）</label>
+<input type="number" inputmode="numeric" id="plan-budget" placeholder="5000" style="">
+<div class="hint">収支見通し・残高グラフに反映されます</div>
+</div>
+<div class="fg" id="plan-pay-wrap">
+<label>支払い方法</label>
+<div class="pay-chips" id="plan-pay-chips" role="group" aria-label="支払い方法">
+<button type="button" class="pay-chip sel" onclick="selPlanPay(-1)" aria-pressed="true">現金</button>
+<button type="button" class="pay-chip" onclick="selPlanPay(0)" aria-pressed="false">Aカード</button>
+<button type="button" class="pay-chip" onclick="selPlanPay(1)" aria-pressed="false">Bカード</button>
+</div>
+<div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div>
+</div>
+<div class="fg">
+<label>色</label>
+<div class="color-swatches" id="plan-color-swatches" role="group" aria-label="色">
+<button type="button" class="color-swatch sel" style="background:#E06080" onclick="selPlanColor('pink')" aria-label="ピンク" aria-pressed="true">
+</button>
+<button type="button" class="color-swatch" style="background:#3A8FE0" onclick="selPlanColor('blue')" aria-label="青" aria-pressed="false">
+</button>
+<button type="button" class="color-swatch" style="background:#5CA020" onclick="selPlanColor('green')" aria-label="緑" aria-pressed="false">
+</button>
+<button type="button" class="color-swatch" style="background:#E09030" onclick="selPlanColor('orange')" aria-label="オレンジ" aria-pressed="false">
+</button>
+<button type="button" class="color-swatch" style="background:#7060D0" onclick="selPlanColor('purple')" aria-label="紫" aria-pressed="false">
+</button>
+<button type="button" class="color-swatch" style="background:#209070" onclick="selPlanColor('teal')" aria-label="青緑" aria-pressed="false">
+</button>
+</div>
+</div>
+<div class="fg">
+<label for="plan-memo">メモ</label>
+<textarea id="plan-memo" placeholder="任意" style="">
+</textarea>
+</div>
+<div style="display:flex;gap:8px;justify-content:flex-end">
+<button class="btn" onclick="closePlanModal()">キャンセル</button>
+<button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button>
+</div>
+</div>
+</div>
