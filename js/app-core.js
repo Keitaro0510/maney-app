@@ -111,42 +111,19 @@ function hideLoginScreen(user){
 // ============================================================
 const STORAGE_PREFIX = MoneyEnv.storagePrefix; // 本番は maney:prod:（src/env.ts）
 // サーバーの写し（server）・送信待ち（outbox）・remoteReady・loadingRemote・sending・sendBlocked は、src/state.ts の入れ物（window の getter・setter。D19）
-
-const TABLE_LABELS = {
-  settings: '設定', cards: 'カード', jobs: 'バイト先', categories: 'カテゴリ', ledger_entries: '家計簿',
-  shifts: 'シフト', plans: '予定', fixed_costs: '毎月のお金', withdrawals: '引き出し',
-  salary_actuals: '給与の実績', card_bill_actuals: 'カードの実績', tasks: 'タスク',
-};
-
-function storageKey(name){ return `${STORAGE_PREFIX}${currentUser.id}:v2:${name}`; }
-
-function loadStored(name){
-  try{
-    const s = localStorage.getItem(storageKey(name));
-    return s ? JSON.parse(s) : null;
-  }catch(e){ return null; }
-}
-
-function store(name, value){
-  try{ localStorage.setItem(storageKey(name), JSON.stringify(value)); }
-  catch(e){
-    console.warn('端末に保存できませんでした:', e);
-    showSyncBanner('この端末に保存できませんでした（容量がいっぱいかもしれません）。送れていない変更は、アプリを閉じると消えます。',
-      [{label: '閉じる', onclick: hideSyncBanner}]);
-  }
-}
-
-// 今の行（サーバーの写しに送信待ちを重ねたもの）
-// 今の行（サーバーの写しに、送信待ちを重ねたもの）。まだサーバーから読み込めていないときは、空の行（お金の計算が止まらないように）
-function currentRows(){ return server ? MoneyData.applyOutbox(server.rows, outbox) : {}; }
-
-// 今の行から、画面のデータ（互換の st）を作り直す。設定の行がなければ false
-function rebuildSt(){
-  if(!server) return false;
-  st = MoneyCompat.rowsToSt(currentRows()) || defaultSt();
-  fixDefaults();
-  return true;
-}
+// 保存・送信・読み込みの流れ（save・saveRows・currentRows・flushOutbox・loadRemote など）と TABLE_LABELS は src/sync.ts（D19 の手順4）。
+// js/ からは window に出した同じ名前で呼ぶ。ここでは、流れが使う Supabase・st の既定値・画面の関数を渡す
+MoneySync.initSync({
+  supa, storagePrefix: STORAGE_PREFIX, defaultSt, fixDefaults,
+  ui: {
+    showBanner: showSyncBanner,
+    hideBanner: hideSyncBanner,
+    renderCurrentSection,
+    updateSyncStatus,
+    hasOpenModal: ()=>!!document.querySelector('.mbg.open'),
+    downloadJson,
+  },
+});
 
 function renderCurrentSection(){
   const cur = document.querySelector('.sec.active');
@@ -182,63 +159,6 @@ function hideSyncBanner(){
   document.getElementById('sync-banner').classList.remove('show');
 }
 
-// 別の端末の変更とぶつかった
-function showConflict(op, conflicts){
-  const reasons = {
-    changed: '別の端末で変更されています',
-    missing: '別の端末で削除されています',
-    exists: 'すでにあります',
-    duplicate: '同じ内容の記録が、別の端末で登録されています',
-  };
-  const lines = conflicts.map(c => `・${TABLE_LABELS[c.table] || c.table}: ${reasons[c.reason] || c.reason}`);
-  showSyncBanner(
-    '別の端末の変更とぶつかったため、この端末の変更を保存していません。\n' + lines.join('\n') + '\n\n' +
-    '・サーバーの内容にする: この端末の送れていない変更は、すべて消えます\n' +
-    '・この端末の内容で上書き: ぶつかった記録を、この端末の内容にします',
-    [
-      {label: 'サーバーの内容にする', onclick: useServerVersion},
-      {label: 'この端末の内容で上書き', onclick: ()=>overwriteWithMine(op, conflicts)},
-    ]);
-}
-
-// 競合を解く: 送信待ちを捨てて、サーバーの内容を読み込み直す
-async function useServerVersion(){
-  outbox = [];
-  store('outbox', outbox);
-  sendBlocked = null;
-  hideSyncBanner();
-  updateSyncStatus();
-  await loadRemote();
-}
-
-// 競合を解く: ぶつかった記録を、この端末の内容で上書きして送り直す
-async function overwriteWithMine(op, conflicts){
-  outbox = MoneyData.rewriteForOverwrite(outbox, op, conflicts, crypto.randomUUID());
-  store('outbox', outbox);
-  sendBlocked = null;
-  hideSyncBanner();
-  rebuildSt();
-  renderCurrentSection();
-  await flushOutbox();
-  if(!outbox.length) await loadRemote(); // 別の端末の、ほかの変更も読み込む
-}
-
-// サーバーのデータが移し直された（移行の番号が上がった）
-function showStaleEpoch(){
-  showSyncBanner(
-    `サーバーのデータが移し直されたため、この端末の送れていない変更（${outbox.length}件）は保存できません。\n` +
-    '必要なら書き出して（JSON のファイル）から、捨てて読み込み直してください。',
-    [
-      {label: '書き出す', onclick: downloadOutbox},
-      {label: '捨てて読み込み直す', onclick: useServerVersion, primary: true},
-    ]);
-}
-
-// 送信待ちを JSON のファイルにして保存する（捨てる前の退避）
-function downloadOutbox(){
-  downloadJson('maney-outbox', JSON.stringify({exportedAt: new Date().toISOString(), outbox}, null, 2));
-}
-
 function downloadJson(name, text){
   const blob = new Blob([text], {type: 'application/json'});
   const a = document.createElement('a');
@@ -269,157 +189,9 @@ function handleLegacyLocalData(){
     ]);
 }
 
-// サーバーが受け付けなかった（制約違反など。送り直しても通らない）
-function showSendError(op, error){
-  showSyncBanner(
-    'サーバーがこの端末の変更を受け付けませんでした。\n' + ((error && (error.message || error.code)) || error) + '\n' +
-    '・この変更を捨てる: この変更と、これを前提にしたあとの変更を捨てます',
-    [
-      {label: 'この変更を捨てる', onclick: ()=>{
-        outbox = MoneyData.discardOp(outbox, op.id);
-        store('outbox', outbox);
-        sendBlocked = null;
-        hideSyncBanner();
-        rebuildSt();
-        renderCurrentSection();
-        flushOutbox();
-      }},
-      {label: 'もう一度送る', onclick: ()=>{ sendBlocked = null; hideSyncBanner(); flushOutbox(); }, primary: true},
-    ]);
-}
-
-// ============================================================
-// 保存: 画面で変えた st を、送信待ちの操作にする
-// UI の処理は st を変えてから save() を呼ぶ。そのあとの描画は、作り直した st で行われる
-// ============================================================
+// 前の版の保存の入り口（何もしない。呼んでいる所が残っている）。保存は save()（src/sync.ts）
 function saveLocal(){}
 
-function save(){
-  if(!server){
-    rebuildSt();
-    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
-      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
-    return;
-  }
-  try{
-    const now = new Date().toISOString();
-    const before = currentRows();
-    const after = MoneyCompat.stToRows(st, before, {newId: ()=>crypto.randomUUID(), now});
-    // 互換の st が持つテーブルだけを比べる（tasks などは st にないので、比べると全部「消えた」と見なしてしまう。D1）
-    queueChanges(MoneyData.diffRows(before, after, MoneyData.COMPAT_TABLES), now);
-  }catch(e){
-    console.warn('保存できませんでした:', e);
-    rebuildSt();
-    renderCurrentSection();
-    showSyncBanner('保存できませんでした。変えた内容は取り消しました。\n' + (e.message || e),
-      [{label: '閉じる', onclick: hideSyncBanner}]);
-    return;
-  }
-  rebuildSt(); // 新しい記録にも _id が付く（続けて編集しても、同じ行の更新になる）
-  updateSyncStatus();
-  flushOutbox();
-}
-
-// 変更の列を1つの操作にして、送信待ちに積む（端末にも保存する）
-function queueChanges(changes, now){
-  if(!changes.length) return;
-  const op = MoneyData.makeOp(changes, {id: crypto.randomUUID(), epoch: server.epoch, now, server, outbox});
-  outbox = [...outbox, op];
-  store('outbox', outbox);
-}
-
-// 互換の st を通さずに、行を直接保存する入り口（tasks など。D1）。1回の呼び出しが1つの操作になる。
-// changes: [{table, action: 'insert'|'update'|'delete', id, row}]。row にはサーバーが決める列（id・user_id・日時）を入れない。
-// base（読み込んだときの updated_at）は makeOp が付ける。保存した行は currentRows()[table] で読める。
-// 保存できたら true。できなければ知らせを出して false（送信待ちには積まない）
-function saveRows(changes){
-  if(!server){
-    showSyncBanner('まだサーバーから読み込めていないので、保存できません。',
-      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
-    return false;
-  }
-  try{
-    queueChanges(MoneyData.checkDirectChanges(changes), new Date().toISOString());
-  }catch(e){
-    console.warn('保存できませんでした:', e);
-    showSyncBanner('保存できませんでした。\n' + (e.message || e), [{label: '閉じる', onclick: hideSyncBanner}]);
-    return false;
-  }
-  updateSyncStatus();
-  flushOutbox();
-  return true;
-}
-
-// 送信待ちを、古いものから1つずつ送る
-async function flushOutbox(){
-  if(!currentUser || sending || loadingRemote || sendBlocked || !outbox.length) return;
-  sending = true;
-  try{
-    while(outbox.length && !sendBlocked){
-      const op = outbox[0];
-      const res = await MoneyData.sendOp(supa, op);
-      if(res.kind === 'applied'){
-        ({server, outbox} = MoneyData.acknowledge({server, outbox}, op, res.result));
-        store('server', server);
-        store('outbox', outbox);
-      }else if(res.kind === 'conflict'){
-        sendBlocked = 'conflict';
-        showConflict(op, res.conflicts);
-      }else if(res.kind === 'stale_epoch'){
-        sendBlocked = 'stale_epoch';
-        showStaleEpoch();
-      }else if(res.kind === 'network'){
-        showSyncBanner(`通信できないため、送れていない変更が${outbox.length}件あります。この端末に残っていて、通信が戻ったら送ります。`,
-          [{label: 'もう一度送る', onclick: flushOutbox, primary: true}]);
-        break;
-      }else{
-        sendBlocked = 'error';
-        showSendError(op, res.error);
-      }
-    }
-    if(!outbox.length) hideSyncBanner();
-  }finally{
-    sending = false;
-    updateSyncStatus();
-  }
-}
-
-// ============================================================
-// 新しいテーブルから読み込む（起動時と、アプリに戻ってきたとき）
-// すべてのテーブルを読み終えて件数が合ったときだけ、サーバーの写しを置き換える
-// 送信待ちは、新しい写しに重ね直す
-// ============================================================
-async function loadRemote(){
-  if(!currentUser || loadingRemote || sending) return;
-  loadingRemote = true;
-  try{
-    server = await MoneyData.loadAllTables(supa);
-    store('server', server);
-    remoteReady = true;
-    rebuildSt();
-    if(!sendBlocked) hideSyncBanner();
-    renderCurrentSection();
-    console.log('サーバーから読み込みました', server.loadedAt);
-  }catch(e){
-    console.warn('新しいテーブルを読み込めませんでした:', e);
-    showSyncBanner(
-      (server ? '新しいテーブルを読み込めませんでした。前に読み込んだ内容を表示しています。' : '新しいテーブルを読み込めませんでした。')
-        + '\n' + (e.message || e),
-      [{label: 'もう一度読み込む', onclick: loadRemote, primary: true}]);
-  }finally{
-    loadingRemote = false;
-  }
-}
-
-// アプリに戻ってきたとき・通信が戻ったとき: 送信待ちを送ってから、読み込み直す
-// （入力中の画面があるときは読み込まない。送るのは入力中でもよい）
-async function resyncRemote(){
-  if(!currentUser) return;
-  await flushOutbox();
-  if(outbox.length) return;
-  if(document.querySelector('.mbg.open')) return;
-  await loadRemote();
-}
 // 日付が変わったとき（裏に置いたまま日をまたいだ・開いたまま0時をまたいだ）: 「今日」を新しくして描き直す。
 // 「今月」「今日」を見ていた画面は新しい今月・今日に合わせる。ほかの月・日を見ていたら、そのままにする
 function onDayChange(now, prevKey){

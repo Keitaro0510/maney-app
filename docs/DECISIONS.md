@@ -620,6 +620,15 @@ PR の順と、それぞれの完了の条件:
 - 型: `src/` から見ると厳しい型（`St`・`Server`・`Op[]`・`User`）。`js/` から見ると、`let` で推論されていた今までの型のまま（`types/legacy/state.d.ts`。`js/` だけが読む）。厳しい型にすると `js/` の59か所が合わず、`js/` を書き換えることになる（D18）。画面を移すときに直す
 - 確かめ: `tests/state.test.mjs` が Node の vm で、ふつうの `<script>` の `st = …`・中身の変更・分割代入が入れ物に届くことを確かめる。ブラウザ（ローカルのビルド）で、保存・送信・読み込み直し・ログアウトと再ログインが今までどおり動くことと、残った `let st` がエラーになることを確かめた
 
+作り（手順4。2026-11-02）:
+- 流れは `src/sync.ts`。移したのは、端末の保存場所（`storageKey`・`loadStored`・`store`）、`currentRows`・`rebuildSt`、保存（`save`・`queueChanges`・`saveRows`）、送る（`flushOutbox`）、読み込む（`loadRemote`・`resyncRemote`）、同期の知らせとその操作（競合・移し直し・受け付けられない。`useServerVersion`・`overwriteWithMine`・`downloadOutbox`）、`TABLE_LABELS`
+- `UiPort`: `showBanner`・`hideBanner`・`renderCurrentSection`・`updateSyncStatus`・`hasOpenModal`・`downloadJson`。`js/app-core.js` が `MoneySync.initSync` で、DOM の実装・Supabase のクライアント・`defaultSt`・`fixDefaults` を渡す。ログイン画面（`showLogin` など）と開いたときのタスク（`showStartupTasks`）は手順5で足す
+- `window` に出すのは、`js/` と HTML が名前で呼ぶ9つ（`LEGACY_SYNC`: `TABLE_LABELS`・`currentRows`・`rebuildSt`・`loadStored`・`save`・`saveRows`・`flushOutbox`・`loadRemote`・`resyncRemote`）。`js/` で同じ名前を宣言すると `window` の名前を上書きしてしまうので、`tests/sync.test.mjs` が見つける
+- `js/` から見た型は、行を今までどおり `any` とする（`types/legacy/state.d.ts`）
+- 文言・順番は前の `js/` と同じ。`Conflict` の型に、サーバーが返していた `table`・`id` を足した
+- テスト: `tests/sync-device.mjs` が「1台の端末」を作る（状態は1つしかないので、操作の間だけ入れ物に入れる。2台の競合を1つの Node で試せる）。`tests/sync.test.mjs`（偽の Supabase）が、受け付けられない・保存の失敗・読み込む前の保存・入力中の読み直し・読み込みの失敗を、`tests/integration/sync-flow.local.test.mjs`（ローカルの Supabase）が、送る・通信の失敗と送り直し・2台の競合（上書き／サーバーの内容）・移し直しを、本物の流れで確かめる。結合テストの共通の部分は `tests/integration/helpers.mjs`
+- ブラウザ（ローカルのビルド）で、通信の失敗（`fetch` を止めた）と競合（DB を直接書き換えた）のバナーが出て、ボタンで直ることを確かめた
+
 理由:
 - 型とテストの恩恵がいちばん大きいのは状態と流れ。DOM を残せば、依存の向きは `js/` → `src/` の一方向のまま
 - getter・setter なら `js/` を書き換えずに済み、振る舞いを変えない PR にできる

@@ -10,3 +10,15 @@ declare var remoteReady: boolean;
 declare var loadingRemote: boolean;
 declare var sending: boolean;
 declare var sendBlocked: any;
+
+// 保存・送信・読み込みの流れ（src/sync.ts。D19 の手順4）。src/main.ts が window に同じ名前で出す。
+// 行は js/ では今までどおり any として扱う（src/ の行の型は厳しく、js/ の書き方と合わない）
+declare var TABLE_LABELS: Record<string, string>;
+declare function currentRows(): any;
+declare function loadStored(name: string): any;
+declare var rebuildSt: typeof import('../../src/sync.ts').rebuildSt;
+declare var save: typeof import('../../src/sync.ts').save;
+declare var saveRows: typeof import('../../src/sync.ts').saveRows;
+declare var flushOutbox: typeof import('../../src/sync.ts').flushOutbox;
+declare var loadRemote: typeof import('../../src/sync.ts').loadRemote;
+declare var resyncRemote: typeof import('../../src/sync.ts').resyncRemote;

@@ -24,8 +24,8 @@ export interface Server { rows: Rows; epoch: number; loadedAt: string }
 
 /** apply_op が返す、保存できた行の updated_at */
 export interface AppliedResult { status: 'applied'; rows: { table: string; id: string; updated_at: string }[] }
-/** apply_op が返す競合。index は changes の何番目か（1から） */
-export interface Conflict { index: number; reason: string; server: Row | null }
+/** apply_op が返す競合。index は changes の何番目か（1から）。table・id はぶつかった行 */
+export interface Conflict { index: number; table: string; id: string; reason: string; server: Row | null }
 type ApplyOpResult = AppliedResult | { status: 'conflict'; conflicts: Conflict[] } | { status: 'stale_epoch'; epoch: number };
 export type SendResult =
   | { kind: 'applied'; result: AppliedResult }
