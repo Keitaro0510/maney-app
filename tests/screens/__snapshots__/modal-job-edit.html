@@ -6,55 +6,55 @@
 <div class="fgr">
 <div class="fg">
 <label for="je-name">名前</label>
-<input id="je-name" placeholder="カフェなど" style="">
+<input id="je-name" placeholder="カフェなど">
 </div>
 <div class="fg">
 <label for="je-wage">通常時給 (¥)</label>
-<input id="je-wage" type="number" placeholder="1100" style="">
+<input id="je-wage" type="number" placeholder="1100">
 </div>
 </div>
 <div class="fgr3">
 <div class="fg">
 <label for="je-night-start">深夜開始</label>
-<input id="je-night-start" type="time" style="">
+<input id="je-night-start" type="time">
 </div>
 <div class="fg">
 <label for="je-night-rate">深夜割増(%)</label>
-<input id="je-night-rate" type="number" style="">
+<input id="je-night-rate" type="number">
 </div>
 <div class="fg">
 <label for="je-transport">交通費(片道¥)</label>
-<input id="je-transport" type="number" placeholder="230" style="">
+<input id="je-transport" type="number" placeholder="230">
 </div>
 </div>
 <div class="fgr">
 <div class="fg">
 <label for="je-close-day">締め日</label>
-<input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）" style="">
+<input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）">
 </div>
 <div class="fg">
 <label for="je-pay-day">給料日（翌月）</label>
-<input id="je-pay-day" type="number" min="1" max="31" placeholder="10" style="">
+<input id="je-pay-day" type="number" min="1" max="31" placeholder="10">
 </div>
 </div>
 <div class="fg">
 <label>カレンダーの色</label>
 <div class="color-swatches" id="je-color-swatches" role="group" aria-label="カレンダーの色">
-<button type="button" class="color-swatch" style="background:#E06080" onclick="selJobEditColor('pink')" aria-label="ピンク" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(224, 96, 128);" onclick="selJobEditColor('pink')" aria-label="ピンク" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch sel" style="background:#3A8FE0" onclick="selJobEditColor('blue')" aria-label="青" aria-pressed="true">
+<button type="button" class="color-swatch sel" style="background: rgb(58, 143, 224);" onclick="selJobEditColor('blue')" aria-label="青" aria-pressed="true">
 </button>
-<button type="button" class="color-swatch" style="background:#5CA020" onclick="selJobEditColor('green')" aria-label="緑" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(92, 160, 32);" onclick="selJobEditColor('green')" aria-label="緑" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background:#E09030" onclick="selJobEditColor('orange')" aria-label="オレンジ" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(224, 144, 48);" onclick="selJobEditColor('orange')" aria-label="オレンジ" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background:#7060D0" onclick="selJobEditColor('purple')" aria-label="紫" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(112, 96, 208);" onclick="selJobEditColor('purple')" aria-label="紫" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background:#209070" onclick="selJobEditColor('teal')" aria-label="青緑" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(32, 144, 112);" onclick="selJobEditColor('teal')" aria-label="青緑" aria-pressed="false">
 </button>
 </div>
 </div>
-<div style="display:flex;gap:8px;justify-content:flex-end">
+<div style="display: flex; gap: 8px; justify-content: flex-end;">
 <button class="btn" onclick="closeJobEdit()">キャンセル</button>
 <button class="btn primary" onclick="saveJobEdit()">保存</button>
 </div>

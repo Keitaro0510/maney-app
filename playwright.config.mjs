@@ -19,7 +19,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]] : 'list',
   // 基準がないときに CI で黙って作らない（作るのは手元で。CI では失敗にする）
-  updateSnapshots: process.env.CI ? 'none' : 'missing',
+  updateSnapshots: 'missing', // 一時的: CI で Linux の基準を作る
   snapshotPathTemplate: '{testDir}/__snapshots__/{arg}{ext}',
   expect: {
     toHaveScreenshot: {

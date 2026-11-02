@@ -34,11 +34,17 @@ async function closeAll(page) {
   });
 }
 
-// 要素の DOM の写し。canvas（グラフ）の大きさなどは描くたびに変わるので外す。差分を読みやすいように、タグごとに改行する
+// 要素の DOM の写し。canvas（グラフ）の大きさなどは描くたびに変わるので外す。差分を読みやすいように、タグごとに改行する。
+// style 属性は、ブラウザの書き方（cssText）にそろえ、空なら消す（写真を撮ると、Playwright が入力欄の style を書き直すため）
 async function dom(page, selector) {
   return page.locator(selector).evaluate(el => {
     const copy = el.cloneNode(true);
     copy.querySelectorAll('canvas').forEach(c => { for (const a of [...c.attributes]) if (a.name !== 'id') c.removeAttribute(a.name); });
+    for (const e of [copy, ...copy.querySelectorAll('[style]')]) {
+      if (!e.hasAttribute('style')) continue;
+      const css = e.style.cssText;
+      if (css) e.setAttribute('style', css); else e.removeAttribute('style');
+    }
     return copy.outerHTML.replace(/>\s*</g, '>\n<') + '\n';
   });
 }
