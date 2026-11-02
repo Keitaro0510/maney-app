@@ -605,6 +605,14 @@ PR の順と、それぞれの完了の条件:
 
 3〜5 では毎回、結合テストを流し、2 の環境でブラウザから保存を確かめる。
 
+作り（手順2の前半。2026-11-02）:
+- 接続先は環境変数 `MANEY_TARGET`（`prod`・`local`）。`vite.config.mjs` が決めて `src/env.ts` の `__MANEY_*__` を置き換え、`src/main.ts` が `window.MoneyEnv` に出す。`js/app-core.js` は URL・キー・保存場所の名前をそこから読む（Supabase の作成は手順5まで `js/` に残す）。本番の URL・キーは `vite.config.mjs`
+- ビルド（`vite build`・`scripts/build-pages.sh`）は指定しないと止まる。`npm run dev` は、指定しなければ今までどおり本番。公開（`deploy.yml`）と CI のビルドは `prod` を明示する
+- ローカルの値は `scripts/local-supabase.mjs` が `npx supabase status` から読んで入れる（`npm run dev:local`・`build:local`・`preview:local`）
+- 端末の保存場所の名前を分ける（本番は今までどおり `maney:prod:`・`money-app-auth`、ローカルは `maney:local:`・`money-app-auth-local`）。手元の 127.0.0.1:8765 は本番につなぐ `npm run dev` と同じ場所なので、混ざらないように
+- ローカル用のログイン（`src/local-login.ts`）は、`main.ts` が置き換えられる文字（`__MANEY_TARGET__ === 'local'`）を条件に呼ぶので、本番のビルドでは取り除かれる。`build-pages.sh` が、本番の出力に `data-maney-local-login` とローカルの接続先がなく、本番の接続先があることを確かめる
+- ローカルにつなぐときは Service Worker を登録しない（同じ場所で、本番のビルドとローカルのビルドをキャッシュから取り違えた）
+
 理由:
 - 型とテストの恩恵がいちばん大きいのは状態と流れ。DOM を残せば、依存の向きは `js/` → `src/` の一方向のまま
 - getter・setter なら `js/` を書き換えずに済み、振る舞いを変えない PR にできる

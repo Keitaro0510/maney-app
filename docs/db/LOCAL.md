@@ -81,6 +81,21 @@ node --test "tests/integration/*.test.mjs"
 - 前に立てた Docker のデータが古いと `Could not find the table` で落ちる。そのときは `npx supabase migration up` で新しいマイグレーションを当ててから流す
 - `data`・`compat` を `src/` の TypeScript に移したあと（#92・#93）も通ることを確かめた（2026-11-02）
 
+## 画面をローカルの Supabase につないで確かめる（D19）
+
+本番のデータに書き込まずに、本物の保存の流れをブラウザで確かめる。ローカルの Supabase を立ててから（上の「起動」）:
+
+```bash
+npm run preview:local   # 公開と同じ形でビルドし（_site_local）、http://127.0.0.1:8765/ で開く
+npm run dev:local       # 手元の開発用（npm run dev のローカル版）
+```
+
+- 接続先は環境変数 `MANEY_TARGET`（`prod`・`local`）で決まる。ビルドは指定しないと止まる。`npm run dev` は、指定しなければ今までどおり本番につなぐ
+- ローカルにつなぐと、ログイン画面に**メールとパスワードのログイン**が出る（本番のビルドには入らない。公開の手順が確かめる）。テスト用のアカウントは、メール `local-dev@example.test`・パスワード `local-dev-password`（ローカルの Supabase の中だけ）。ないときは「作ってログイン」で作る
+- 端末の保存場所は本番と分けてある（`maney:local:`・`money-app-auth-local`）。同じ 127.0.0.1:8765 で開いても、本番のログインや送信待ちと混ざらない
+- ローカルにつなぐときは Service Worker を登録しない。前に本番のビルドを開いて登録したままだと、古いビルドが出ることがある。そのときは開発者ツールの Application → Service workers で Unregister し、読み込み直す
+- 保存した行は `docker exec supabase_db_maney-app psql -U postgres -c "select * from public.ledger_entries"` などで見られる（Studio でもよい）
+
 ## 本番に適用する
 
 テストが通ったマイグレーションだけを、本番に適用する。今は Supabase MCP の `apply_migration` を使っている。

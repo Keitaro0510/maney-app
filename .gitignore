@@ -7,3 +7,4 @@ _site/
 # npm の部品と、Vite のビルドの出力（D4）
 node_modules/
 dist/
+_site_local/

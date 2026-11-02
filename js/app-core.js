@@ -42,12 +42,13 @@ let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 // ============================================================
 // Supabase設定
 // ============================================================
-const SUPA_URL = 'https://sgvyjolyfuqchugltvls.supabase.co';
-const SUPA_KEY = 'sb_publishable_xQszLlsL0IVxrnxsHK0ZtA_AHqsaDMu';
+// 接続先は、ビルドのときに決まる（src/env.ts。D19）。本番の値は vite.config.mjs
+const SUPA_URL = MoneyEnv.supaUrl;
+const SUPA_KEY = MoneyEnv.supaKey;
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY, {
   auth: {
     persistSession: true,
-    storageKey: 'money-app-auth',
+    storageKey: MoneyEnv.authStorageKey, // 本番は money-app-auth（src/env.ts）
     storage: window.localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true
@@ -108,7 +109,7 @@ function hideLoginScreen(user){
 // - 保存: 画面で st を変えたら、互換層で行に戻し、前の行との違いを1つの操作にして送信待ちに入れ、順に apply_op で送る
 // - 端末の保存場所のキーは maney:prod: で始める（切り替える前の版のキー mavFinal2・mavSync は使わない）
 // ============================================================
-const STORAGE_PREFIX = 'maney:prod:';
+const STORAGE_PREFIX = MoneyEnv.storagePrefix; // 本番は maney:prod:（src/env.ts）
 let server = null;         // {rows, epoch, loadedAt}
 let outbox = [];           // 送信待ちの操作
 let remoteReady = false;   // サーバーから読み込めた

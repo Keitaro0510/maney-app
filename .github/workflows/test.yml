@@ -37,4 +37,6 @@ jobs:
       - name: 型の検査
         run: npm run typecheck
       - name: 公開するファイルを試しに作る
+        env:
+          MANEY_TARGET: prod # 公開と同じく本番につなぐ（D19）
         run: bash scripts/build-pages.sh "$RUNNER_TEMP/_site"

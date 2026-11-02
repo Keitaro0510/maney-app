@@ -14,3 +14,4 @@ declare var MoneyUI: typeof import('../js/ui.js');
 declare var MoneyTasks: typeof import('../src/tasks.ts');
 declare var MoneyMonthly: typeof import('../src/monthly.ts');
 declare var MoneyBackup: typeof import('../src/backup.ts');
+declare var MoneyEnv: typeof import('../src/env.ts').ENV;

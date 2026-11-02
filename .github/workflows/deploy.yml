@@ -38,6 +38,8 @@ jobs:
       - name: 部品を入れる（package-lock.json のとおり）
         run: npm ci
       - name: 公開するファイルを集め、CACHE_NAME を中身の指紋にする
+        env:
+          MANEY_TARGET: prod # 本番の Supabase につなぐ（D19。指定しないとビルドが止まる）
         run: |
           version=$(bash scripts/build-pages.sh _site)
           echo "公開する版: \`$version\`" >> "$GITHUB_STEP_SUMMARY"

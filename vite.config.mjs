@@ -3,9 +3,26 @@
 // - index.html の js/・css/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
 // - CSS・JavaScript を縮めない（出力の index.html を、元とほぼ同じにする。モジュールに移したら見直す）
 // - 公開するときは scripts/build-pages.sh がこのビルドを使い、sw.js の CACHE_NAME を中身の指紋にする（D15）
+// - 接続先（D19）: 環境変数 MANEY_TARGET が prod（本番）か local（ローカルの Supabase）。ビルドは、指定しないと止める（つなぎ間違えて公開しないように）。
+//   npm run dev は、指定しなければ今までどおり本番につなぐ。local のときは MANEY_LOCAL_API_URL・MANEY_LOCAL_PUBLISHABLE_KEY が要る（scripts/local-supabase.mjs が入れる）
 import { defineConfig } from 'vite';
 import { cpSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+// 本番の Supabase。sb_publishable_… はブラウザ用の公開キーで、秘密ではない（D19）
+const PROD_SUPA = { url: 'https://sgvyjolyfuqchugltvls.supabase.co', key: 'sb_publishable_xQszLlsL0IVxrnxsHK0ZtA_AHqsaDMu' };
+
+// 接続先を決める。ビルドで指定がない・知らない値・ローカルの値が足りないときは止める
+function supaTarget(command) {
+  const target = process.env.MANEY_TARGET || (command === 'serve' ? 'prod' : '');
+  if (target === 'prod') return { target, ...PROD_SUPA };
+  if (target === 'local') {
+    const url = process.env.MANEY_LOCAL_API_URL, key = process.env.MANEY_LOCAL_PUBLISHABLE_KEY;
+    if (!url || !key) throw new Error('MANEY_TARGET=local には MANEY_LOCAL_API_URL と MANEY_LOCAL_PUBLISHABLE_KEY が要る（node scripts/local-supabase.mjs から動かす。D19）');
+    return { target, url, key };
+  }
+  throw new Error(`接続先を MANEY_TARGET=prod か MANEY_TARGET=local で指定する（今は「${target}」。D19）`);
+}
 
 // まだ Vite を通さないファイル（そのまま公開する）
 const STATIC_FILES = ['js', 'css', 'sw.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
@@ -22,7 +39,15 @@ function copyStaticFiles() {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => {
+  const supa = supaTarget(command);
+  return {
+  // src/env.ts の __MANEY_*__ を置き換える（D19）
+  define: {
+    __MANEY_TARGET__: JSON.stringify(supa.target),
+    __MANEY_SUPA_URL__: JSON.stringify(supa.url),
+    __MANEY_SUPA_KEY__: JSON.stringify(supa.key),
+  },
   base: './', // GitHub Pages の /maney-app/ の下でも動くように、相対のパスにする
   appType: 'mpa', // 知らない場所には index.html ではなく 404 を返す（GitHub Pages と同じ）
   publicDir: false,
@@ -52,4 +77,5 @@ export default defineConfig({
   server: { host: '127.0.0.1', port: 8765, strictPort: true },
   preview: { host: '127.0.0.1', port: 8765, strictPort: true },
   plugins: [copyStaticFiles()],
+  };
 });
