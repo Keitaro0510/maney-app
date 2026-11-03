@@ -750,6 +750,11 @@ PR の順:
 - 日付が変わったときのシフト画面の月送りは `onShiftDayChanged` として画面側に置き、`js/app-core.js` から呼ぶ。HTML とまだ `js/` にある画面が呼ぶ関数は `LEGACY_SHIFTS`・`LEGACY_SHIFT_SCREEN` で window に出す
 - 既存の Node テスト・型検査・画面比較5件が通った。ローカルの Supabase でシフトの追加、給与実績の入力、バイト先の追加と編集を行い、読み込み直しても残ることを一時のブラウザテストで確かめた
 
+作り（6。予定。2026-11-03）:
+- 日別の予定と期間予定の時刻を読む `getPlansForDay`・`planTimeOnDay`・`hm2min` を `src/plans.ts` に移した。ホームとカレンダーからは `LEGACY_PLANS` で呼ぶ
+- 予定の追加・編集画面を `src/screens/plans.ts` に移し、編集対象・日付モード・色・カードの選択をモジュール内に置いた。まだ `js/` にある `renderCal`・`refreshDayViews`・`renderHome` は `src/js-bridge.ts` を通す
+- 変更前と移行後に `npm run test:screens` の5件が通った。Node テスト・型検査も通した。ローカルの Supabase で期間と時刻・カード払いの予定を追加・編集し、読み込み直しても残ることを一時のブラウザテストで確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む
