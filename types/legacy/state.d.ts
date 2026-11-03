@@ -241,3 +241,19 @@ declare var onLedgerDayChanged: typeof import('../../src/screens/ledger.ts').onL
 declare var renderHome: typeof import('../../src/screens/home.ts').renderHome;
 declare var openHomeMore: typeof import('../../src/screens/home.ts').openHomeMore;
 declare var closeHomeMore: typeof import('../../src/screens/home.ts').closeHomeMore;
+
+// カレンダー（src/screens/calendar.ts。ナビ・起動・HTML が呼ぶ）
+declare var selDay: string | null;
+declare var renderCal: typeof import('../../src/screens/calendar.ts').renderCal;
+declare var refreshDayViews: typeof import('../../src/screens/calendar.ts').refreshDayViews;
+declare var prevM: typeof import('../../src/screens/calendar.ts').prevM;
+declare var nextM: typeof import('../../src/screens/calendar.ts').nextM;
+declare var setCalView: typeof import('../../src/screens/calendar.ts').setCalView;
+declare var jumpToDay: typeof import('../../src/screens/calendar.ts').jumpToDay;
+declare var closeDayDetail: typeof import('../../src/screens/calendar.ts').closeDayDetail;
+declare var sameRecord: typeof import('../../src/screens/calendar.ts').sameRecord;
+declare var dayClick: typeof import('../../src/screens/calendar.ts').dayClick;
+declare var dayCellClick: typeof import('../../src/screens/calendar.ts').dayCellClick;
+declare var togglePlanDone: typeof import('../../src/screens/calendar.ts').togglePlanDone;
+declare var deletePlan: typeof import('../../src/screens/calendar.ts').deletePlan;
+declare var onCalendarDayChanged: typeof import('../../src/screens/calendar.ts').onCalendarDayChanged;

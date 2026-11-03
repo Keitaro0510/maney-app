@@ -766,6 +766,11 @@ PR の順:
 - TypeScript の各画面は `renderHome` を直接 import し、`src/js-bridge.ts` から同名の呼び出しを消した。`js/app-core.js` のナビ、`js/app-calendar.js` と HTML の onclick のために `LEGACY_HOME` を `window` に出す。`js/app-home.js` は読み込みとキャッシュから外した
 - Node テスト175件、型検査、ローカルの Supabase を使った画面比較5件が通った。画面比較は Windows で Git for Windows の bash を PATH の先頭に置いて実行した
 
+作り（9。カレンダー。2026-11-03）:
+- 祝日取得、月・週・日の表示、日の詳細と編集操作を `src/screens/calendar.ts` に移した。表示月・選択日・表示方法・非同期描画の番号は画面モジュールに置き、日付が変わったときは `onCalendarDayChanged` を共通部分から呼ぶ
+- TypeScript の各画面は `renderCal`・`refreshDayViews` を直接 import し、`src/js-bridge.ts` から両方を消した。ナビ・起動と HTML の onclick のために `LEGACY_CALENDAR` を `window` に出す。HTML の追加ボタンが読む `selDay` は、画面モジュールの選択日を読む getter で一時的に公開する
+- Node テスト175件、型検査、ローカルの Supabase を使った画面比較5件が通った。さらに日付の選択から予定入力を開く操作、予定の「済み」、月送りをブラウザで確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

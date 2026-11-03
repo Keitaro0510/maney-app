@@ -1,5 +1,5 @@
 // 共通部分: 状態の初期値・ログイン画面・ナビなど、まだ js/ にある入口
-// js/app.js を中身を変えずに分けたファイル（D18）。ふつうの <script> を、index.html に書いた順に読む（共通部分 → 画面 → bootstrap）。
+// js/app.js を中身を変えずに分けたファイル（D18）。ふつうの <script> を、index.html に書いた順に読む（共通部分 → bootstrap）。
 // アプリの画面と動き（D4 の手順3 で index.html の <script> から出した）。まだふつうの <script>（import/export ではない）なので、
 // 関数は今までどおり window から見え、HTML の onclick から呼べる。index.html の最後（<body> の終わり）で読む
 // ============================================================
@@ -11,10 +11,6 @@
 // 新しいユーザーの st（新しいテーブルに設定の行がまだないとき。最初の保存で行ができる）
 function defaultSt(){return {acctBase:0,baseDate:TODAY,shiftCloseDay:31,shiftPayDay:10,budget:0,jobs:[],shifts:[],ledger:[],cards:[],wds:[],actualInputs:[],fuyouLimit:'1300000',otherIncome:0,plans:[],catExp:[...DEF_EXP],catInc:[...DEF_INC]};}
 st=defaultSt(); // st は src/state.ts の入れ物（window の getter・setter。D19）
-let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
-let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
-let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
-let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
 
 // ============================================================
 // Supabase設定
@@ -115,11 +111,9 @@ function saveLocal(){}
 function onDayChange(now, prevKey){
   const prev=_now;
   MoneyDates.setNow(now); // 今の日時と今日の日付（src/dates.ts）
-  const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
-  ({y:calY,m:calM}=follow(calY,calM));
+  onCalendarDayChanged(prev,now,prevKey);
   onShiftDayChanged(prev,now);
   onLedgerDayChanged(prev,now);
-  if(calAnchor===prevKey) calAnchor=TODAY;
   if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
 }
 const todayWatcher=MoneyClock.createDayWatcher(()=>new Date(), onDayChange);
@@ -192,9 +186,3 @@ function sw(t){
 // カードサイクル
 // ============================================================
 // その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
-// 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
-// カードの締め日を実際の日付で取得（31=末日として扱う）
-
-// カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
-// 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
-// idx: 0 は確定（次に引き落とされる分）、1 は集計中（その次）

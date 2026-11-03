@@ -1,4 +1,3 @@
-import { renderCal } from '../js-bridge.ts';
 // シフト・バイト先・給与実績の画面（D20 の 5）。
 import { renderHome } from './home.ts';
 import { state } from '../state.ts';
@@ -7,6 +6,7 @@ import { gY, gM, gD, getNow, addM, ds2d, toDS, DAYS, monthDay, monthDate, calcH 
 import { endsAfterStart, followMonth } from '../clock.ts';
 import { PLAN_COLORS, COLOR_NAMES, jobColorObj, jobColorByName } from '../palette.ts';
 import * as ui from '../ui.ts';
+import { renderCal } from './calendar.ts';
 import { monthShifts, jobPayDay, jobCloseDayNum, salaryKeyForShiftMonth, getActualSalary, calcShiftInc, totalShiftIncNoTransport, totalShiftIncNoTransportForJob } from '../shifts.ts';
 import type { StShiftActual } from '../compat.ts';
 

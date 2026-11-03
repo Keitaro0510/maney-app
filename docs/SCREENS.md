@@ -9,7 +9,7 @@
   |---|---|
   | 1〜621 | `js/app-core.js`（共通部分）。日付・色・部品などは `src/dates.ts`・`palette.ts`・`ui.ts`、カードの集計は `src/cards.ts`、シフトの合計は `src/shifts.ts`、家計簿の補助は `src/ledger.ts` へ移した |
   | 622〜699 | `src/home.ts`・`src/screens/home.ts`。予定の補助は `src/plans.ts` |
-  | 700〜1059 | `js/app-calendar.js`（祝日・カレンダー。D20 の 9 で移す） |
+  | 700〜1059 | `src/screens/calendar.ts`（祝日・カレンダー） |
   | 1060〜1135 | `src/screens/cards.ts`・`src/screens/atm.ts`（カード設定・ATM） |
   | 1136〜1269 | `src/screens/shift.ts` |
   | 1270〜1507 | `src/screens/ledger.ts`・`src/screens/monthly.ts` |
