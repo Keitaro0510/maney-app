@@ -19,10 +19,10 @@ import { bindCardControls } from './screens/cards.ts';
 import { bindPlanControls } from './screens/plans.ts';
 import { elementById } from './ui.ts';
 
-function onDayChange(now: Date, prevKey: string): void {
+function onDayChange(now: Date): void {
   const prev = getNow();
   setNow(now);
-  onCalendarDayChanged(prev, now, prevKey);
+  onCalendarDayChanged(prev, now);
   onShiftDayChanged(prev, now);
   onLedgerDayChanged(prev, now);
   if (state.currentUser) { renderCurrentSection(); maybeShowStartupTasks(); }

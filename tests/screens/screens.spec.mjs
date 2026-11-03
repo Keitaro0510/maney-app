@@ -71,7 +71,7 @@ test('開いたときのタスクと、ホーム', async ({ page }) => {
   await shot(page, 'home-more.png', { fullPage: false });
 });
 
-test('カレンダー（月・週・日と、日の詳細）', async ({ page }) => {
+test('カレンダー（月と日の詳細）', async ({ page }) => {
   await open(page);
   await closeAll(page);
   await page.locator('#nav-cal').click();
@@ -83,11 +83,11 @@ test('カレンダー（月・週・日と、日の詳細）', async ({ page }) 
   await settle(page);
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
 
-  for (const view of ['week', 'day']) {
-    await page.locator(`#cvt-${view}`).click();
-    await settle(page);
-    expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot(`cal-${view}.html`);
-  }
+  await page.locator('.cal-nav button').last().click();
+  await expect(page.locator('#cal-title')).toHaveText('2026年12月');
+  await expect(page.locator('#day-detail')).not.toBeVisible();
+  await page.locator('.cal-nav button').first().click();
+  await expect(page.locator('#cal-title')).toHaveText('2026年11月');
 });
 
 test('家計簿（記録・グラフ・毎月のお金）', async ({ page }) => {
@@ -282,9 +282,7 @@ test('カレンダーの描画後に作るボタンとキーボード操作', as
   await page.locator('#day-detail [data-cal-action="add-plan"]').click();
   await expect(page.locator('#plan-date')).toHaveValue('2026-11-12');
   await closeAll(page);
-  await page.locator('#day-detail [data-cal-action="jump-day"]').click();
-  await expect(page.locator('#cvt-day')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#cal-list [data-cal-action="add-ledger"]').click();
+  await page.locator('#day-detail [data-cal-action="add-ledger"]').click();
   await expect(page.locator('#ldg-date')).toHaveValue('2026-11-12');
   await closeAll(page);
   expect(await page.evaluate(() => 'dayCellClick' in window || 'sameRecord' in window)).toBe(false);
