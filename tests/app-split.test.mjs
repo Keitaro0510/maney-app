@@ -38,3 +38,9 @@ test('シフトの画面は TypeScript に移り、古い画面スクリプト�
   const src = readFileSync(new URL('../src/screens/shift.ts', import.meta.url), 'utf8');
   assert.match(src, /LEGACY_SHIFT_SCREEN/);
 });
+
+test('予定の画面は TypeScript に移り、古い画面スクリプトを読まない', () => {
+  assert.equal(appFiles.includes('app-plan.js'), false);
+  const src = readFileSync(new URL('../src/screens/plans.ts', import.meta.url), 'utf8');
+  assert.match(src, /LEGACY_PLAN_SCREEN/);
+});

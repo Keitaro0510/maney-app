@@ -15,22 +15,6 @@ function upcomingFixed(){const mdl=MoneyCalc.model(currentRows()),y=gY(),m=gM(),
   mdl.ledger.filter(l=>l.kind==='expense'&&l.payment_method==='bank'&&l.date>TODAY&&l.date<=monthEnd).forEach(l=>{total+=l.amount;});
   return total;}
 function thisMonthPlanBudget(){const y=gY(),m=gM(),ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());return st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).reduce((a,p)=>a+p.budget,0);}
-function getPlansForDay(ds){return st.plans.filter(p=>{const s=p.dateStart||p.date,e=p.dateEnd||p.date;return ds>=s&&ds<=e;});}
-
-// 'HH:MM' → 分（時刻なしは-1）。calcShiftInc()のsh*60+smイディオムを関数化したもの
-const hm2min = t => { if(!t) return -1; const [h,m]=t.split(':').map(Number); return h*60+m; };
-
-// 指定日における予定の時刻情報を返す。期間予定は「初日=timeStart、最終日=timeEnd、中日=終日」という
-// Googleカレンダー準拠のセマンティクスにする
-function planTimeOnDay(p, ds){
-  const s=p.dateStart||p.date, e=p.dateEnd||p.date;
-  if(!p.timeStart) return {start:'',end:'',min:-1};
-  if(s===e) return {start:p.timeStart,end:p.timeEnd||'',min:hm2min(p.timeStart)};
-  if(ds===s) return {start:p.timeStart,end:'',min:hm2min(p.timeStart)};
-  if(ds===e) return {start:'',end:p.timeEnd||'',min:p.timeEnd?hm2min(p.timeEnd):-1};
-  return {start:'',end:'',min:-1};
-}
-
 function renderForecast(){const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">${yenSigned(acct)}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・毎月のお金</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>0?'+':''}${yenSigned(forecast)}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;document.getElementById('forecast-content').innerHTML=html;}
 
 // お金を「-¥1,200」「¥3,400」の形にする（マイナスはそのまま出す。D11）
