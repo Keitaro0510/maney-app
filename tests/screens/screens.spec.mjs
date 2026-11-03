@@ -71,7 +71,7 @@ test('開いたときのタスクと、ホーム', async ({ page }) => {
 test('カレンダー（月・週・日と、日の詳細）', async ({ page }) => {
   await open(page);
   await closeAll(page);
-  await page.evaluate(() => sw('cal'));
+  await page.locator('#nav-cal').click();
   await settle(page);
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-month.html');
   await shot(page, 'cal-month.png');
@@ -81,7 +81,7 @@ test('カレンダー（月・週・日と、日の詳細）', async ({ page }) 
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
 
   for (const view of ['week', 'day']) {
-    await page.evaluate(v => setCalView(v), view);
+    await page.locator(`#cvt-${view}`).click();
     await settle(page);
     expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot(`cal-${view}.html`);
   }
@@ -90,12 +90,12 @@ test('カレンダー（月・週・日と、日の詳細）', async ({ page }) 
 test('家計簿（記録・グラフ・毎月のお金）', async ({ page }) => {
   await open(page);
   await closeAll(page);
-  await page.evaluate(() => sw('ledger'));
+  await page.locator('#nav-ledger').click();
   await settle(page);
   expect.soft(await dom(page, '#sec-ledger')).toMatchSnapshot('ledger-list.html');
   await shot(page, 'ledger-list.png');
   for (const tab of ['graph', 'monthly']) {
-    await page.evaluate(t => ldgTab(t), tab);
+    await page.locator('#ldg-main-tabs button').nth(['list', 'graph', 'monthly'].indexOf(tab)).click();
     await settle(page);
     expect.soft(await dom(page, '#sec-ledger')).toMatchSnapshot(`ledger-${tab}.html`);
   }
@@ -105,7 +105,7 @@ test('シフト・設定・タスク', async ({ page }) => {
   await open(page);
   await closeAll(page);
   for (const sec of ['shift', 'set', 'task']) {
-    await page.evaluate(s => sw(s), sec);
+    await page.locator(sec === 'set' ? '#settings-btn' : `#nav-${sec}`).click();
     await settle(page);
     expect.soft(await dom(page, `#sec-${sec}`)).toMatchSnapshot(`${sec}.html`);
     await shot(page, `${sec}.png`);
@@ -134,4 +134,31 @@ test('入力画面', async ({ page }) => {
     if (withShot) await shot(page, `modal-${name}.png`, { fullPage: false });
     await closeAll(page);
   }
+});
+
+test('固定のナビ・期間ボタンで画面を切り替える', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-cal').click();
+  await expect(page.locator('#sec-cal')).toHaveClass(/active/);
+  await expect(page.locator('#nav-cal')).toHaveAttribute('aria-current', 'page');
+  const calTitle = await page.locator('#cal-title').textContent();
+  await page.locator('.cal-nav button').first().click();
+  await expect(page.locator('#cal-title')).not.toHaveText(calTitle);
+  await page.locator('.cal-nav button').last().click();
+  await expect(page.locator('#cal-title')).toHaveText(calTitle);
+
+  await page.locator('#nav-ledger').click();
+  const monthLabel = await page.locator('#ldg-month-label').textContent();
+  await page.locator('#ldg-month-nav button').first().click();
+  await expect(page.locator('#ldg-month-label')).not.toHaveText(monthLabel);
+  await page.locator('#ldg-month-nav button').last().click();
+  await expect(page.locator('#ldg-month-label')).toHaveText(monthLabel);
+  await page.locator('#ldg-main-tabs button').nth(1).click();
+  await page.locator('#ldg-graph-mode-tabs button').nth(1).click();
+  await expect(page.locator('#cat-chart-title')).toHaveText('カテゴリ別支出（年間）');
+  await page.locator('#settings-btn').click();
+  await expect(page.locator('#sec-set')).toHaveClass(/active/);
+  await expect(page.locator('#settings-btn')).toHaveAttribute('aria-current', 'page');
+  expect(await page.evaluate(() => 'sw' in window)).toBe(false);
 });

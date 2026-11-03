@@ -37,6 +37,14 @@ export function sw(tab: string): void {
   else if (tab === 'set') initSettingTab();
 }
 
+/** 固定のナビボタンをモジュールの関数につなぐ。HTML の onclick は使わない。 */
+export function bindNavigation(): void {
+  for (const tab of ['home', 'cal', 'ledger', 'shift', 'task', 'set']) {
+    const id = tab === 'set' ? 'settings-btn' : `nav-${tab}`;
+    elementById(id).addEventListener('click', () => sw(tab));
+  }
+}
+
 export function renderCurrentSection(): void {
   const current = document.querySelector<HTMLElement>('.sec.active');
   sw(current ? current.id.replace('sec-', '') : 'home');

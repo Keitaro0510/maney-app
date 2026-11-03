@@ -348,7 +348,7 @@ function calShift(dir: number): Promise<void>{
   }
   return renderCal();
 }
-export async function prevM(): Promise<void>{await calShift(-1);}  // 既存の関数名・onclickを温存
+export async function prevM(): Promise<void>{await calShift(-1);}
 export async function nextM(): Promise<void>{await calShift(1);}
 
 export async function setCalView(v: 'day' | 'week' | 'month'): Promise<void>{
@@ -378,4 +378,14 @@ export function togglePlanDone(idx: number): void{state.st.plans[idx].done=!stat
 export function deletePlan(idx: number): void{state.st.plans.splice(idx,1);save();renderCal();refreshDayViews();renderHome();}
 
 
-export const LEGACY_CALENDAR = { renderCal, refreshDayViews, prevM, nextM, setCalView, jumpToDay, closeDayDetail, sameRecord, dayClick, dayCellClick, togglePlanDone, deletePlan, getSelectedCalDay };
+/** カレンダー上部の固定ボタンを登録する。 */
+export function bindCalendarControls(): void {
+  for (const view of ['day', 'week', 'month'] as const) {
+    MoneyUI.elementById('cvt-' + view).addEventListener('click', () => { void setCalView(view); });
+  }
+  document.querySelectorAll<HTMLButtonElement>('.cal-nav button').forEach((button, i) => {
+    button.addEventListener('click', () => { void (i === 0 ? prevM() : nextM()); });
+  });
+}
+
+export const LEGACY_CALENDAR = { renderCal, refreshDayViews, jumpToDay, closeDayDetail, sameRecord, dayClick, dayCellClick, togglePlanDone, deletePlan, getSelectedCalDay };
