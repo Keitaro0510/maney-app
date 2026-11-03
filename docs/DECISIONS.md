@@ -738,6 +738,13 @@ PR の順:
 - 画面を比べる道具の基準は、HTML のコメント1行（`js/backup-ui.js` → `src/screens/backup.ts`）だけ更新した（見た目は変わらない）
 - 確かめ: 一時のテストで、書き出し（ファイル名・中身）・変なファイルを止める・件数の比較（少ないテーブルを目立たせる）・やめる・置き換える（DB に反映、写しの番号を知らせる）が、ブラウザで今までどおり動くことを確かめた
 
+作り（4。設定・カード・ATM。2026-11-03）:
+- D20 の PR 4 を1つの PR とし、計算→設定→カード→ATM の順にコミットした。カードの計算と実績は `src/cards.ts`、画面は `src/screens/settings.ts`・`cards.ts`・`atm.ts` に分けた。`cardEditIdx` と `wdStr` はそれぞれの画面モジュールに置いた
+- `js/app-core.js` のカード補助と `js/app-settings.js`・`js/app-cards.js` を移した。`LEGACY_CARDS`・`LEGACY_SETTINGS`・`LEGACY_CARD_SCREEN`・`LEGACY_ATM` を `src/main.ts` から window に出す。`initSettingTab` はナビを移す PR 10 まで残す
+- まだ `js/` にある `renderHome`・`renderCal`・`moveMonthlyOffCard` は `src/js-bridge.ts` を通す。`index.html` と `sw.js` から古い2ファイルを外した
+- `previewCycle` の仮カードの push/pop は計算に不要なので、移行とは別コミットで削除した。カード名の HTML エスケープは表示の変更になるため、この PR には含めない
+- 変更前と各移行後に `npm run test:screens` の5件が通った。seed にはカード・引き出し・請求実績がある。`npm test` と `npm run typecheck` も通した
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

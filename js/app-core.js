@@ -21,7 +21,7 @@ let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
 let selShiftDays=new Set();
 let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
 let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
-let catChart=null,dayChart=null,balChart=null,wdStr='',cardEditIdx=-1;
+let catChart=null,dayChart=null,balChart=null;
 let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 
 // ============================================================
@@ -199,9 +199,7 @@ function jobCloseDayNum(job,y,m){const cl=parseInt(job&&job.closeDay)||parseInt(
 const salaryKeyForShiftMonth=(jobName,y,m)=>{const pm=addM(y,m,1);return `${jobName}|${pm.y}-${String(pm.m+1).padStart(2,'0')}`;};
 const getActualSalary=(jobName,y,m)=>st.actualInputs.find(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKeyForShiftMonth(jobName,y,m));
 function setActualSalary(jobName,y,m,amount){const key=salaryKeyForShiftMonth(jobName,y,m),pm=addM(y,m,1),job=st.jobs.find(j=>j.name===jobName),date=toDS(pm.y,pm.m,monthDay(pm.y,pm.m,jobPayDay(job)));const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===key);const entry={type:'shift',job:jobName,salaryKey:key,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,y,m)};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
-const cardActualKey=(ci,bY,bM)=>`card-${ci}-${bY}-${String(bM+1).padStart(2,'0')}`;
-const getActualCard=(ci,bY,bM)=>st.actualInputs.find(a=>a.type==='card'&&a.cardKey===cardActualKey(ci,bY,bM));
-function setActualCard(ci,bY,bM,amount,estimated){const key=cardActualKey(ci,bY,bM),ei=st.actualInputs.findIndex(a=>a.type==='card'&&a.cardKey===key);const entry={type:'card',cardKey:key,cardIdx:ci,billY:bY,billM:bM,actualAmount:amount,estimatedAmount:estimated};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
+// カードの実績は src/cards.ts（window には LEGACY_CARDS）。
 
 // ============================================================
 // シフト計算
@@ -219,10 +217,6 @@ const totalShiftIncNoTransportForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).
 // カードサイクル
 // ============================================================
 // その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
-function cardBillAmount(card, ci, y, m){
-  const actual = getActualCard(ci, y, m);
-  return actual ? parseInt(actual.actualAmount) : cardCycleForBillMonth(card, ci, y, m).amount;
-}
 // 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
 function ledgerPayLabel(l){
   if(l.type === 'income') return l.receive || '現金';
@@ -230,20 +224,10 @@ function ledgerPayLabel(l){
   return card ? card.name : (l.pay || '');
 }
 // カードの締め日を実際の日付で取得（31=末日として扱う）
-function cardCloseDay(card, y, m){
-  const cl = parseInt(card.closeDay);
-  if(cl >= 28) return new Date(y, m+1, 0).getDate(); // その月の末日
-  return cl;
-}
 
 // カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
 // 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
-function cardRowOf(card){const row=card._id&&(currentRows().cards||[]).find(c=>c.id===card._id);return row||{id:'__preview__',close_day:parseInt(card.closeDay),bill_day:parseInt(card.billDay)};}
-function cardCycleForBillMonth(card,ci,billY,billM){const n=MoneyCalc.cardCycle(currentRows(),cardRowOf(card),billY,billM);return{cs:ds2d(n.cs),ce:ds2d(n.ce),billD:n.billD,amount:n.amount};}
 // idx: 0 は確定（次に引き落とされる分）、1 は集計中（その次）
-function cycle(card,idx){const row=cardRowOf(card),mo=MoneyCalc.cardCycleMonths(row,TODAY),bm=idx===0?mo.confirmed:mo.pending,n=MoneyCalc.cardCycle(currentRows(),row,bm.y,bm.m);return{label:idx===0?'確定':'集計中',cs:ds2d(n.cs),ce:ds2d(n.ce),billY:n.billY,billM:n.billM,billD:n.billD,amount:n.amount};}
-const cardBillForGraphDate=(card,ci,billY,billM)=>cardCycleForBillMonth(card,ci,billY,billM).amount;
-const cardBillForDate=(card,bY,bM)=>cardBillForGraphDate(card,st.cards.indexOf(card),bY,bM);
 
 // ============================================================
 // 口座推定

@@ -22,3 +22,13 @@ test('loadData() を呼ぶのは bootstrap だけ（ほかのファイルは定�
     assert.equal(callsAtTopLevel, f === 'app-bootstrap.js', `${f}: loadData() の呼び出しの場所が違います`);
   }
 });
+
+test('設定・カード・ATM は TypeScript に移り、古い画面スクリプトを読まない', () => {
+  for (const f of ['app-settings.js', 'app-cards.js']) {
+    assert.equal(appFiles.includes(f), false, `${f} が index.html に残っています`);
+  }
+  for (const name of ['settings', 'cards', 'atm']) {
+    const src = readFileSync(new URL(`../src/screens/${name}.ts`, import.meta.url), 'utf8');
+    assert.match(src, new RegExp(`LEGACY_${name === 'cards' ? 'CARD_SCREEN' : name.toUpperCase()}`));
+  }
+});

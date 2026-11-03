@@ -4,12 +4,18 @@
 type JsFunctions = {
   /** タブを切り替える（js/app-core.js のナビ。D20 の 10 で移す） */
   sw(tab: string): void;
+  renderHome(): void;
+  renderCal(): void;
+  moveMonthlyOffCard(cardId: string | undefined): void;
 };
 
 function call<K extends keyof JsFunctions>(name: K): JsFunctions[K] {
   const fn = (globalThis as unknown as Partial<JsFunctions>)[name];
   if (typeof fn !== 'function') throw new Error(`js/ の ${name} が見つかりません`);
-  return fn;
+  return fn as JsFunctions[K];
 }
 
 export const sw = (tab: string): void => call('sw')(tab);
+export const renderHome = (): void => call('renderHome')();
+export const renderCal = (): void => call('renderCal')();
+export const moveMonthlyOffCard = (cardId: string | undefined): void => call('moveMonthlyOffCard')(cardId);

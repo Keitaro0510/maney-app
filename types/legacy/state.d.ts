@@ -52,6 +52,50 @@ declare var DEF_INC: typeof import('../../src/palette.ts').DEF_INC;
 declare var CAT_COL: typeof import('../../src/palette.ts').CAT_COL;
 declare var DOTC: typeof import('../../src/palette.ts').DOTC;
 
+// カードの集計と実績（src/cards.ts。D20 の 4）
+declare var cardActualKey: typeof import('../../src/cards.ts').cardActualKey;
+declare var getActualCard: (...args: any[]) => any;
+declare var setActualCard: typeof import('../../src/cards.ts').setActualCard;
+declare var cardRowOf: typeof import('../../src/cards.ts').cardRowOf;
+declare var cardCloseDay: typeof import('../../src/cards.ts').cardCloseDay;
+declare var cardCycleForBillMonth: typeof import('../../src/cards.ts').cardCycleForBillMonth;
+declare var cycle: typeof import('../../src/cards.ts').cycle;
+declare var cardBillForGraphDate: typeof import('../../src/cards.ts').cardBillForGraphDate;
+declare var cardBillForDate: typeof import('../../src/cards.ts').cardBillForDate;
+declare var cardBillAmount: typeof import('../../src/cards.ts').cardBillAmount;
+
+// 設定タブ（src/screens/settings.ts）。ナビが initSettingTab を呼ぶため window に残す
+declare var addCatExp: typeof import('../../src/screens/settings.ts').addCatExp;
+declare var addCatInc: typeof import('../../src/screens/settings.ts').addCatInc;
+declare var delCatExp: typeof import('../../src/screens/settings.ts').delCatExp;
+declare var delCatInc: typeof import('../../src/screens/settings.ts').delCatInc;
+declare var renderCatTags: typeof import('../../src/screens/settings.ts').renderCatTags;
+declare var initSettingTab: typeof import('../../src/screens/settings.ts').initSettingTab;
+declare var updateShiftCyclePreview: typeof import('../../src/screens/settings.ts').updateShiftCyclePreview;
+declare var saveSettingFields: typeof import('../../src/screens/settings.ts').saveSettingFields;
+
+// カードの画面（src/screens/cards.ts）
+declare var toggleCardCloseEom: typeof import('../../src/screens/cards.ts').toggleCardCloseEom;
+declare var previewCycle: typeof import('../../src/screens/cards.ts').previewCycle;
+declare var addCard: typeof import('../../src/screens/cards.ts').addCard;
+declare var renderCardBillHistory: typeof import('../../src/screens/cards.ts').renderCardBillHistory;
+declare var onCardBillChange: typeof import('../../src/screens/cards.ts').onCardBillChange;
+declare var renderCardList: typeof import('../../src/screens/cards.ts').renderCardList;
+declare var delCard: typeof import('../../src/screens/cards.ts').delCard;
+declare var openCardEdit: typeof import('../../src/screens/cards.ts').openCardEdit;
+declare var closeCardEdit: typeof import('../../src/screens/cards.ts').closeCardEdit;
+declare var saveCardEdit: typeof import('../../src/screens/cards.ts').saveCardEdit;
+
+// ATM（src/screens/atm.ts）
+declare var openWd: typeof import('../../src/screens/atm.ts').openWd;
+declare var closeWd: typeof import('../../src/screens/atm.ts').closeWd;
+declare var nk: typeof import('../../src/screens/atm.ts').nk;
+declare var nd: typeof import('../../src/screens/atm.ts').nd;
+declare var updWd: typeof import('../../src/screens/atm.ts').updWd;
+declare var doWd: typeof import('../../src/screens/atm.ts').doWd;
+declare var renderWdHist: typeof import('../../src/screens/atm.ts').renderWdHist;
+declare var delWd: typeof import('../../src/screens/atm.ts').delWd;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
