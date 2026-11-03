@@ -66,6 +66,22 @@ const comparable = st => {
 let alice;
 before(async () => { if (!skip) alice = await createUser('alice'); });
 
+test('複数のタスクタグをクラウドに保存し、別の端末で読み直せる', { skip }, async () => {
+  const user = await createUser('tags');
+  const a = device(user.supa);
+  await a.load();
+  const id = crypto.randomUUID();
+  a.saveRows([{ table: 'tasks', action: 'insert', id, row: { title: 'タグの確認', tags: ['仕事', '就活'], position: 0 } }]);
+  assert.equal((await a.flush()).kind, 'done');
+  const b = device(user.supa);
+  await b.load();
+  assert.deepEqual(b.rows().tasks.find(task => task.id === id).tags, ['仕事', '就活']);
+  b.saveRows([{ table: 'tasks', action: 'update', id, row: { tags: ['お金'] } }]);
+  assert.equal((await b.flush()).kind, 'done');
+  await a.load();
+  assert.deepEqual(a.rows().tasks.find(task => task.id === id).tags, ['お金']);
+});
+
 test('新しいユーザーが一通り記録し、読み込み直しても同じ画面のデータになる', { skip }, async () => {
   const a = device(alice.supa);
   await a.load();

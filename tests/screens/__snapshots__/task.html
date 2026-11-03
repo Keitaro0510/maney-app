@@ -14,6 +14,13 @@
 <input type="date" aria-label="期限の日付を選ぶ">
 </label>
 </div>
+<label class="task-tags-field" for="task-add-tags">タグ <span>複数は「、」で区切る</span>
+</label>
+<input id="task-add-tags" class="task-tags-input" placeholder="仕事、就活など" autocomplete="off">
+<div class="task-tag-suggestions" id="task-add-tag-suggestions">
+</div>
+<div class="task-filter" id="task-filter" role="group" aria-label="タグでタスクを絞り込む">
+</div>
 <div id="task-list">
 <section class="card task-section task-overdue">
 <h2 class="task-section-title">

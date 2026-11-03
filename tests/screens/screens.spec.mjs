@@ -216,6 +216,32 @@ test('タスクの追加・編集・削除をボタンとフォームで行う',
   await expect(row).toHaveCount(0);
 });
 
+test('タスクの複数タグを付け外し、タグで一覧を絞る', async ({ page }) => {
+  await open(page);
+  await page.locator('#task-startup [data-task-action="all"]').click();
+  await page.locator('#task-add-title').fill('タグの確認');
+  await page.locator('#task-add-tags').fill('仕事、就活、仕事');
+  await page.locator('#sec-task .task-add button[type="submit"]').click();
+  const row = page.locator('#task-list .check-row').filter({ hasText: 'タグの確認' });
+  await expect(row.locator('.task-tag')).toHaveText(['仕事', '就活']);
+  await expect(page.locator('#task-add-tag-suggestions button').filter({ hasText: '仕事' })).toBeVisible();
+  await page.locator('#task-filter button').filter({ hasText: '就活' }).click();
+  await expect(row).toBeVisible();
+  await page.locator('#task-filter button').filter({ hasText: '仕事' }).click();
+  await expect(row).toBeVisible();
+  await row.locator('.task-edit').click();
+  await page.locator('#task-edit-tag-suggestions button').filter({ hasText: '仕事' }).click();
+  await expect(page.locator('#task-tags')).toHaveValue('就活');
+  await page.locator('#task-tags').fill('お金');
+  await page.locator('#task-sheet [data-task-action="save"]').click();
+  await expect(page.locator('#task-filter button').filter({ hasText: '仕事' })).toHaveCount(0);
+  await page.locator('#task-filter button').filter({ hasText: 'お金' }).click();
+  await expect(row).toBeVisible();
+  await expect(row.locator('.task-tag')).toHaveText('お金');
+  await row.locator('.task-edit').click();
+  await page.locator('#task-sheet [data-task-action="delete"]').click();
+});
+
 test('書き出したファイルを読み込みの確認画面で開いて閉じる', async ({ page }) => {
   await open(page);
   await closeAll(page);

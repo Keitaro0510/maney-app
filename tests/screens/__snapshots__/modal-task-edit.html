@@ -27,6 +27,13 @@
 <textarea id="task-memo" rows="3" style="height: auto; font-size: 16px;">
 </textarea>
 </div>
+<div class="fg">
+<label for="task-tags">タグ <span class="task-tags-hint">複数は「、」で区切る</span>
+</label>
+<input id="task-tags" class="task-tags-input" placeholder="仕事、就活など" autocomplete="off">
+<div class="task-tag-suggestions" id="task-edit-tag-suggestions">
+</div>
+</div>
 <div class="task-sheet-actions">
 <button type="button" class="ui-btn danger" data-task-action="delete">削除</button>
 <span class="spacer">

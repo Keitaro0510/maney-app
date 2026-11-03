@@ -118,7 +118,7 @@ flowchart LR
 | ATMで現金を引き出す | ホーム | `withdrawals`（日付は今日に決まる） | 774、1812 |
 | バイト先を編集 | シフト（バイト先一覧） | `jobs`（名前を変えると、シフトと給与の実績の名前も書き換える） | 793、1933 |
 | カードを編集 | 設定（クレジットカード） | `cards` | 790、1788 |
-| タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。互換の `st` を通さない） | `src/screens/tasks.ts` の `openTaskSheet` |
+| タスクを編集（`<dialog>`） | タスク・今日のタスク | `tasks`（`saveRows`。複数の用途タグも `tasks.tags` に保存。互換の `st` を通さない） | `src/screens/tasks.ts` の `openTaskSheet` |
 | 今日のタスク（画面中央の `<dialog>`。開くたびに出す。自動で出したときは「今日は表示しない」のチェック。D10・#139） | 起動したあと・日付が変わったとき・ほかのアプリから戻ってきたとき（前に出してから1時間以上）・ホームのタスクの1行 | `tasks`（完了のチェック） | `src/screens/tasks.ts` の `maybeShowStartupTasks` |
 
 ## その場の操作（画面を移らない）
