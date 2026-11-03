@@ -162,3 +162,34 @@ test('固定のナビ・期間ボタンで画面を切り替える', async ({ pa
   await expect(page.locator('#settings-btn')).toHaveAttribute('aria-current', 'page');
   expect(await page.evaluate(() => 'sw' in window)).toBe(false);
 });
+
+test('タスクの追加・編集・削除をボタンとフォームで行う', async ({ page }) => {
+  await open(page);
+  await page.locator('#task-startup [data-task-action="close"]').click();
+  await expect(page.locator('#task-startup')).not.toBeVisible();
+  await page.locator('#home-tasks').click();
+  await expect(page.locator('#task-startup')).toBeVisible();
+  await page.locator('#task-startup [data-task-action="all"]').click();
+  await expect(page.locator('#sec-task')).toHaveClass(/active/);
+  await page.locator('#task-add-due input[type="date"]').fill('2026-11-15');
+  await expect(page.locator('#task-add-due [data-due="pick"]')).toHaveClass(/on/);
+  await page.locator('#task-add-due button[data-due="today"]').click();
+  await expect(page.locator('#task-add-due button[data-due="today"]')).toHaveAttribute('aria-pressed', 'true');
+
+  const title = 'イベント登録の確認';
+  await page.locator('#task-add-title').fill(title);
+  await page.locator('#task-add-title').press('Enter');
+  const row = page.locator('#task-list .check-row').filter({ hasText: title });
+  await expect(row).toBeVisible();
+  await row.locator('.task-edit').click();
+  await page.locator('#task-sheet [data-task-action="close"]').first().click();
+  await expect(page.locator('#task-sheet')).not.toBeVisible();
+  await row.locator('.task-edit').click();
+  await page.locator('#task-sheet .task-sheet-due button[data-due="tomorrow"]').click();
+  await expect(page.locator('#task-due')).not.toHaveValue('');
+  await page.locator('#task-sheet [data-task-action="save"]').click();
+  await expect(page.locator('#task-sheet')).not.toBeVisible();
+  await row.locator('.task-edit').click();
+  await page.locator('#task-sheet [data-task-action="delete"]').click();
+  await expect(row).toHaveCount(0);
+});

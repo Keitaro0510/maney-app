@@ -3,7 +3,7 @@
 // - 開いたときの一覧（#task-startup）: 期限切れ・今日・2週間以内。開くたびに出し、「今日は表示しない」で止める
 // - ホームの1行（#home-tasks）
 // 完了できるのは、タブと開いたときの一覧の2か所だけ（D10）。
-// まだ js/ と index.html が名前で呼ぶものは、src/main.ts が LEGACY_TASKS を window に出す（期限付きの互換の層。D20）
+// HTML に残る互換の関数だけ、src/main.ts が LEGACY_TASKS を window に出す（D18 の手順5）。
 import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { currentRows, saveRows, userKey } from '../sync.ts';
@@ -229,7 +229,6 @@ export function openStartupTasks(opener?: HTMLElement | null, { auto = false }: 
   hide.checked = false;
   const label = hide.closest('label');
   if (label) label.hidden = !auto;
-  hide.onchange = () => writeStartup('tasksHideDay', hide.checked ? today : null);
   closeStartupFn = openSheet(dialogById('task-startup'), opener);
 }
 
@@ -269,16 +268,44 @@ function renderStartupTasks(): void {
 export function closeStartupTasks(): void { if (closeStartupFn) closeStartupFn(); }
 export function openTaskTabFromStartup(): void { closeStartupTasks(); sw('task'); }
 
-/**
- * まだ js/ と index.html が名前で呼ぶもの（src/main.ts が window に出す。期限付きの互換の層。D20）。
- * HTML の onclick（手順5で置き換える）・ほかの画面（js/app-*.js）・画面を比べる道具（tests/screens）が使う
- */
-export const LEGACY_TASKS = {
-  // ほかの画面
-  taskRows, renderTaskTab, renderHomeTasks, maybeShowStartupTasks,
-  // index.html の onclick など
-  setTaskAddDue, pickTaskAddDue, addTaskQuick, closeTaskSheet, setTaskSheetDue, saveTaskSheet, deleteTaskFromSheet,
-  openStartupTasks, closeStartupTasks, openTaskTabFromStartup,
-  // 画面を比べる道具
-  openTaskSheet,
-};
+/** 固定のタスク入力欄・編集シート・起動時一覧にイベントを登録する。 */
+export function bindTaskControls(): void {
+  child<HTMLFormElement>(document, '#sec-task .task-add').addEventListener('submit', event => {
+    event.preventDefault();
+    addTaskQuick();
+  });
+  document.querySelectorAll<HTMLButtonElement>('#task-add-due button[data-due]').forEach(button => {
+    button.addEventListener('click', () => setTaskAddDue(button.dataset.due || 'none'));
+  });
+  child<HTMLInputElement>(document, '#task-add-due input[type="date"]').addEventListener('change', event => {
+    pickTaskAddDue((event.currentTarget as HTMLInputElement).value);
+  });
+  const homeTasks = elementById('home-tasks');
+  homeTasks.addEventListener('click', () => openStartupTasks(homeTasks));
+
+  const sheet = dialogById('task-sheet');
+  sheet.querySelectorAll<HTMLButtonElement>('.task-sheet-due button[data-due]').forEach(button => {
+    button.addEventListener('click', () => setTaskSheetDue(button.dataset.due || 'none'));
+  });
+  sheet.addEventListener('click', event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('[data-task-action]');
+    if (!button) return;
+    if (button.dataset.taskAction === 'close') closeTaskSheet();
+    else if (button.dataset.taskAction === 'save') saveTaskSheet();
+    else if (button.dataset.taskAction === 'delete') deleteTaskFromSheet();
+  });
+
+  dialogById('task-startup').addEventListener('click', event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('[data-task-action]');
+    if (!button) return;
+    if (button.dataset.taskAction === 'close') closeStartupTasks();
+    else if (button.dataset.taskAction === 'all') openTaskTabFromStartup();
+  });
+  inputById('task-startup-hide').addEventListener('change', event => {
+    const hide = event.currentTarget as HTMLInputElement;
+    writeStartup('tasksHideDay', hide.checked ? getToday() : null);
+  });
+}
+
+/** 画面比較の道具が呼ぶ入口。HTML からは呼ばない。 */
+export const LEGACY_TASKS = { openTaskSheet };

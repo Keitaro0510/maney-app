@@ -1,7 +1,7 @@
 <dialog class="sheet" id="task-sheet" aria-labelledby="task-sheet-title">
 <div class="sheet-head">
 <h2 id="task-sheet-title">タスクを編集</h2>
-<button type="button" class="icon-btn" aria-label="閉じる" onclick="closeTaskSheet()">
+<button type="button" class="icon-btn" aria-label="閉じる" data-task-action="close">
 <svg viewBox="0 0 24 24" aria-hidden="true">
 <path d="M6 6l12 12M18 6L6 18">
 </path>
@@ -17,9 +17,9 @@
 <label for="task-due">期限（なくてもよい）</label>
 <input id="task-due" type="date" style="font-size: 16px;">
 <div class="task-sheet-due">
-<button type="button" class="task-chip" onclick="setTaskSheetDue('none')">期限なし</button>
-<button type="button" class="task-chip" onclick="setTaskSheetDue('today')">今日</button>
-<button type="button" class="task-chip" onclick="setTaskSheetDue('tomorrow')">明日</button>
+<button type="button" class="task-chip" data-due="none">期限なし</button>
+<button type="button" class="task-chip" data-due="today">今日</button>
+<button type="button" class="task-chip" data-due="tomorrow">明日</button>
 </div>
 </div>
 <div class="fg">
@@ -28,10 +28,10 @@
 </textarea>
 </div>
 <div class="task-sheet-actions">
-<button type="button" class="ui-btn danger" onclick="deleteTaskFromSheet()">削除</button>
+<button type="button" class="ui-btn danger" data-task-action="delete">削除</button>
 <span class="spacer">
 </span>
-<button type="button" class="ui-btn" onclick="closeTaskSheet()">キャンセル</button>
-<button type="button" class="ui-btn primary" onclick="saveTaskSheet()">保存</button>
+<button type="button" class="ui-btn" data-task-action="close">キャンセル</button>
+<button type="button" class="ui-btn primary" data-task-action="save">保存</button>
 </div>
 </dialog>
