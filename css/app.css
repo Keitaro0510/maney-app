@@ -183,8 +183,12 @@ body{
 .cday.otherm{opacity:.25}
 .cday.selected{border:2px solid var(--color-brand);background:#E6F1FB;box-shadow:0 0 0 1px rgba(24,95,165,.12)}
 .cday:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
-.dnum{font-size:11px;font-weight:600;color:var(--color-text-secondary);margin-bottom:1px}
+.cday-top{display:flex;align-items:center;justify-content:space-between;min-height:16px;margin-bottom:1px}
+.dnum{font-size:11px;font-weight:600;color:var(--color-text-secondary)}
 .cday.today .dnum{color:#185FA5}
+.task-mark{display:inline-flex;align-items:center;justify-content:center;flex:none;width:16px;height:16px;border-radius:50%;background:#185FA5;color:#fff;font-size:9px;font-weight:700;line-height:1}
+.task-mark.overdue{background:#A32D2D}
+.task-mark.done{background:#E8F0FE;color:#185FA5}
 .cal-detail-hint{margin:8px 2px 0;font-size:12px;color:var(--color-text-secondary);line-height:1.45}
 .day-detail-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .day-detail-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
@@ -199,8 +203,6 @@ body{
 .pill.s4{background:#EEEDFE;color:#3C3489}.pill.payday{background:#E6F1FB;color:#185FA5;font-weight:700}
 .pill.shime{background:#FAEEDA;color:#BA7517}.pill.hikiotoshi{background:#FCEBEB;color:#A32D2D}
 .pill.wd{background:#EEEDFE;color:#3C3489}.pill.fixedcost{background:#FFF0E0;color:#C45000}
-/* タスクの印と件数（D10）。期限が過ぎた日に残っていれば赤、全部済んでいれば薄く */
-.pill.task{background:#E8F0FE;color:#185FA5}.pill.task.overdue{background:#FCEBEB;color:#A32D2D}.pill.task.done{opacity:.45}
 /* ===== リストアイテム ===== */
 .ri{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
 .ri:last-child{border-bottom:none}

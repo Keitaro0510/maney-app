@@ -103,7 +103,7 @@ flowchart LR
   detail -- "記録の編集" --> sLde(["記録を編集"])
 ```
 
-- タスク（D10）: 月表示のセルは「タスク2」の札（期限が過ぎた日に残っていれば赤、全部済んでいれば薄く「タスク済」）。日の詳細は名前だけ（見るだけ。完了はタスクのタブで）。月セルの見せ方は [#138](https://github.com/Keitaro0510/maney-app/issues/138) で見直す
+- タスク（D10・[#138](https://github.com/Keitaro0510/maney-app/issues/138)）: 月表示のセルは日付の横の小さな丸に未完了件数を出す。期限切れは赤、全部済んでいればチェック。日の詳細は名前だけ（見るだけ。完了はタスクのタブで）
 - 日の詳細には予定・記録の編集・削除と、予定・シフト・支出の追加がある（`src/screens/calendar.ts` の `buildDay`・`dayClick`）
 - 「← →」は1か月ずつ動く（`src/screens/calendar.ts` の `calShift`）
 

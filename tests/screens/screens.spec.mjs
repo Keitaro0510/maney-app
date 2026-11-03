@@ -76,11 +76,15 @@ test('カレンダー（月と日の詳細）', async ({ page }) => {
   await closeAll(page);
   await page.locator('#nav-cal').click();
   await settle(page);
+  const taskDay = page.locator('#cal-body .cday[data-day="2026-11-12"]');
+  await expect(taskDay.locator('.task-mark')).toHaveText('1');
+  await expect(page.locator('#cal-body .pill.task')).toHaveCount(0);
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-month.html');
   await shot(page, 'cal-month.png');
 
-  await page.locator('#cal-body .cday[data-day="2026-11-12"]').click();
+  await taskDay.click();
   await settle(page);
+  await expect(page.locator('#day-detail .task-ri-title')).toBeVisible();
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
 
   await page.locator('.cal-nav button').last().click();

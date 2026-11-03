@@ -118,9 +118,10 @@ async function renderCalMonth(seq: number): Promise<void>{
 
     let pills='';
     if(holiday&&!other) pills+=`<div class="pill holiday">${MoneyUI.escapeHtml(holiday)}</div>`;
-    // タスク（D10）: 印と件数だけ。期限が過ぎた日に残っていれば赤、全部済んでいれば薄く
+    // タスクは日付の横の小さな丸で示す。予定の札とは形を分ける（#138）
     const tc=other?null:taskCount.get(ds);
-    if(tc) pills+=tc.open?`<div class="pill task${ds<getToday()?' overdue':''}">タスク${tc.open}</div>`:'<div class="pill task done" title="タスク（済み）">タスク</div>';
+    const taskMark=tc?`<span class="task-mark${tc.open?(ds<getToday()?' overdue':''):' done'}" aria-hidden="true">${tc.open?(tc.open>9?'9+':tc.open):'✓'}</span>`:'';
+    const taskLabel=tc?(tc.open?`、未完了のタスク${tc.open}件`:'、タスクはすべて完了'):'';
     if(isPay) pills+='<div class="pill payday">給料日</div>';
     if(isShime&&!isPay) pills+='<div class="pill shime">締め日</div>';
     if(isClose&&!isShime) pills+='<div class="pill shime">締め日</div>';
@@ -135,7 +136,7 @@ async function renderCalMonth(seq: number): Promise<void>{
     // 支出・収入の金額はセルに出さない（D10。日の詳細・家計簿では見られる）
 
     const selected=ds===selDay;
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示${taskLabel}" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="cday-top"><div class="dnum" style="color:${dnumColor}">${day}</div>${taskMark}</div>${pills}</div>`;
   }
   MoneyUI.elementById('cal-body').innerHTML=html;
 }
