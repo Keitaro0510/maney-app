@@ -476,3 +476,17 @@ test('シフトとバイト先の操作をボタンから行う', async ({ page 
   await expect(edited).toHaveCount(0);
   expect(await page.evaluate(() => 'openShiftModal' in window && 'saveShift' in window)).toBe(false);
 });
+
+test('HTML 特殊文字を含むカード名を文字として表示する', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#settings-btn').click();
+  const name = '試験 <img src=x onerror=alert(1)> & "カード"';
+  await page.locator('#cn-name').fill(name);
+  await page.locator('#cn-close').fill('15');
+  await page.locator('#cn-bill').fill('27');
+  await page.locator('#add-card').click();
+  const list = page.locator('#card-list-sec');
+  await expect(list.getByText(name, { exact: true })).toBeVisible();
+  await expect(list.locator('img')).toHaveCount(0);
+});
