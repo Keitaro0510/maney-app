@@ -23,7 +23,7 @@ Phase の番号の順ではなく、次の順で進める。
 
 手順8のあと、全部の画面を iPhone の幅で確かめて、UI の見直しをした（2026-10-31、[#71](https://github.com/Keitaro0510/maney-app/issues/71)。Codex の [#58](https://github.com/Keitaro0510/maney-app/issues/58) の続き）。
 
-Phase 4 の実装（ファイルの分割・TypeScript・イベント登録・Service Worker のビルド連動）は 2026-11-03 に完了した。残る練習と Phase 6 の機能は [現在地と引き継ぎ](STATUS.md) を参照。`CACHE_NAME` の自動化は 2026-11-01 に入れた（D15）。
+Phase 4 の実装（ファイルの分割・TypeScript・イベント登録・Service Worker のビルド連動）は 2026-11-03 に完了した。残る練習と Phase 6 の機能は、下の未チェック項目を参照。`CACHE_NAME` の自動化は 2026-11-01 に入れた（D15）。
 
 ## Phase 0: 今の状態の地図を作る
 

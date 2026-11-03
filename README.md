@@ -3,7 +3,7 @@
 予定・お金・タスクを1つにまとめた、自分用の生活管理アプリ（PWA）。
 iPhoneのホーム画面から毎日使っている。
 
-**開発の現在地と引き継ぎ**: [docs/STATUS.md](docs/STATUS.md)（2026-11-03 更新）。完了した作業、残作業、次に着手する手順をまとめている。
+**開発の現在地**: 基本のタスク管理、DB のテーブル分割、TypeScript への移行、イベント登録、Service Worker のビルド連動は完了（2026-11-03）。残作業は [ROADMAP](docs/ROADMAP.md) の未チェック項目と [GitHub の Issues](https://github.com/Keitaro0510/maney-app/issues)。
 
 **公開URL**: https://keitaro0510.github.io/maney-app/
 
@@ -80,13 +80,12 @@ npm install
 - Vite を使っている（[D4](docs/DECISIONS.md)）。計算・データ・画面・起動を `src/` の TypeScript（ES モジュール）に移した（D20 の 0〜10。2026-11-03）。`js/` に実行ファイルは残っていない。HTML のイベント属性と、そのための `window` への関数公開も D18 の手順5で削除した
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
-- **ほかの PC で続きを始めるとき**: [docs/STATUS.md](docs/STATUS.md) で GitHub と残作業の確認手順を読む。最新の `main` から作業ブランチを切り、Node.js 24 で `npm install` する。画面や保存の変更では、ローカルの Supabase を起動して `npm run test:screens`・`npm run test:integration` も確かめる（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。
+- **ほかの PC で続きを始めるとき**: `git fetch origin main` と `gh pr list --state open` で最新の状態を確認し、[ROADMAP](docs/ROADMAP.md) の未チェック項目と Issues を読む。最新の `main` から作業ブランチを切り、Node.js 24 で `npm install` する。画面や保存の変更では、ローカルの Supabase を起動して `npm run test:screens`・`npm run test:integration` も確かめる（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。
 - 公開は自動: main に入ると GitHub Actions がビルドして GitHub Pages に出す（[D15](docs/DECISIONS.md)、`.github/workflows/deploy.yml`）
 - 祝日を読む Google のキーは 127.0.0.1:8765 だけを許しているので、手元ではこの場所で開く
 
 ## 資料
 
-- 現在地・残作業・引き継ぎ: [docs/STATUS.md](docs/STATUS.md)
 - ブランチとPRの流れ・練習メニュー: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 - やること: [docs/ROADMAP.md](docs/ROADMAP.md)
 - 自分で決める設計判断: [docs/DECISIONS.md](docs/DECISIONS.md)
