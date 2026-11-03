@@ -52,6 +52,18 @@ declare var DEF_INC: typeof import('../../src/palette.ts').DEF_INC;
 declare var CAT_COL: typeof import('../../src/palette.ts').CAT_COL;
 declare var DOTC: typeof import('../../src/palette.ts').DOTC;
 
+// カードの集計と実績（src/cards.ts。D20 の 4）
+declare var cardActualKey: typeof import('../../src/cards.ts').cardActualKey;
+declare var getActualCard: (...args: any[]) => any;
+declare var setActualCard: typeof import('../../src/cards.ts').setActualCard;
+declare var cardRowOf: typeof import('../../src/cards.ts').cardRowOf;
+declare var cardCloseDay: typeof import('../../src/cards.ts').cardCloseDay;
+declare var cardCycleForBillMonth: typeof import('../../src/cards.ts').cardCycleForBillMonth;
+declare var cycle: typeof import('../../src/cards.ts').cycle;
+declare var cardBillForGraphDate: typeof import('../../src/cards.ts').cardBillForGraphDate;
+declare var cardBillForDate: typeof import('../../src/cards.ts').cardBillForDate;
+declare var cardBillAmount: typeof import('../../src/cards.ts').cardBillAmount;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;

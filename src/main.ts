@@ -19,6 +19,7 @@ import { LEGACY_PALETTE } from './palette.ts';
 import * as ui from './ui.ts';
 import { LEGACY_TASKS } from './screens/tasks.ts';
 import { LEGACY_BACKUP } from './screens/backup.ts';
+import { LEGACY_CARDS } from './cards.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -42,7 +43,7 @@ Object.assign(window, LEGACY_PALETTE);
 window.MoneyUI = { ...ui };
 
 // 画面（D20 の 2〜）。src/screens/ のモジュールのうち、js/ と index.html が名前で呼ぶものを window に出す（期限付きの互換の層）
-Object.assign(window, LEGACY_TASKS, LEGACY_BACKUP);
+Object.assign(window, LEGACY_TASKS, LEGACY_BACKUP, LEGACY_CARDS);
 
 // 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）
