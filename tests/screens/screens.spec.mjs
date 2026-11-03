@@ -76,7 +76,7 @@ test('カレンダー（月・週・日と、日の詳細）', async ({ page }) 
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-month.html');
   await shot(page, 'cal-month.png');
 
-  await page.evaluate(() => dayClick('2026-11-12'));
+  await page.locator('#cal-body .cday[data-day="2026-11-12"]').click();
   await settle(page);
   expect.soft(await dom(page, '#sec-cal')).toMatchSnapshot('cal-day-detail.html');
 
@@ -240,4 +240,49 @@ test('ホームの操作ボタンとログアウト', async ({ page }) => {
   await page.locator('#logout-btn').click();
   await expect(page.locator('#login-screen')).toBeVisible();
   expect(await page.evaluate(() => 'loginWithGoogle' in window || 'logout' in window)).toBe(false);
+});
+
+test('カレンダーの描画後に作るボタンとキーボード操作', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-cal').click();
+  const cell = page.locator('#cal-body .cday[data-day="2026-11-12"]');
+  await cell.focus();
+  await cell.press('Enter');
+  await expect(page.locator('#day-detail')).toBeVisible();
+  await page.locator('#day-detail [data-cal-action="close-detail"]').click();
+  await expect(page.locator('#day-detail')).not.toBeVisible();
+  await cell.focus();
+  await cell.press('Space');
+  await expect(page.locator('#day-detail')).toBeVisible();
+
+  const deletePlanButton = page.locator('#day-detail [data-cal-action="delete-plan"]');
+  const planId = await deletePlanButton.getAttribute('data-id');
+  await deletePlanButton.evaluate(button => { button.dataset.id = 'old-record'; });
+  await deletePlanButton.click();
+  await expect(page.locator('#day-detail [data-cal-action="delete-plan"]')).toHaveAttribute('data-id', planId);
+
+  await page.locator('#day-detail [data-cal-action="edit-plan"]').click();
+  await expect(page.locator('#plan-mbg')).toHaveClass(/open/);
+  await closeAll(page);
+  await page.locator('#day-detail [data-cal-action="edit-ledger"]').click();
+  await expect(page.locator('#ldg-edit-mbg')).toHaveClass(/open/);
+  await closeAll(page);
+
+  const done = page.locator('#day-detail input[data-cal-action="toggle-plan"]');
+  const wasDone = await done.isChecked();
+  await done.click();
+  await expect(done).toBeChecked({ checked: !wasDone });
+  await done.click();
+  await expect(done).toBeChecked({ checked: wasDone });
+
+  await page.locator('#day-detail [data-cal-action="add-plan"]').click();
+  await expect(page.locator('#plan-date')).toHaveValue('2026-11-12');
+  await closeAll(page);
+  await page.locator('#day-detail [data-cal-action="jump-day"]').click();
+  await expect(page.locator('#cvt-day')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#cal-list [data-cal-action="add-ledger"]').click();
+  await expect(page.locator('#ldg-date')).toHaveValue('2026-11-12');
+  await closeAll(page);
+  expect(await page.evaluate(() => 'dayCellClick' in window || 'sameRecord' in window)).toBe(false);
 });

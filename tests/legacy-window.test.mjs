@@ -18,7 +18,6 @@ import { LEGACY_PLAN_SCREEN } from '../src/screens/plans.ts';
 import { LEGACY_LEDGER } from '../src/ledger.ts';
 import { LEGACY_MONTHLY_SCREEN } from '../src/screens/monthly.ts';
 import { LEGACY_LEDGER_SCREEN } from '../src/screens/ledger.ts';
-import { LEGACY_CALENDAR } from '../src/screens/calendar.ts';
 import * as ui from '../src/ui.ts';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -27,7 +26,7 @@ const srcFiles = readdirSync(new URL('../src/', import.meta.url), { recursive: t
   .filter(f => f.endsWith('.ts')).map(f => `src/${f}`);
 
 // src/main.ts が window に出す名前（名前のまま出すもの）
-const LEGACY = { ...LEGACY_SYNC, ...LEGACY_TASKS, ...LEGACY_CARDS, ...LEGACY_SETTINGS, ...LEGACY_CARD_SCREEN, ...LEGACY_ATM, ...LEGACY_SHIFTS, ...LEGACY_SHIFT_SCREEN, ...LEGACY_PLANS, ...LEGACY_PLAN_SCREEN, ...LEGACY_LEDGER, ...LEGACY_MONTHLY_SCREEN, ...LEGACY_LEDGER_SCREEN, ...LEGACY_CALENDAR };
+const LEGACY = { ...LEGACY_SYNC, ...LEGACY_TASKS, ...LEGACY_CARDS, ...LEGACY_SETTINGS, ...LEGACY_CARD_SCREEN, ...LEGACY_ATM, ...LEGACY_SHIFTS, ...LEGACY_SHIFT_SCREEN, ...LEGACY_PLANS, ...LEGACY_PLAN_SCREEN, ...LEGACY_LEDGER, ...LEGACY_MONTHLY_SCREEN, ...LEGACY_LEDGER_SCREEN };
 // js/ のトップレベルの関数・変数
 const jsNames = new Set(jsFiles.flatMap(f => [...read(f).matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)|^(?:let|const|var)\s+([A-Za-z_$][\w$]*)/mg)].map(m => m[1] || m[2])));
 // ブラウザにもともとある名前と、JavaScript の言葉

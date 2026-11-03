@@ -13,13 +13,15 @@ import { getLedgerForDay, ledgerPayLabel } from '../ledger.ts';
 import { cardCloseDay, cardBillAmount, cardCycleForBillMonth, getActualCard } from '../cards.ts';
 import { jobColorByName, planColor } from '../palette.ts';
 import { renderHome } from './home.ts';
+import { openPlanModal, openPlanEdit } from './plans.ts';
+import { openShiftModal } from './shift.ts';
+import { openLedgerModal, openLdgEdit, delLedger } from './ledger.ts';
 import type { StShift } from '../compat.ts';
 
 let calY=getNow().getFullYear(), calM=getNow().getMonth(), selDay: string | null=null;
 let calView: 'day' | 'week' | 'month'='month';
 let calAnchor=getToday();
 let calRenderSeq=0;
-export const getSelectedCalDay = (): string | null => selDay;
 export function onCalendarDayChanged(prev: Date, now: Date, prevKey: string): void {
   ({y:calY,m:calM}=followMonth({y:calY,m:calM},prev,now));
   if(calAnchor===prevKey)calAnchor=getToday();
@@ -144,7 +146,7 @@ async function renderCalMonth(seq: number): Promise<void>{
     // 支出・収入の金額はセルに出さない（D10。セルを整理する。日の詳細・週表示・家計簿では見られる）
 
     const selected=ds===selDay;
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint" onclick="dayCellClick('${ds}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dayCellClick('${ds}')}"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
+    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
   }
   MoneyUI.elementById('cal-body').innerHTML=html;
 }
@@ -153,9 +155,9 @@ function weekStart(ds: string): Date{ const d=ds2d(ds); d.setDate(d.getDate()-d.
 
 function dayActionButtonsHtml(): string{
   return `<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-    <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
+    <button class="btn plan-btn" style="flex:1" data-cal-action="add-plan">＋ 予定</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-shift">＋ シフト</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-ledger">＋ 支出</button>
   </div>`;
 }
 
@@ -195,7 +197,7 @@ async function renderCalWeek(seq: number): Promise<void>{
     const col=hd||dow===0?'#A32D2D':dow===6?'#185FA5':'var(--color-text-primary)';
     const sum=[inc?`+¥${inc.toLocaleString()}`:'',exp?`-¥${exp.toLocaleString()}`:''].filter(Boolean).join(' / ');
     html+=`<div class="cal-day-block${isT?' today':''}">
-      <div class="cal-day-head" onclick="jumpToDay('${ds}')">
+      <div class="cal-day-head" data-day="${ds}" data-cal-action="jump-day">
         <span class="cal-day-date" style="color:${col}">${d.getMonth()+1}/${d.getDate()}(${DAYS[dow]})</span>
         ${hd?`<span style="font-size:10px;color:#A32D2D">${hd}</span>`:''}
         <span class="cal-day-sum">${sum||(items.length?items.length+'件':'')}</span>
@@ -266,12 +268,12 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
     const t=planTimeOnDay(p,ds);
     const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
     // ボタンには番号と ID を埋め込み、押したときに同じ記録かを確かめる（sameRecord）
-    const guard=`sameRecord('plans',${pidx},'${p._id}')`;
-    const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="${guard}&&deletePlan(${pidx})">削除</button>`:'';
+    const record=`data-cal-kind="plans" data-index="${pidx}" data-id="${p._id}"`;
+    const actionsHtml=actions?`<button class="btn sm edit" ${record} data-cal-action="edit-plan">編集</button><button class="btn sm del" ${record} data-cal-action="delete-plan">削除</button>`:'';
     // 「済み」のチェック（D2）: 済みにした予定は、予算を見込みの支出に入れない。列の名前は done のまま（D11 で見直す）
     // 名前とメモは、自由に入れた文字なのでエスケープする
     const title=MoneyUI.escapeHtml(p.title);
-    push(t.min,timeLabel,`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:4px"><label class="plan-done" title="済みにすると、予算を見込みの支出に入れません"><input type="checkbox" ${p.done?'checked':''} aria-label="「${title}」を済みにする（予算に含めない）" onchange="${guard}&&togglePlanDone(${pidx})"></label><div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${title}</span>${p.done?'<span class="plan-done-badge">済み・予算に含めない</span>':''}${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart || p.date).getDate()}〜${ds2d(p.dateEnd || p.date).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(p.memo)}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${(p.budget||0)>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${(p.budget||0).toLocaleString()}</span>`:''}${actionsHtml}</div></div>`);
+    push(t.min,timeLabel,`<div class="ri" style="${p.done?'opacity:.5':''}"><div style="display:flex;align-items:center;gap:4px"><label class="plan-done" title="済みにすると、予算を見込みの支出に入れません"><input type="checkbox" ${p.done?'checked':''} aria-label="「${title}」を済みにする（予算に含めない）" ${record} data-cal-action="toggle-plan"></label><div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><div style="width:10px;height:10px;border-radius:50%;background:${c.dot};flex-shrink:0"></div><span style="font-size:14px${p.done?';text-decoration:line-through':''}">${title}</span>${p.done?'<span class="plan-done-badge">済み・予算に含めない</span>':''}${isMultiDay?`<span style="font-size:10px;color:${c.fg};background:${c.bg};padding:1px 6px;border-radius:100px">${ds2d(p.dateStart || p.date).getDate()}〜${ds2d(p.dateEnd || p.date).getDate()}日</span>`:''}</div>${p.memo?`<div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(p.memo)}</div>`:''}</div></div><div style="display:flex;align-items:center;gap:6px">${(p.budget||0)>0?`<span style="font-size:13px;font-weight:600;color:${c.fg}">-¥${(p.budget||0).toLocaleString()}</span>`:''}${actionsHtml}</div></div>`);
   });
   shifts.forEach(s=>{
     const c=jobColorByName(s.job),r=calcShiftInc(s);
@@ -281,8 +283,8 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
   lds.forEach(l=>{
     const amt=parseInt(String(l.amount));
     if(l.type==='income')inc+=amt; else exp+=amt;
-    const lidx=state.st.ledger.indexOf(l),guard=`sameRecord('ledger',${lidx},'${l._id}')`;
-    const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openLdgEdit(${lidx})">編集</button><button class="btn sm del" onclick="${guard}&&delLedger(${lidx})">削除</button>`:'';
+    const lidx=state.st.ledger.indexOf(l),record=`data-cal-kind="ledger" data-index="${lidx}" data-id="${l._id}"`;
+    const actionsHtml=actions?`<button class="btn sm edit" ${record} data-cal-action="edit-ledger">編集</button><button class="btn sm del" ${record} data-cal-action="delete-ledger">削除</button>`:'';
     push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${MoneyUI.escapeHtml(l.cat)}</span><div style="min-width:0"><div style="font-size:14px">${MoneyUI.escapeHtml(l.name)}</div><div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(ledgerPayLabel(l))}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
   });
 
@@ -319,7 +321,7 @@ export function dayClick(ds: string): void{
   });
   const d=ds2d(ds), hd=getHoliday(ds);
   const {items}=buildDay(ds,{actions:true, showTime:false, tasks:'names'});
-  let html=`<div class="st day-detail-head"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span class="day-detail-actions"><button type="button" class="day-detail-open" onclick="jumpToDay('${ds}')">詳しく見る <span aria-hidden="true">→</span></button><button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" onclick="closeDayDetail()">×</button></span></div>`;
+  let html=`<div class="st day-detail-head"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span class="day-detail-actions"><button type="button" class="day-detail-open" data-day="${ds}" data-cal-action="jump-day">詳しく見る <span aria-hidden="true">→</span></button><button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" data-cal-action="close-detail">×</button></span></div>`;
   html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
   MoneyUI.elementById('day-detail-content').innerHTML=html;
   MoneyUI.elementById('day-detail').style.display='block';
@@ -386,6 +388,43 @@ export function bindCalendarControls(): void {
   document.querySelectorAll<HTMLButtonElement>('.cal-nav button').forEach((button, i) => {
     button.addEventListener('click', () => { void (i === 0 ? prevM() : nextM()); });
   });
+  const root = MoneyUI.elementById('sec-cal');
+  root.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const action = event.target.closest<HTMLElement>('[data-cal-action]');
+    if (action && root.contains(action)) {
+      const name = action.dataset.calAction;
+      const ds = action.dataset.calDate === 'none' ? undefined : selDay || undefined;
+      if (name === 'add-plan') openPlanModal(ds);
+      else if (name === 'add-shift') openShiftModal(ds);
+      else if (name === 'add-ledger') openLedgerModal(ds);
+      else if (name === 'jump-day' && action.dataset.day) jumpToDay(action.dataset.day);
+      else if (name === 'close-detail') closeDayDetail();
+      else if (name === 'edit-plan' || name === 'delete-plan' || name === 'edit-ledger' || name === 'delete-ledger') {
+        const kind = action.dataset.calKind;
+        const index = Number(action.dataset.index);
+        const id = action.dataset.id;
+        if ((kind !== 'plans' && kind !== 'ledger') || !Number.isInteger(index) || !id || !sameRecord(kind, index, id)) return;
+        if (name === 'edit-plan') openPlanEdit(index);
+        else if (name === 'delete-plan') deletePlan(index);
+        else if (name === 'edit-ledger') openLdgEdit(index);
+        else delLedger(index);
+      }
+      return;
+    }
+    const cell = event.target.closest<HTMLElement>('.cday[data-day]');
+    if (cell && root.contains(cell) && cell.dataset.day) dayCellClick(cell.dataset.day);
+  });
+  root.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (!(event.target instanceof HTMLElement) || !event.target.matches('.cday[data-day]')) return;
+    event.preventDefault();
+    if (event.target.dataset.day) dayCellClick(event.target.dataset.day);
+  });
+  root.addEventListener('change', event => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.dataset.calAction !== 'toggle-plan') return;
+    const index = Number(event.target.dataset.index);
+    const id = event.target.dataset.id;
+    if (Number.isInteger(index) && id && sameRecord('plans', index, id)) togglePlanDone(index);
+  });
 }
-
-export const LEGACY_CALENDAR = { renderCal, refreshDayViews, jumpToDay, closeDayDetail, sameRecord, dayClick, dayCellClick, togglePlanDone, deletePlan, getSelectedCalDay };
