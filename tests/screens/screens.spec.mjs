@@ -403,3 +403,24 @@ test('設定のカテゴリとカードを実際の操作で追加・編集・�
   await expect(edited).toHaveCount(0);
   expect(await page.evaluate(() => 'addCatExp' in window || 'addCard' in window)).toBe(false);
 });
+
+test('予定の入力画面で期間・時刻・色・支払いを選ぶ', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#home-add-plan').click();
+  await expect(page.locator('#plan-mbg')).toHaveClass(/open/);
+  await page.locator('#plan-mbg [data-plan-action="date-range"]').click();
+  await expect(page.locator('#date-range-wrap')).toBeVisible();
+  await page.locator('#plan-date-start').fill('2026-11-12');
+  await page.locator('#plan-date-end').fill('2026-11-13');
+  await expect(page.locator('#range-preview')).toContainText('2日間');
+  await page.locator('#plan-mbg [data-plan-action="timed"]').click();
+  await expect(page.locator('#plan-time-wrap')).not.toHaveClass(/is-all-day/);
+  await page.locator('#plan-color-swatches [data-plan-action="color"]').nth(1).click();
+  await expect(page.locator('#plan-color-swatches [data-plan-action="color"]').nth(1)).toHaveClass(/sel/);
+  await page.locator('#plan-pay-chips [data-plan-action="pay"]').nth(1).click();
+  await expect(page.locator('#plan-pay-chips [data-plan-action="pay"]').nth(1)).toHaveClass(/sel/);
+  await page.locator('#plan-mbg [data-plan-action="close"]').click();
+  await expect(page.locator('#plan-mbg')).not.toHaveClass(/open/);
+  expect(await page.evaluate(() => 'setDateMode' in window || 'savePlan' in window)).toBe(false);
+});

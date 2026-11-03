@@ -8,8 +8,8 @@
 <input id="plan-title" placeholder="旅行、ライブなど">
 </div>
 <div class="date-mode-tabs" role="group" aria-label="日にち">
-<button type="button" class="date-mode-tab active" id="dmt-single" onclick="setDateMode('single')" aria-pressed="true">1日</button>
-<button type="button" class="date-mode-tab" id="dmt-range" onclick="setDateMode('range')" aria-pressed="false">期間（連続日程）</button>
+<button type="button" class="date-mode-tab active" id="dmt-single" data-plan-action="date-single" aria-pressed="true">1日</button>
+<button type="button" class="date-mode-tab" id="dmt-range" data-plan-action="date-range" aria-pressed="false">期間（連続日程）</button>
 </div>
 <div id="date-single-wrap" class="fg" style="display: block;">
 <label for="plan-date">日付</label>
@@ -33,11 +33,11 @@
 <div class="plan-time-header">
 <span class="plan-time-title">予定の時間</span>
 <div class="plan-time-toggle" role="group" aria-label="予定の時間設定">
-<button type="button" id="plan-mode-allday" class="active" onclick="setPlanTimeMode(true)" aria-pressed="true">終日</button>
-<button type="button" id="plan-mode-timed" onclick="setPlanTimeMode(false)" aria-pressed="false">時刻指定</button>
+<button type="button" id="plan-mode-allday" class="active" data-plan-action="all-day" aria-pressed="true">終日</button>
+<button type="button" id="plan-mode-timed" data-plan-action="timed" aria-pressed="false">時刻指定</button>
 </div>
 </div>
-<input type="checkbox" id="plan-allday" checked="" onchange="togglePlanAllDay()" hidden="">
+<input type="checkbox" id="plan-allday" checked="" hidden="">
 <div class="plan-time-inputs" id="plan-time-inputs">
 <label class="plan-time-field">
 <span>開始</span>
@@ -58,26 +58,26 @@
 <div class="fg" id="plan-pay-wrap">
 <label>支払い方法</label>
 <div class="pay-chips" id="plan-pay-chips" role="group" aria-label="支払い方法">
-<button type="button" class="pay-chip sel" onclick="selPlanPay(-1)" aria-pressed="true">現金</button>
-<button type="button" class="pay-chip" onclick="selPlanPay(0)" aria-pressed="false">Aカード</button>
-<button type="button" class="pay-chip" onclick="selPlanPay(1)" aria-pressed="false">Bカード</button>
+<button type="button" class="pay-chip sel" data-plan-action="pay" data-index="-1" aria-pressed="true">現金</button>
+<button type="button" class="pay-chip" data-plan-action="pay" data-index="0" aria-pressed="false">Aカード</button>
+<button type="button" class="pay-chip" data-plan-action="pay" data-index="1" aria-pressed="false">Bカード</button>
 </div>
 <div class="hint" id="plan-pay-hint">現金・口座払いの場合は予定日に残高から引かれます</div>
 </div>
 <div class="fg">
 <label>色</label>
 <div class="color-swatches" id="plan-color-swatches" role="group" aria-label="色">
-<button type="button" class="color-swatch sel" style="background: rgb(224, 96, 128);" onclick="selPlanColor('pink')" aria-label="ピンク" aria-pressed="true">
+<button type="button" class="color-swatch sel" style="background: rgb(224, 96, 128);" data-plan-action="color" data-color="pink" aria-label="ピンク" aria-pressed="true">
 </button>
-<button type="button" class="color-swatch" style="background: rgb(58, 143, 224);" onclick="selPlanColor('blue')" aria-label="青" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(58, 143, 224);" data-plan-action="color" data-color="blue" aria-label="青" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background: rgb(92, 160, 32);" onclick="selPlanColor('green')" aria-label="緑" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(92, 160, 32);" data-plan-action="color" data-color="green" aria-label="緑" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background: rgb(224, 144, 48);" onclick="selPlanColor('orange')" aria-label="オレンジ" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(224, 144, 48);" data-plan-action="color" data-color="orange" aria-label="オレンジ" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background: rgb(112, 96, 208);" onclick="selPlanColor('purple')" aria-label="紫" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(112, 96, 208);" data-plan-action="color" data-color="purple" aria-label="紫" aria-pressed="false">
 </button>
-<button type="button" class="color-swatch" style="background: rgb(32, 144, 112);" onclick="selPlanColor('teal')" aria-label="青緑" aria-pressed="false">
+<button type="button" class="color-swatch" style="background: rgb(32, 144, 112);" data-plan-action="color" data-color="teal" aria-label="青緑" aria-pressed="false">
 </button>
 </div>
 </div>
@@ -87,8 +87,8 @@
 </textarea>
 </div>
 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-<button class="btn" onclick="closePlanModal()">キャンセル</button>
-<button class="btn primary" id="plan-save-btn" onclick="savePlan()">追加</button>
+<button class="btn" data-plan-action="close">キャンセル</button>
+<button class="btn primary" id="plan-save-btn" data-plan-action="save">追加</button>
 </div>
 </div>
 </div>
