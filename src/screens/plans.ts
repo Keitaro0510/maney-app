@@ -9,7 +9,7 @@ import { renderCal, refreshDayViews } from './calendar.ts';
 import type { StPlan } from '../compat.ts';
 
 let planEditIdx=-1, planDateMode='single', planColorSel='pink';
-export function renderColorSwatches(): void{ui.elementById('plan-color-swatches').innerHTML=PLAN_COLORS.map(c=>`<button type="button" class="color-swatch${planColorSel===c.key?' sel':''}" style="background:${c.dot}" onclick="selPlanColor('${c.key}')" aria-label="${COLOR_NAMES[c.key]}"></button>`).join('');}
+export function renderColorSwatches(): void{ui.elementById('plan-color-swatches').innerHTML=PLAN_COLORS.map(c=>`<button type="button" class="color-swatch${planColorSel===c.key?' sel':''}" style="background:${c.dot}" data-plan-action="color" data-color="${c.key}" aria-label="${COLOR_NAMES[c.key]}"></button>`).join('');}
 export function selPlanColor(key: string): void{planColorSel=key;renderColorSwatches();}
 export function setDateMode(mode: string): void{planDateMode=mode;ui.elementById('dmt-single').classList.toggle('active',mode==='single');ui.elementById('dmt-range').classList.toggle('active',mode==='range');ui.elementById('date-single-wrap').style.display=mode==='single'?'block':'none';ui.elementById('date-range-wrap').style.display=mode==='range'?'block':'none';}
 export function updateRangePreview(): void{const s=ui.inputById('plan-date-start').value,e=ui.inputById('plan-date-end').value,el=ui.elementById('range-preview');if(!s||!e){el.textContent='';return;}const days=Math.round((ds2d(e).getTime()-ds2d(s).getTime())/(864e5))+1;el.textContent=days>=1?`${days}日間の予定として登録されます`:'終了日は開始日より後にしてください';}
@@ -18,7 +18,7 @@ let planCardIdx=-1; // -1=現金、0以上=カードインデックス
 export function renderPlanPayChips(): void{
   if(!ui.elementById('plan-pay-chips'))return;
   const opts=['現金',...state.st.cards.map(c=>c.name)];
-  ui.elementById('plan-pay-chips').innerHTML=opts.map((o,i)=>i>0&&state.st.cards[i-1]._deleted&&planCardIdx!==i-1?'':`<button type="button" class="pay-chip${(i===0&&planCardIdx===-1)||(i>0&&planCardIdx===i-1)?' sel':''}" onclick="selPlanPay(${i-1})">${o}</button>`).join('');
+  ui.elementById('plan-pay-chips').innerHTML=opts.map((o,i)=>i>0&&state.st.cards[i-1]._deleted&&planCardIdx!==i-1?'':`<button type="button" class="pay-chip${(i===0&&planCardIdx===-1)||(i>0&&planCardIdx===i-1)?' sel':''}" data-plan-action="pay" data-index="${i-1}">${ui.escapeHtml(o)}</button>`).join('');
   const hint=ui.elementById('plan-pay-hint');
   if(hint){
     if(planCardIdx>=0&&state.st.cards[planCardIdx]){
@@ -68,8 +68,6 @@ export function openPlanModal(ds?: string): void{
   togglePlanAllDay();
   renderColorSwatches();
   renderPlanPayChips();
-  ui.elementById('plan-date-start').oninput=updateRangePreview;
-  ui.elementById('plan-date-end').oninput=updateRangePreview;
   ui.elementById('plan-mbg').classList.add('open');
 }
 
@@ -94,8 +92,6 @@ export function openPlanEdit(idx: number): void{
   togglePlanAllDay();
   renderColorSwatches();
   renderPlanPayChips();
-  ui.elementById('plan-date-start').oninput=updateRangePreview;
-  ui.elementById('plan-date-end').oninput=updateRangePreview;
   if(mode==='range')updateRangePreview();
   ui.elementById('plan-mbg').classList.add('open');
 }
@@ -131,4 +127,24 @@ export function savePlan(): void{
 }
 
 
-export const LEGACY_PLAN_SCREEN = { renderColorSwatches, selPlanColor, setDateMode, updateRangePreview, renderPlanPayChips, selPlanPay, setPlanTimeMode, togglePlanAllDay, openPlanModal, openPlanEdit, closePlanModal, savePlan };
+/** 予定の入力画面を起動時に一度だけ登録する。 */
+export function bindPlanControls(): void {
+  ui.elementById('plan-mbg').addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const target = event.target.closest<HTMLElement>('[data-plan-action]');
+    if (!target) return;
+    const action = target.dataset.planAction;
+    if (action === 'date-single') setDateMode('single');
+    else if (action === 'date-range') setDateMode('range');
+    else if (action === 'all-day') setPlanTimeMode(true);
+    else if (action === 'timed') setPlanTimeMode(false);
+    else if (action === 'close') closePlanModal();
+    else if (action === 'save') savePlan();
+    else if (action === 'color' && target.dataset.color) selPlanColor(target.dataset.color);
+    else if (action === 'pay' && target.dataset.index !== undefined) selPlanPay(Number(target.dataset.index));
+  });
+  ui.inputById('plan-allday').addEventListener('change', togglePlanAllDay);
+  for (const id of ['plan-date-start', 'plan-date-end']) ui.inputById(id).addEventListener('input', updateRangePreview);
+}
+
+export const LEGACY_PLAN_SCREEN = { openPlanModal };
