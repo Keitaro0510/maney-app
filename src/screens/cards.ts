@@ -26,7 +26,7 @@ export function previewCycle(): void{
   const el=ui.elementById('cn-cycle-preview');
   if(!cl||!bill){el.style.display='none';return;}
   const tmp={name:'__p__',closeDay:String(cl),billDay:String(bill)};
-  state.st.cards.push(tmp);const f=cycle(tmp,0),c=cycle(tmp,1);state.st.cards.pop();
+  const f=cycle(tmp,0),c=cycle(tmp,1);
   el.innerHTML=`<span class="badge bfixed">確定</span> ${fmtMD(f.cs)}〜${fmtMD(f.ce)} → <strong>${f.billY}年${f.billM+1}月${f.billD}日</strong><br><span class="badge bpending">集計中</span> ${fmtMD(c.cs)}〜${fmtMD(c.ce)} → <strong>${c.billY}年${c.billM+1}月${c.billD}日</strong>`;
   el.style.display='block';
 }
