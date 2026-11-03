@@ -5,22 +5,22 @@
 <h3>ATMで現金を引き出す</h3>
 <div class="amount-display" id="wd-display">¥0</div>
 <div class="numpad">
-<button class="numkey" onclick="nk('1')">1</button>
-<button class="numkey" onclick="nk('2')">2</button>
-<button class="numkey" onclick="nk('3')">3</button>
-<button class="numkey" onclick="nk('4')">4</button>
-<button class="numkey" onclick="nk('5')">5</button>
-<button class="numkey" onclick="nk('6')">6</button>
-<button class="numkey" onclick="nk('7')">7</button>
-<button class="numkey" onclick="nk('8')">8</button>
-<button class="numkey" onclick="nk('9')">9</button>
-<button class="numkey" onclick="nk('000')">000</button>
-<button class="numkey" onclick="nk('0')">0</button>
-<button class="numkey" onclick="nd()">⌫</button>
+<button class="numkey" data-atm-key="1">1</button>
+<button class="numkey" data-atm-key="2">2</button>
+<button class="numkey" data-atm-key="3">3</button>
+<button class="numkey" data-atm-key="4">4</button>
+<button class="numkey" data-atm-key="5">5</button>
+<button class="numkey" data-atm-key="6">6</button>
+<button class="numkey" data-atm-key="7">7</button>
+<button class="numkey" data-atm-key="8">8</button>
+<button class="numkey" data-atm-key="9">9</button>
+<button class="numkey" data-atm-key="000">000</button>
+<button class="numkey" data-atm-key="0">0</button>
+<button class="numkey" data-atm-key="backspace">⌫</button>
 </div>
 <div style="display: flex; gap: 8px;">
-<button class="btn full" style="margin-top: 0px; flex: 1 1 0%;" onclick="closeWd()">キャンセル</button>
-<button class="btn primary full" style="margin-top: 0px; flex: 2 1 0%;" onclick="doWd()">引き出す</button>
+<button class="btn full" style="margin-top: 0px; flex: 1 1 0%;" data-atm-action="close">キャンセル</button>
+<button class="btn primary full" style="margin-top: 0px; flex: 2 1 0%;" data-atm-action="withdraw">引き出す</button>
 </div>
 </div>
 </div>
