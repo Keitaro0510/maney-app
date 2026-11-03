@@ -16,7 +16,6 @@ const ASSETS = [
   './js/app-cards.js',
   './js/app-shift.js',
   './js/app-ledger.js',
-  './js/app-settings.js',
   './js/app-plan.js',
   './js/app-bootstrap.js',
   './manifest.json',

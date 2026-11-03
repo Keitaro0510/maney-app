@@ -64,6 +64,16 @@ declare var cardBillForGraphDate: typeof import('../../src/cards.ts').cardBillFo
 declare var cardBillForDate: typeof import('../../src/cards.ts').cardBillForDate;
 declare var cardBillAmount: typeof import('../../src/cards.ts').cardBillAmount;
 
+// 設定タブ（src/screens/settings.ts）。ナビが initSettingTab を呼ぶため window に残す
+declare var addCatExp: typeof import('../../src/screens/settings.ts').addCatExp;
+declare var addCatInc: typeof import('../../src/screens/settings.ts').addCatInc;
+declare var delCatExp: typeof import('../../src/screens/settings.ts').delCatExp;
+declare var delCatInc: typeof import('../../src/screens/settings.ts').delCatInc;
+declare var renderCatTags: typeof import('../../src/screens/settings.ts').renderCatTags;
+declare var initSettingTab: typeof import('../../src/screens/settings.ts').initSettingTab;
+declare var updateShiftCyclePreview: typeof import('../../src/screens/settings.ts').updateShiftCyclePreview;
+declare var saveSettingFields: typeof import('../../src/screens/settings.ts').saveSettingFields;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
