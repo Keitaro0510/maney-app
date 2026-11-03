@@ -96,6 +96,22 @@ declare var doWd: typeof import('../../src/screens/atm.ts').doWd;
 declare var renderWdHist: typeof import('../../src/screens/atm.ts').renderWdHist;
 declare var delWd: typeof import('../../src/screens/atm.ts').delWd;
 
+// シフト・給与の計算と実績（src/shifts.ts）
+declare var monthShifts: typeof import('../../src/shifts.ts').monthShifts;
+declare var closeDay: typeof import('../../src/shifts.ts').closeDay;
+declare var jobPayDay: typeof import('../../src/shifts.ts').jobPayDay;
+declare var jobCloseDayNum: typeof import('../../src/shifts.ts').jobCloseDayNum;
+declare var salaryKeyForShiftMonth: typeof import('../../src/shifts.ts').salaryKeyForShiftMonth;
+declare var getActualSalary: (...args: any[]) => any;
+declare var setActualSalary: typeof import('../../src/shifts.ts').setActualSalary;
+declare var calcShiftInc: typeof import('../../src/shifts.ts').calcShiftInc;
+declare var totalShiftInc: typeof import('../../src/shifts.ts').totalShiftInc;
+declare var totalShiftIncNoTransport: typeof import('../../src/shifts.ts').totalShiftIncNoTransport;
+declare var totalTransport: typeof import('../../src/shifts.ts').totalTransport;
+declare var jobMonthShifts: typeof import('../../src/shifts.ts').jobMonthShifts;
+declare var totalShiftIncForJob: typeof import('../../src/shifts.ts').totalShiftIncForJob;
+declare var totalShiftIncNoTransportForJob: typeof import('../../src/shifts.ts').totalShiftIncNoTransportForJob;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
