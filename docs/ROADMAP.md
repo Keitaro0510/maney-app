@@ -23,7 +23,7 @@ Phase の番号の順ではなく、次の順で進める。
 
 手順8のあと、全部の画面を iPhone の幅で確かめて、UI の見直しをした（2026-10-31、[#71](https://github.com/Keitaro0510/maney-app/issues/71)。Codex の [#58](https://github.com/Keitaro0510/maney-app/issues/58) の続き）。
 
-そのあと Phase 4（ファイルの分割と TypeScript）と Phase 6。`CACHE_NAME` の自動化は 2026-11-01 に入れた（D15）。
+Phase 4 の実装（ファイルの分割・TypeScript・イベント登録・Service Worker のビルド連動）は 2026-11-03 に完了した。残る練習と Phase 6 の機能は [現在地と引き継ぎ](STATUS.md) を参照。`CACHE_NAME` の自動化は 2026-11-01 に入れた（D15）。
 
 ## Phase 0: 今の状態の地図を作る
 
@@ -87,13 +87,13 @@ Phase の番号の順ではなく、次の順で進める。
 - [x] 3. TypeScript の検査（`checkJs`）を入れて、型の間違いを直す。その前に `index.html` の CSS と JavaScript をファイルに出す（2026-11-02）
   - [x] `index.html` の `<style>` を `css/app.css` に、`<script>` を `js/app.js` に出す（2026-11-02。CSS と JavaScript は分けずに1つの PR でまとめて出した。中身は1文字も変えず、`js/` と同じく `vite-ignore` でそのまま公開する）　ブランチ: `feature/extract-css-js`
   - [x] `checkJs` を入れて、型の間違いを直す（2026-11-02。336件を0件に。画面の要素は型付きの取り出し関数で取る（[D16](DECISIONS.md)）。`strict` はまだ入れない。CI で `npm run typecheck` を動かす）　ブランチ: `feature/check-js`
-- [ ] 4. 機能ごとに `.ts` と import/export に移す（home / calendar / ledger / shift / settings / tasks）。計算ロジックから。つなぎ方は [D17](DECISIONS.md)
+- [x] 4. 機能ごとに `.ts` と import/export に移す（home / calendar / ledger / shift / settings / tasks）。計算ロジックから。つなぎ方は [D17](DECISIONS.md)。2026-11-03 完了
   - [x] 土台（`src/main.ts` から `window` に出す・`js/` は `<body>` に `defer`・`src/` は `strict`）と `clock`・`money`（2026-11-02。本番と同じビルドで、起動・主要な画面・オフラインでの読み直しを確かめた）　ブランチ: `feature/ts-clock-money`
   - [x] `tasks`・`monthly`（2026-11-02。架空のデータを読み込ませた13の画面の表示が、移す前と同じことを確かめた）　ブランチ: `feature/ts-tasks-monthly`
   - [x] `data`・`backup`（2026-11-02。表示に加えて、支出の追加・記録の編集・タスクの追加の保存で積まれる送信待ちの操作と、書き出し・読み込みの確かめが、移す前と同じことを確かめた）　ブランチ: `feature/ts-data-backup`
   - [x] `compat`（2026-11-02。DB の全テーブルの行の型を `src/rows.ts` にまとめた。表示と保存の流れが移す前と同じことを確かめた）　ブランチ: `feature/ts-compat`。これで計算ロジックはすべて `src/` に移り、`js/` には画面のファイルだけが残った
   - [x] 結合テスト（`tests/integration/`。ローカルの Supabase で保存を本物の DB に通す）を流す（2026-11-02。Windows の PC で 7 件すべて通った。`supabase.exe` が止まるかは PC による。[db/LOCAL.md](db/LOCAL.md) の「結合テスト」）
-  - [ ] 画面（home / calendar / ledger / shift / settings / tasks）。やり方は [D18](DECISIONS.md)（2026-11-02）
+  - [x] 画面（home / calendar / ledger / shift / settings / tasks）。やり方は [D18](DECISIONS.md)（2026-11-03 完了）
     - [x] `js/app.js` を、中身を変えずに `js/` の中で「共通部分 → 画面 → bootstrap」のファイルに分ける。`loadData()` を呼ぶのは bootstrap だけ（2026-11-02。9つのファイルに分けた。つなぎ直すと元と1バイトも違わないことと、本番と同じビルドで起動・全200関数の存在を確かめた）　ブランチ: `feature/split-app-js`
     - [x] 共通部分（状態・保存・同期・認証）を `src/` に移す。やり方は [D19](DECISIONS.md)（2026-11-02）
       - [x] Supabase のライブラリの版を固定し、型を付ける（2026-11-02。CDN を 2.118.0 に固定、同じ版を開発用の依存に。#99）　ブランチ: `chore/pin-supabase-js`
