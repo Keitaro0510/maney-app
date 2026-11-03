@@ -1,21 +1,21 @@
-# 画面の構成と遷移（2026-10-29 時点。2026-10-31 に設定の開き方を直し、タスクを足した）
+# 画面の構成と遷移（2026-10-29 時点。2026-10-31 に設定の開き方を直し、タスクを足した。2026-11-03 にファイルの対応表を直した）
 
 今のアプリ（`index.html`）で、どこを押すとどの画面に行くかをまとめた「今の地図」。画面を作り直すとき（タスクを足す・タブを組み替える）の出発点にする。
 
 - 図は今の動きを書いたもので、こうあるべきという案ではない。問題点は [design-review/audit-claude.md](design-review/audit-claude.md) と [design-review/audit-codex.md](design-review/audit-codex.md)
-- 画面の HTML は `index.html`、動きは `js/app-*.js`（`js/app.js` を2026-11-02に分けた。D18）。**この文書の `js/app.js:行番号` は、分ける前の `js/app.js` の行**。今のファイルは次の表で探す（各ファイルの先頭に2行の説明がある）。画面を変えたら、この図も直す
+- 画面の HTML は `index.html`、動きは `src/screens/<機能>.ts`（移したもの）と `js/app-*.js`（まだ移していないもの）。`js/app.js` を2026-11-02に分け（D18）、D20 で画面を `src/` に移している。**この文書の `js/app.js:行番号` は、分ける前の `js/app.js` の行**。今の場所は次の表で探す。画面を変えたら、この図も直す
 
-  | 分ける前の行 | ファイル |
+  | 分ける前の行 | 今の場所（2026-11-03 時点） |
   |---|---|
-  | 1〜621 | `js/app-core.js`（共通部分） |
-  | 622〜699 | `js/app-home.js` |
-  | 700〜1059 | `js/app-calendar.js`（祝日・カレンダー） |
-  | 1060〜1135 | `js/app-cards.js`（カード設定・ATM） |
-  | 1136〜1269 | `js/app-shift.js` |
-  | 1270〜1507 | `js/app-ledger.js` |
-  | 1508〜1538 | `js/app-settings.js` |
-  | 1539〜1662 | `js/app-plan.js` |
-  | 1663〜1708 | `js/app-bootstrap.js`（起動） |
+  | 1〜621 | `js/app-core.js`（共通部分）。日付・色・部品などは `src/dates.ts`・`palette.ts`・`ui.ts`、カードの集計は `src/cards.ts`、シフトの合計は `src/shifts.ts`、家計簿の補助は `src/ledger.ts` へ移した |
+  | 622〜699 | `js/app-home.js`（D20 の 8 で移す）。予定の補助は `src/plans.ts` |
+  | 700〜1059 | `js/app-calendar.js`（祝日・カレンダー。D20 の 9 で移す） |
+  | 1060〜1135 | `src/screens/cards.ts`・`src/screens/atm.ts`（カード設定・ATM） |
+  | 1136〜1269 | `src/screens/shift.ts` |
+  | 1270〜1507 | `src/screens/ledger.ts`・`src/screens/monthly.ts` |
+  | 1508〜1538 | `src/screens/settings.ts` |
+  | 1539〜1662 | `src/screens/plans.ts` |
+  | 1663〜1708 | `js/app-bootstrap.js`（起動。ログインと起動の流れは `src/auth.ts`） |
 
 ## 用語
 

@@ -29,7 +29,7 @@ iPhoneのホーム画面から毎日使っている。
 
 ## 方針: 動いているアプリを壊さずに改修する
 
-今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（`js/app-*.js` と `js/` の機能ごとのファイル、TypeScript に移したものは `src/`）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。毎日使いながら、次の順で少しずつ直す。
+今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（計算と画面の多くは `src/` の TypeScript、ホーム・カレンダー・共通部分・起動は `js/` に残っている）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。毎日使いながら、次の順で少しずつ直す。
 
 1. **ブランチとPRで変更する流れを身につける**（main がそのまま本番なので、main で直接作業しない）
 2. **安全網を張る**（データのエクスポート、計算ロジックのテスト、CI）
@@ -74,7 +74,7 @@ npm install
 | 公開と同じ形にビルドする | `MANEY_TARGET=prod bash scripts/build-pages.sh`（`_site` に出る。接続先の指定が要る。D19） |
 | ローカルの Supabase につないで開く | `npm run preview:local`・`npm run dev:local`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 
-- Vite を使っている（[D4](docs/DECISIONS.md)）。計算とデータの層は `src/` の TypeScript（ES モジュール）に移した。画面はまだ `js/` のふつうの `<script>` のままで、Vite はそのまま公開する。少しずつ移す（[D17](docs/DECISIONS.md)）
+- Vite を使っている（[D4](docs/DECISIONS.md)）。計算とデータの層は `src/` の TypeScript（ES モジュール）に移した。画面も、ホーム・カレンダー以外は `src/screens/` に移した（D20 の 0〜7。2026-11-03）。`js/` に残るのは `app-core`・`app-home`・`app-calendar`・`app-bootstrap` で、これらは Vite がそのまま公開する。少しずつ移す（[D17](docs/DECISIONS.md)）
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
 - **ほかの PC で続きを始めるとき**（2026-11-03 時点。Phase 4 の途中）:
