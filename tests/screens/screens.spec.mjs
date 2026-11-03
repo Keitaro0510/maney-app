@@ -58,8 +58,23 @@ const shot = (page, name, options = {}) =>
 test('開いたときのタスクと、ホーム', async ({ page }) => {
   await open(page);
   await expect(page.locator('#task-startup')).toBeVisible();
+  const notice = await page.locator('#task-startup').boundingBox();
+  expect(notice).not.toBeNull();
+  if (notice) {
+    expect(notice.y).toBeGreaterThan(40);
+    expect(notice.y + notice.height).toBeLessThan(804);
+  }
   expect.soft(await dom(page, '#task-startup')).toMatchSnapshot('task-startup.html');
   await shot(page, 'task-startup.png', { fullPage: false });
+  const longList = await page.locator('#task-startup').evaluate(dialog => {
+    const extra = document.createElement('div');
+    extra.style.height = '2000px';
+    dialog.querySelector('#task-startup-list').append(extra);
+    const result = { withinScreen: dialog.getBoundingClientRect().bottom < innerHeight, scrollable: dialog.scrollHeight > dialog.clientHeight };
+    extra.remove();
+    return result;
+  });
+  expect(longList).toEqual({ withinScreen: true, scrollable: true });
   await closeAll(page);
 
   expect.soft(await dom(page, '#sec-home')).toMatchSnapshot('home.html');

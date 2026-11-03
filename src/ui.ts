@@ -94,7 +94,7 @@ export function checkRow({ title, sub, done = false, label, onChange, end }: {
 }
 
 /**
- * 下からせり上がる画面（<dialog class="sheet">）を開く。
+ * <dialog> の画面を開く（シートと中央のお知らせの両方で使う）。
  * 開いている間は後ろを触れない。Esc か閉じるボタンで閉じる（外側を押しても閉じない。今の入力シートと同じ）。
  * 閉じたら、opener（開いたボタン）か、開く前にフォーカスがあった所に戻す。戻り値は閉じる関数。
  * iPhone の Safari はボタンを押してもフォーカスを移さないので、押したボタンを opener で渡す
