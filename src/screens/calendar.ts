@@ -19,12 +19,9 @@ import { openLedgerModal, openLdgEdit, delLedger } from './ledger.ts';
 import type { StShift } from '../compat.ts';
 
 let calY=getNow().getFullYear(), calM=getNow().getMonth(), selDay: string | null=null;
-let calView: 'day' | 'week' | 'month'='month';
-let calAnchor=getToday();
 let calRenderSeq=0;
-export function onCalendarDayChanged(prev: Date, now: Date, prevKey: string): void {
+export function onCalendarDayChanged(prev: Date, now: Date): void {
   ({y:calY,m:calM}=followMonth({y:calY,m:calM},prev,now));
-  if(calAnchor===prevKey)calAnchor=getToday();
 }
 
 // 祝日（Google Calendar API）とカレンダーの画面
@@ -78,17 +75,9 @@ async function ensureHolidays(dsList: string[]): Promise<void>{
 
 export async function renderCal(): Promise<void>{
   const seq=++calRenderSeq;
-  const isMonth=calView==='month';
-  MoneyUI.elementById('cal-month-wrap').style.display=isMonth?'block':'none';
-  MoneyUI.elementById('cal-list').style.display=isMonth?'none':'block';
-  if(!isMonth) MoneyUI.elementById('day-detail').style.display='none';
-  if(isMonth){
-    await renderCalMonth(seq);
-    // 日の詳細が開いていれば、今のデータで描き直す（読み込み直したあとに、古い番号のボタンを残さない）
-    if(seq===calRenderSeq && selDay && MoneyUI.elementById('day-detail').style.display==='block') dayClick(selDay);
-  }
-  else if(calView==='week') await renderCalWeek(seq);
-  else await renderCalDay(seq);
+  await renderCalMonth(seq);
+  // 日の詳細が開いていれば、今のデータで描き直す（読み込み直したあとに、古い番号のボタンを残さない）
+  if(seq===calRenderSeq && selDay && MoneyUI.elementById('day-detail').style.display==='block') dayClick(selDay);
 }
 
 async function renderCalMonth(seq: number): Promise<void>{
@@ -143,7 +132,7 @@ async function renderCalMonth(seq: number): Promise<void>{
     // JS側でtitleを.sliceして切らない方が正しく省略される
     plans.sort((a,b)=>planTimeOnDay(a,ds).min-planTimeOnDay(b,ds).min);
     plans.forEach(p=>{const c=planColor(p.color),t=planTimeOnDay(p,ds);pills+=`<div class="pill" style="background:${c.bg};color:${c.fg};${p.done?'opacity:.4':''}">${t.start?t.start+' ':''}${p.title}</div>`;});
-    // 支出・収入の金額はセルに出さない（D10。セルを整理する。日の詳細・週表示・家計簿では見られる）
+    // 支出・収入の金額はセルに出さない（D10。日の詳細・家計簿では見られる）
 
     const selected=ds===selDay;
     html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="dnum" style="color:${dnumColor}">${day}</div>${pills}</div>`;
@@ -151,84 +140,18 @@ async function renderCalMonth(seq: number): Promise<void>{
   MoneyUI.elementById('cal-body').innerHTML=html;
 }
 
-function weekStart(ds: string): Date{ const d=ds2d(ds); d.setDate(d.getDate()-d.getDay()); return d; } // 日曜始まり
-
-function dayActionButtonsHtml(): string{
-  return `<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-    <button class="btn plan-btn" style="flex:1" data-cal-action="add-plan">＋ 予定</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-shift">＋ シフト</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-ledger">＋ 支出</button>
-  </div>`;
-}
-
-async function renderCalDay(seq: number): Promise<void>{
-  const ds=calAnchor;
-  await ensureHolidays([ds]);
-  if(seq!==calRenderSeq)return;
-  selDay=ds;
-  const d=ds2d(ds), hd=getHoliday(ds), dow=d.getDay();
-  const col=hd||dow===0?'#A32D2D':dow===6?'#185FA5':'var(--color-text-primary)';
-  MoneyUI.elementById('cal-title').innerHTML=`<span style="color:${col}">${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[dow]})</span>`+(ds===getToday()?' <span class="badge bs0" style="font-size:10px">今日</span>':'');
-
-  const {items}=buildDay(ds,{actions:true, showTime:true});
-  const allday=items.filter(i=>i.sort<0), timed=items.filter(i=>i.sort>=0);
-
-  let html='<div class="card" style="margin-bottom:8px">';
-  if(hd) html+=`<div class="abar" style="background:#FCEBEB;color:#A32D2D">${hd}</div>`;
-  if(allday.length) html+='<div class="st">終日・日付イベント</div>'+allday.map(i=>i.html).join('');
-  if(timed.length) html+='<div class="st" style="margin-top:14px">時間指定</div>'+timed.map(i=>i.html).join('');
-  if(!items.length) html+='<div class="empty">この日のイベントなし</div>';
-  html+='</div>'+dayActionButtonsHtml();
-  MoneyUI.elementById('cal-list').innerHTML=html;
-}
-
-async function renderCalWeek(seq: number): Promise<void>{
-  const ws=weekStart(calAnchor);
-  const days=[...Array(7)].map((_,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return toDS(d.getFullYear(),d.getMonth(),d.getDate());});
-  await ensureHolidays(days); // 月跨ぎの週でも自動で2ヶ月分取得される
-  if(seq!==calRenderSeq)return;
-  const we=ds2d(days[6]);
-  MoneyUI.elementById('cal-title').textContent=`${ws.getMonth()+1}/${ws.getDate()} 〜 ${we.getMonth()+1}/${we.getDate()}`;
-
-  let html='';
-  days.forEach(ds=>{
-    const {items,inc,exp}=buildDay(ds,{actions:false, showTime:true});
-    const d=ds2d(ds), dow=d.getDay(), hd=getHoliday(ds), isT=ds===getToday();
-    const col=hd||dow===0?'#A32D2D':dow===6?'#185FA5':'var(--color-text-primary)';
-    const sum=[inc?`+¥${inc.toLocaleString()}`:'',exp?`-¥${exp.toLocaleString()}`:''].filter(Boolean).join(' / ');
-    html+=`<div class="cal-day-block${isT?' today':''}">
-      <div class="cal-day-head" data-day="${ds}" data-cal-action="jump-day">
-        <span class="cal-day-date" style="color:${col}">${d.getMonth()+1}/${d.getDate()}(${DAYS[dow]})</span>
-        ${hd?`<span style="font-size:10px;color:#A32D2D">${hd}</span>`:''}
-        <span class="cal-day-sum">${sum||(items.length?items.length+'件':'')}</span>
-      </div>
-      <div class="cal-day-body">${items.length?items.map(i=>i.html).join(''):'<div class="empty">予定なし</div>'}</div>
-    </div>`;
-  });
-  MoneyUI.elementById('cal-list').innerHTML=html;
-}
-
 // 指定日のイベントを、今までの追加順で集める。
-type DayItem = { sort: number; time: string; html: string };
-type DayOptions = { actions?: boolean; showTime?: boolean; tasks?: 'names' };
-function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: number; exp: number }{
-  const actions=opts.actions!==false, showTime=!!opts.showTime;
+type DayItem = { sort: number; html: string };
+function buildDay(ds: string): DayItem[]{
   const d=ds2d(ds), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
   const shifts=state.st.shifts.filter(s=>s.date===ds),lds=getLedgerForDay(ds),wdList=state.st.wds.filter(w=>w.date===ds),
         plans=getPlansForDay(ds),fcList=monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===day);
-  const items: DayItem[]=[]; let inc=0, exp=0;
-  const push=(sort: number,time: string,html: string): void=>{items.push({sort,time,html:showTime?`<div class="ri-with-time"><span class="ri-time">${time||''}</span>${html}</div>`:html});};
+  const items: DayItem[]=[];
+  const push=(sort: number,_time: string,html: string): void=>{items.push({sort,html});};
 
-  // タスク（D10）: 日の詳細（opts.tasks='names'）は名前を出す（見るだけ。完了はタスクのタブで）。日・週の表示は件数だけ
+  // タスク（D10）: 日の詳細には名前を出す（見るだけ。完了はタスクのタブで）
   const dayTasks=MoneyTasks.tasksOnDay(taskRows(),ds);
-  if(dayTasks.length){
-    if(opts.tasks==='names'){
-      dayTasks.forEach(t=>push(-1,'',`<div class="ri task-ri${t.completed_at?' done':''}"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge btask">タスク</span><span class="task-ri-title">${MoneyUI.escapeHtml(t.title)}</span></div></div>`));
-    }else{
-      const left=dayTasks.filter(t=>!t.completed_at).length;
-      push(-1,'',`<div class="ri"><span class="badge btask">タスク</span><span class="task-ri-count">${left?`${left}件`:'すべて済み'}</span></div>`);
-    }
-  }
+  dayTasks.forEach(t=>push(-1,'',`<div class="ri task-ri${t.completed_at?' done':''}"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge btask">タスク</span><span class="task-ri-title">${MoneyUI.escapeHtml(t.title)}</span></div></div>`));
 
   state.st.jobs.forEach(job=>{
     const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);
@@ -236,7 +159,7 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
       const sm=addM(y,m,-1);
       const act=getActualSalary(job.name,sm.y,sm.m);
       const si=act?parseInt(String(act.actualAmount)):totalShiftIncForJob(job.name,sm.y,sm.m);
-      if(si>0){inc+=si;push(-1,'',`<div class="ri"><span class="badge binc">${job.name} 給料入金</span><span style="font-size:14px;font-weight:600;color:#3B6D11">+¥${si.toLocaleString()}</span></div>`);}
+      if(si>0)push(-1,'',`<div class="ri"><span class="badge binc">${job.name} 給料入金</span><span style="font-size:14px;font-weight:600;color:#3B6D11">+¥${si.toLocaleString()}</span></div>`);
     }
     if(day===jShimeD&&day!==jPayD)push(-1,'',`<div class="ri"><span class="badge bpending">${job.name} 締め日</span></div>`);
   });
@@ -258,7 +181,6 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
     }
   });
   fcList.forEach(fc=>{
-    if(fc.kind==='income')inc+=fc.amount; // 支出側(固定費)の集計はcycle等の既存ロジックと重複するため対象外、収入だけ加算
     push(-1,'',`<div class="ri"><div><span class="badge bfixcost">${MoneyUI.escapeHtml(fc.name)}</span><div style="font-size:11px;color:var(--color-text-secondary)">毎月・${MoneyUI.escapeHtml(monthlyPayLabel(fc))}</div></div><span style="font-size:14px;font-weight:600;color:${fc.kind==='income'?'#3B6D11':'#C45000'}">${fc.kind==='income'?'+':'-'}¥${fc.amount.toLocaleString()}</span></div>`);
   });
   wdList.forEach(w=>push(-1,'',`<div class="ri"><span class="badge bwd">ATM引き出し</span><span style="font-size:14px;font-weight:600;color:#3C3489">-¥${parseInt(String(w.amount)).toLocaleString()}</span></div>`));
@@ -269,7 +191,7 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
     const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
     // ボタンには番号と ID を埋め込み、押したときに同じ記録かを確かめる（sameRecord）
     const record=`data-cal-kind="plans" data-index="${pidx}" data-id="${p._id}"`;
-    const actionsHtml=actions?`<button class="btn sm edit" ${record} data-cal-action="edit-plan">編集</button><button class="btn sm del" ${record} data-cal-action="delete-plan">削除</button>`:'';
+    const actionsHtml=`<button class="btn sm edit" ${record} data-cal-action="edit-plan">編集</button><button class="btn sm del" ${record} data-cal-action="delete-plan">削除</button>`;
     // 「済み」のチェック（D2）: 済みにした予定は、予算を見込みの支出に入れない。列の名前は done のまま（D11 で見直す）
     // 名前とメモは、自由に入れた文字なのでエスケープする
     const title=MoneyUI.escapeHtml(p.title);
@@ -277,19 +199,17 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
   });
   shifts.forEach(s=>{
     const c=jobColorByName(s.job),r=calcShiftInc(s);
-    inc+=r.total;
     push(hm2min(s.start || ''),s.start || '',`<div class="ri"><div><div style="display:flex;align-items:center;gap:8px"><span class="badge" style="background:${c.bg};color:${c.fg}">${s.job}</span><span style="font-size:13px">${s.start}〜${s.end}</span></div><div style="font-size:11px;color:var(--color-text-secondary)">${r.restMin>0?`休憩${r.restMin}分 `:''}${r.nightH>0?`深夜${r.nightH.toFixed(1)}h `:''} ${r.transport>0?`交通費 ¥${r.transport.toLocaleString()}`:''}</div></div><span style="font-size:14px;font-weight:600;color:#3B6D11">¥${r.total.toLocaleString()}</span></div>`);
   });
   lds.forEach(l=>{
     const amt=parseInt(String(l.amount));
-    if(l.type==='income')inc+=amt; else exp+=amt;
     const lidx=state.st.ledger.indexOf(l),record=`data-cal-kind="ledger" data-index="${lidx}" data-id="${l._id}"`;
-    const actionsHtml=actions?`<button class="btn sm edit" ${record} data-cal-action="edit-ledger">編集</button><button class="btn sm del" ${record} data-cal-action="delete-ledger">削除</button>`:'';
+    const actionsHtml=`<button class="btn sm edit" ${record} data-cal-action="edit-ledger">編集</button><button class="btn sm del" ${record} data-cal-action="delete-ledger">削除</button>`;
     push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${MoneyUI.escapeHtml(l.cat)}</span><div style="min-width:0"><div style="font-size:14px">${MoneyUI.escapeHtml(l.name)}</div><div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(ledgerPayLabel(l))}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
   });
 
   items.sort((a,b)=>a.sort-b.sort); // 終日(-1)が先頭、以降は時刻昇順。同値はstable sortでpush順を維持
-  return {items, inc, exp};
+  return items;
 }
 
 export function closeDayDetail(): void{
@@ -320,8 +240,8 @@ export function dayClick(ds: string): void{
     cell.setAttribute('aria-expanded',String(selected));
   });
   const d=ds2d(ds), hd=getHoliday(ds);
-  const {items}=buildDay(ds,{actions:true, showTime:false, tasks:'names'});
-  let html=`<div class="st day-detail-head"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span class="day-detail-actions"><button type="button" class="day-detail-open" data-day="${ds}" data-cal-action="jump-day">詳しく見る <span aria-hidden="true">→</span></button><button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" data-cal-action="close-detail">×</button></span></div>`;
+  const items=buildDay(ds);
+  let html=`<div class="st day-detail-head"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span class="day-detail-actions"><button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" data-cal-action="close-detail">×</button></span></div>`;
   html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
   MoneyUI.elementById('day-detail-content').innerHTML=html;
   MoneyUI.elementById('day-detail').style.display='block';
@@ -337,44 +257,18 @@ export function dayCellClick(ds: string): void{
     scrollBy({top:top-innerHeight*0.35,behavior:reduce?'auto':'smooth'});
   }
 }
-// dir: -1|+1。月ビューは月単位、週ビューは7日単位、日ビューは1日単位でcalAnchorを動かす
+// dir: -1|+1。月単位で動かす
 function calShift(dir: number): Promise<void>{
-  if(calView==='month'){
-    const nm=addM(calY,calM,dir); calY=nm.y; calM=nm.m;
-    calAnchor=toDS(calY,calM,1);
-  }else{
-    const step=calView==='week'?7:1;
-    const d=ds2d(calAnchor); d.setDate(d.getDate()+dir*step);
-    calAnchor=toDS(d.getFullYear(),d.getMonth(),d.getDate());
-    calY=d.getFullYear(); calM=d.getMonth(); // 月ビュー復帰時のために同期しておく
-  }
+  const nm=addM(calY,calM,dir); calY=nm.y; calM=nm.m;
+  closeDayDetail();
   return renderCal();
 }
 export async function prevM(): Promise<void>{await calShift(-1);}
 export async function nextM(): Promise<void>{await calShift(1);}
 
-export async function setCalView(v: 'day' | 'week' | 'month'): Promise<void>{
-  if(calView===v)return;
-  if(v==='month'){
-    const d=ds2d(calAnchor); calY=d.getFullYear(); calM=d.getMonth();
-  }else if(calView==='month'){
-    calAnchor = selDay || ((calY===gY()&&calM===gM())?getToday():toDS(calY,calM,1));
-  }
-  calView=v;
-  ['day','week','month'].forEach(x=>{
-    const tab=MoneyUI.elementById('cvt-'+x),selected=x===v;
-    tab.classList.toggle('active',selected);
-    tab.setAttribute('aria-pressed',String(selected));
-  });
-  await renderCal();
-}
-// 週ビューの日ヘッダタップ／#day-detailの「詳しく見る」から日ビューへ遷移する共通入口
-export function jumpToDay(ds: string): void{ calAnchor=ds; selDay=ds; setCalView('day'); }
-// 予定/シフト/家計簿の増減後の再描画を1本化する。月ビューではselDayがあれば#day-detailを
-// 更新、日/週ビューはbuildDayベースで丸ごと再描画（祝日はキャッシュ済みなので体感コストは低い）
+// 予定/シフト/家計簿の増減後、開いている日の詳細を描き直す
 export function refreshDayViews(): void{
-  if(calView==='month'){ if(selDay) dayClick(selDay); }
-  else renderCal();
+  if(selDay && MoneyUI.elementById('day-detail').style.display==='block') dayClick(selDay);
 }
 export function togglePlanDone(idx: number): void{state.st.plans[idx].done=!state.st.plans[idx].done;save();renderCal();refreshDayViews();renderHome();}
 export function deletePlan(idx: number): void{state.st.plans.splice(idx,1);save();renderCal();refreshDayViews();renderHome();}
@@ -382,9 +276,6 @@ export function deletePlan(idx: number): void{state.st.plans.splice(idx,1);save(
 
 /** カレンダー上部の固定ボタンを登録する。 */
 export function bindCalendarControls(): void {
-  for (const view of ['day', 'week', 'month'] as const) {
-    MoneyUI.elementById('cvt-' + view).addEventListener('click', () => { void setCalView(view); });
-  }
   document.querySelectorAll<HTMLButtonElement>('.cal-nav button').forEach((button, i) => {
     button.addEventListener('click', () => { void (i === 0 ? prevM() : nextM()); });
   });
@@ -398,7 +289,6 @@ export function bindCalendarControls(): void {
       if (name === 'add-plan') openPlanModal(ds);
       else if (name === 'add-shift') openShiftModal(ds);
       else if (name === 'add-ledger') openLedgerModal(ds);
-      else if (name === 'jump-day' && action.dataset.day) jumpToDay(action.dataset.day);
       else if (name === 'close-detail') closeDayDetail();
       else if (name === 'edit-plan' || name === 'delete-plan' || name === 'edit-ledger' || name === 'delete-ledger') {
         const kind = action.dataset.calKind;
