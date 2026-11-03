@@ -155,3 +155,8 @@ declare var saveJobEdit: typeof import('../../src/screens/shift.ts').saveJobEdit
 declare var delJob: typeof import('../../src/screens/shift.ts').delJob;
 declare var delShift: typeof import('../../src/screens/shift.ts').delShift;
 declare var onShiftDayChanged: typeof import('../../src/screens/shift.ts').onShiftDayChanged;
+
+// 予定の日別表示（src/plans.ts）
+declare var getPlansForDay: typeof import('../../src/plans.ts').getPlansForDay;
+declare var planTimeOnDay: typeof import('../../src/plans.ts').planTimeOnDay;
+declare var hm2min: typeof import('../../src/plans.ts').hm2min;

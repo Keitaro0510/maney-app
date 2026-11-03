@@ -25,6 +25,7 @@ import { LEGACY_CARD_SCREEN } from './screens/cards.ts';
 import { LEGACY_ATM } from './screens/atm.ts';
 import { LEGACY_SHIFTS } from './shifts.ts';
 import { LEGACY_SHIFT_SCREEN } from './screens/shift.ts';
+import { LEGACY_PLANS } from './plans.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -51,6 +52,7 @@ window.MoneyUI = { ...ui };
 Object.assign(window, LEGACY_TASKS, LEGACY_BACKUP, LEGACY_CARDS, LEGACY_SETTINGS, LEGACY_CARD_SCREEN, LEGACY_ATM);
 Object.assign(window, LEGACY_SHIFTS);
 Object.assign(window, LEGACY_SHIFT_SCREEN);
+Object.assign(window, LEGACY_PLANS);
 
 // 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）
