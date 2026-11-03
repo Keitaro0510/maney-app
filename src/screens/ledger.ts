@@ -256,5 +256,23 @@ export function renderChartsYear_(): void{
 export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();}
 
 
-export const LEGACY_LEDGER_SCREEN = { openLedgerModal, selLdgType, renderLdgType, renderCatChips, selCat, payOptions, payChipsHtml, renderPayChips, selReceive, selPayAt, renderLdgRepeat, saveLedger, closeLdgModal, openLdgEdit, closeLdgEdit, selLdeType, renderLdeType, renderLdeCatChips, selLdeCat, renderLdePayChips, selLdeReceive, selLdePayAt, saveLdgEdit, ldgTab, updateLdgNav_, ldgMonthPrev, ldgMonthNext, ldgYearPrev, ldgYearNext, setLdgGraphMode, renderLedgerAll_, renderLedgerMetrics, renderLedger, toggleLdgGroup, delLedger, renderCatChart_, renderChartsMonth_, renderChartsYear_, renderCharts, onLedgerDayChanged };
+/** 家計簿上部の固定タブと期間ボタンを登録する。 */
+export function bindLedgerControls(): void {
+  document.querySelectorAll<HTMLButtonElement>('#ldg-main-tabs button').forEach((button, i) => {
+    button.addEventListener('click', () => ldgTab(['list', 'graph', 'monthly'][i]));
+  });
+  document.querySelectorAll<HTMLButtonElement>('#ldg-graph-mode-tabs button').forEach((button, i) => {
+    button.addEventListener('click', () => setLdgGraphMode(i === 0 ? 'month' : 'year'));
+  });
+  for (const [id, previous, next] of [
+    ['ldg-month-nav', ldgMonthPrev, ldgMonthNext],
+    ['ldg-year-nav', ldgYearPrev, ldgYearNext],
+  ] as const) {
+    document.querySelectorAll<HTMLButtonElement>(`#${id} button`).forEach((button, i) => {
+      button.addEventListener('click', i === 0 ? previous : next);
+    });
+  }
+}
+
+export const LEGACY_LEDGER_SCREEN = { openLedgerModal, selLdgType, renderLdgType, renderCatChips, selCat, payOptions, payChipsHtml, renderPayChips, selReceive, selPayAt, renderLdgRepeat, saveLedger, closeLdgModal, openLdgEdit, closeLdgEdit, selLdeType, renderLdeType, renderLdeCatChips, selLdeCat, renderLdePayChips, selLdeReceive, selLdePayAt, saveLdgEdit, updateLdgNav_, renderLedgerAll_, renderLedgerMetrics, renderLedger, toggleLdgGroup, delLedger, renderCatChart_, renderChartsMonth_, renderChartsYear_, renderCharts, onLedgerDayChanged };
 

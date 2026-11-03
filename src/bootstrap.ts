@@ -5,10 +5,10 @@ import { createDayWatcher, msUntilNextDay } from './clock.ts';
 import { state } from './state.ts';
 import { resyncRemote } from './sync.ts';
 import { loadData } from './auth.ts';
-import { renderCurrentSection } from './navigation.ts';
-import { onCalendarDayChanged } from './screens/calendar.ts';
+import { bindNavigation, renderCurrentSection } from './navigation.ts';
+import { bindCalendarControls, onCalendarDayChanged } from './screens/calendar.ts';
 import { onShiftDayChanged } from './screens/shift.ts';
-import { onLedgerDayChanged } from './screens/ledger.ts';
+import { bindLedgerControls, onLedgerDayChanged } from './screens/ledger.ts';
 import { maybeShowStartupTasks } from './screens/tasks.ts';
 
 function onDayChange(now: Date, prevKey: string): void {
@@ -36,6 +36,9 @@ function linkFormLabels(): void {
 }
 
 export function startBootstrap(): void {
+  bindNavigation();
+  bindCalendarControls();
+  bindLedgerControls();
   if ('serviceWorker' in navigator && ENV.target === 'prod') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(() => console.log('SW registered'))

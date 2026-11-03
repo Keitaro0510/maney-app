@@ -42,7 +42,7 @@
 
 <!-- 右上: 設定を開くボタン（ログイン後に表示。D10）。ログイン中のアカウントとログアウトは、設定のいちばん下 -->
 <div class="top-actions" id="top-actions" hidden>
-  <button type="button" class="icon-btn" id="settings-btn" aria-label="設定" onclick="sw('set')">
+  <button type="button" class="icon-btn" id="settings-btn" aria-label="設定">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
   </button>
 </div>
@@ -88,11 +88,11 @@
   <div class="page-title">カレンダー</div>
   <div class="card" style="padding:.75rem .875rem">
     <div class="date-mode-tabs" id="cal-view-tabs" role="group" aria-label="カレンダーの表示" style="margin-bottom:8px">
-      <button type="button" class="date-mode-tab" id="cvt-day" aria-pressed="false" onclick="setCalView('day')">日</button>
-      <button type="button" class="date-mode-tab" id="cvt-week" aria-pressed="false" onclick="setCalView('week')">週</button>
-      <button type="button" class="date-mode-tab active" id="cvt-month" aria-pressed="true" onclick="setCalView('month')">月</button>
+      <button type="button" class="date-mode-tab" id="cvt-day" aria-pressed="false">日</button>
+      <button type="button" class="date-mode-tab" id="cvt-week" aria-pressed="false">週</button>
+      <button type="button" class="date-mode-tab active" id="cvt-month" aria-pressed="true">月</button>
     </div>
-    <div class="cal-nav"><button class="btn sm" onclick="prevM()">&#8592;</button><h2 id="cal-title"></h2><button class="btn sm" onclick="nextM()">&#8594;</button></div>
+    <div class="cal-nav"><button class="btn sm">&#8592;</button><h2 id="cal-title"></h2><button class="btn sm">&#8594;</button></div>
     <div id="cal-month-wrap">
       <div class="cal-grid" id="cal-hdr"></div>
       <div class="cal-grid" id="cal-body" style="margin-top:3px"></div>
@@ -118,19 +118,19 @@
 <div id="sec-ledger" class="sec">
   <div class="page-title">家計簿</div>
   <div class="tab2" id="ldg-main-tabs" role="group" aria-label="家計簿の表示">
-    <button type="button" class="tb2 active" aria-pressed="true" onclick="ldgTab('list')">記録一覧</button>
-    <button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('graph')">グラフ</button>
-    <button type="button" class="tb2" aria-pressed="false" onclick="ldgTab('monthly')">毎月のお金</button>
+    <button type="button" class="tb2 active" aria-pressed="true">記録一覧</button>
+    <button type="button" class="tb2" aria-pressed="false">グラフ</button>
+    <button type="button" class="tb2" aria-pressed="false">毎月のお金</button>
   </div>
   <div class="month-nav" id="ldg-month-nav">
-    <button class="btn sm" onclick="ldgMonthPrev()">&#8592;</button>
+    <button class="btn sm">&#8592;</button>
     <div style="text-align:center"><div class="month-nav-label" id="ldg-month-label"></div></div>
-    <button class="btn sm" onclick="ldgMonthNext()">&#8594;</button>
+    <button class="btn sm">&#8594;</button>
   </div>
   <div class="month-nav" id="ldg-year-nav" style="display:none">
-    <button class="btn sm" onclick="ldgYearPrev()">&#8592;</button>
+    <button class="btn sm">&#8592;</button>
     <div style="text-align:center"><div class="month-nav-label" id="ldg-year-label"></div></div>
-    <button class="btn sm" onclick="ldgYearNext()">&#8594;</button>
+    <button class="btn sm">&#8594;</button>
   </div>
   <div id="ldg-list-sec">
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:.75rem">
@@ -142,7 +142,7 @@
     <div id="ldg-list"></div>
   </div>
   <div id="ldg-graph-sec" style="display:none">
-    <div class="tab2" id="ldg-graph-mode-tabs" role="group" aria-label="グラフの期間"><button type="button" class="tb2 active" aria-pressed="true" onclick="setLdgGraphMode('month')">月</button><button type="button" class="tb2" aria-pressed="false" onclick="setLdgGraphMode('year')">年</button></div>
+    <div class="tab2" id="ldg-graph-mode-tabs" role="group" aria-label="グラフの期間"><button type="button" class="tb2 active" aria-pressed="true">月</button><button type="button" class="tb2" aria-pressed="false">年</button></div>
     <div class="card"><div class="st" id="cat-chart-title">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
     <div class="card"><div class="st" id="day-chart-title">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
   </div>
@@ -284,23 +284,23 @@
 </div>
 
 <nav class="bottom-nav" aria-label="主要メニュー">
-  <button type="button" class="nav-item active" id="nav-home" aria-current="page" onclick="sw('home')">
+  <button type="button" class="nav-item active" id="nav-home" aria-current="page">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
     <span>ホーム</span>
   </button>
-  <button type="button" class="nav-item" id="nav-cal" onclick="sw('cal')">
+  <button type="button" class="nav-item" id="nav-cal">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
     <span>カレンダー</span>
   </button>
-  <button type="button" class="nav-item" id="nav-ledger" onclick="sw('ledger')">
+  <button type="button" class="nav-item" id="nav-ledger">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
     <span>家計簿</span>
   </button>
-  <button type="button" class="nav-item" id="nav-shift" onclick="sw('shift')">
+  <button type="button" class="nav-item" id="nav-shift">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span>シフト</span>
   </button>
-  <button type="button" class="nav-item" id="nav-task" onclick="sw('task')">
+  <button type="button" class="nav-item" id="nav-task">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>
     <span>タスク</span>
   </button>
@@ -431,7 +431,5 @@
 <div class="mbg" id="job-edit-mbg"><div class="modal"><div class="modal-handle"></div><h3>バイト先を編集</h3><div class="fgr"><div class="fg"><label>名前</label><input id="je-name" placeholder="カフェなど"/></div><div class="fg"><label>通常時給 (¥)</label><input id="je-wage" type="number" placeholder="1100"/></div></div><div class="fgr3"><div class="fg"><label>深夜開始</label><input id="je-night-start" type="time"/></div><div class="fg"><label>深夜割増(%)</label><input id="je-night-rate" type="number"/></div><div class="fg"><label>交通費(片道¥)</label><input id="je-transport" type="number" placeholder="230"/></div></div><div class="fgr"><div class="fg"><label>締め日</label><input id="je-close-day" type="number" min="1" max="31" placeholder="31（末日）"/></div><div class="fg"><label>給料日（翌月）</label><input id="je-pay-day" type="number" min="1" max="31" placeholder="10"/></div></div><div class="fg"><label>カレンダーの色</label><div class="color-swatches" id="je-color-swatches"></div></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeJobEdit()">キャンセル</button><button class="btn primary" onclick="saveJobEdit()">保存</button></div></div></div>
 <div class="mbg" id="ldg-mbg"><div class="modal"><div class="modal-handle"></div><h3>収支を記録</h3><div class="pay-chips" id="ldg-type-chips"><button type="button" class="pay-chip sel" onclick="selLdgType('expense')">支出</button><button type="button" class="pay-chip" onclick="selLdgType('income')">収入</button></div><div class="fg"><label>金額 (¥)</label><input type="number" inputmode="numeric" id="ldg-amount" placeholder="1500"/></div><div class="fg" id="ldg-cat-wrap"><label>カテゴリ</label><div class="cat-chips" id="cat-chips"></div></div><div class="fg" id="ldg-pay-wrap"><label>支払い方法</label><div class="pay-chips" id="ldg-pay-chips"></div><div class="hint" id="ldg-pay-hint"></div></div><div class="fg" id="ldg-receive-wrap" style="display:none"><label>受取方法</label><div class="pay-chips" id="ldg-receive-chips"></div><div class="hint" id="ldg-receive-hint">現金受取は口座残高に影響しません</div></div><div class="fg"><label for="ldg-name" id="ldg-name-label">名前</label><input id="ldg-name" placeholder="ランチ、交通費など" aria-describedby="ldg-name-err"/><div class="task-field-err" id="ldg-name-err" role="alert" hidden>毎月のお金には名前を入れてください（家賃・動画のサブスクなど）</div></div><div class="fg"><label>日付</label><input type="date" id="ldg-date" onchange="renderLdgRepeat()"/></div><label class="ldg-repeat"><input type="checkbox" id="ldg-repeat" onchange="renderLdgRepeat()"/><span>毎月くり返す</span></label><div class="ldg-repeat-hint" id="ldg-repeat-hint" hidden></div><div class="fg" id="ldg-memo-wrap"><label>メモ</label><textarea id="ldg-memo" placeholder="任意"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeLdgModal()">キャンセル</button><button class="btn primary" onclick="saveLedger()">保存</button></div></div></div>
 
-<!-- まだふつうの <script> の js/（D4 の手順4 で少しずつ src/ に移す）。Vite には触らせず、そのまま公開する（vite-ignore）。
-     defer を付けて <body> に置く: 上のモジュールのあとで、この順に動く。<head> に置くと、ビルドしたときだけモジュールより先に動いてしまう（D17） -->
 </body>
 </html>

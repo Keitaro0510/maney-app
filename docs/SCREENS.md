@@ -159,4 +159,4 @@ flowchart LR
 | タスク | `renderTaskTab`（`src/screens/tasks.ts`） | `src/tasks.ts` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
-タブの切り替えは `sw()`（`src/navigation.ts`、旧 `js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。
+タブの切り替えは `sw()`（`src/navigation.ts`、旧 `js/app.js:522`）。下部ナビと設定ボタンは `bindNavigation()` がイベントを登録する。切り替えるたびに、そのタブを全部描き直す。
