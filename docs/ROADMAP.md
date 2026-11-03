@@ -122,6 +122,7 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] ホームの操作とログイン・ログアウトの固定イベント7か所（2026-11-03。`src/screens/home.ts`・`src/bootstrap.ts`。`LEGACY_HOME`・`LEGACY_AUTH` の `window` 公開を削除）　ブランチ: `feature/events-home-auth`
   - [x] カレンダーの固定ボタン5か所と、描画時に作るハンドラ13か所（2026-11-03。`src/screens/calendar.ts` の委譲イベント。`LEGACY_CALENDAR` の `window` 公開を削除）　ブランチ: `feature/events-calendar`
   - [x] ATM の数字キー・引き出し・履歴削除など15か所（2026-11-03。`src/screens/atm.ts` の委譲イベント。`LEGACY_ATM` の `window` 公開を削除）　ブランチ: `feature/events-atm`
+  - [x] 家計簿の入力・編集・一覧と毎月のお金の編集など27か所（2026-11-03。`src/screens/ledger.ts`・`monthly.ts` の委譲イベント。画面比較と実際の操作を確認）　ブランチ: `feature/events-ledger-monthly`
   - [ ] 残りの固定 HTML の `onclick`・`onchange`・`onsubmit` と、画面が組み立てる HTML のハンドラを機能ごとに移す
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）

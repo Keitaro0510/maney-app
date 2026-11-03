@@ -201,5 +201,19 @@ export function moveMonthlyOffCard(cardId: string | undefined): void{
   if(changes.length) saveRows(changes);
 }
 
-export const LEGACY_MONTHLY_SCREEN = { monthlyRowsIn, monthlyPayLabel, openMonthlyTab, renderMonthlyTab, monthlyRow, openMonthlySheet, closeMonthlySheet, saveMonthly, changeMonthlyAmount, stopMonthly, deleteMonthly, saveMonthlyFromLedger, moveMonthlyOffCard };
+/** 設定からの入口と毎月のお金の編集シートを登録する。 */
+export function bindMonthlyControls(): void {
+  ui.elementById('settings-open-monthly').addEventListener('click', openMonthlyTab);
+  ui.dialogById('monthly-sheet').addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const action = event.target.closest<HTMLElement>('[data-monthly-action]')?.dataset.monthlyAction;
+    if (action === 'close') closeMonthlySheet();
+    else if (action === 'change-amount') changeMonthlyAmount();
+    else if (action === 'stop-this') stopMonthly('this');
+    else if (action === 'stop-last') stopMonthly('last');
+    else if (action === 'delete') deleteMonthly();
+  });
+}
+
+export const LEGACY_MONTHLY_SCREEN = { openMonthlySheet };
 
