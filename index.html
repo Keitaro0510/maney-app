@@ -103,14 +103,14 @@
   <div class="card" id="day-detail" style="display:none">
     <div id="day-detail-content"></div>
     <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
-      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
-      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
+      <button class="btn plan-btn" style="flex:1" data-cal-action="add-plan">＋ 予定</button>
+      <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-shift">＋ シフト</button>
+      <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-ledger">＋ 支出</button>
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:4px">
-    <button class="btn primary full" onclick="openShiftModal(null)" style="margin-top:0">＋ シフトを追加</button>
-    <button class="btn plan-btn full" onclick="openPlanModal(null)" style="margin-top:0">＋ 予定を追加</button>
+    <button class="btn primary full" data-cal-action="add-shift" data-cal-date="none" style="margin-top:0">＋ シフトを追加</button>
+    <button class="btn plan-btn full" data-cal-action="add-plan" data-cal-date="none" style="margin-top:0">＋ 予定を追加</button>
   </div>
 </div>
 
