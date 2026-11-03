@@ -153,9 +153,9 @@ function weekStart(ds: string): Date{ const d=ds2d(ds); d.setDate(d.getDate()-d.
 
 function dayActionButtonsHtml(): string{
   return `<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-    <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(selDay)">＋ 予定</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(selDay)">＋ シフト</button>
-    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(selDay)">＋ 支出</button>
+    <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
+    <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
   </div>`;
 }
 
@@ -266,7 +266,7 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
     const t=planTimeOnDay(p,ds);
     const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
     // ボタンには番号と ID を埋め込み、押したときに同じ記録かを確かめる（sameRecord）
-    const guard=`sameRecord(st.plans,${pidx},'${p._id}')`;
+    const guard=`sameRecord('plans',${pidx},'${p._id}')`;
     const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openPlanEdit(${pidx})">編集</button><button class="btn sm del" onclick="${guard}&&deletePlan(${pidx})">削除</button>`:'';
     // 「済み」のチェック（D2）: 済みにした予定は、予算を見込みの支出に入れない。列の名前は done のまま（D11 で見直す）
     // 名前とメモは、自由に入れた文字なのでエスケープする
@@ -281,7 +281,7 @@ function buildDay(ds: string, opts: DayOptions={}): { items: DayItem[]; inc: num
   lds.forEach(l=>{
     const amt=parseInt(String(l.amount));
     if(l.type==='income')inc+=amt; else exp+=amt;
-    const lidx=state.st.ledger.indexOf(l),guard=`sameRecord(st.ledger,${lidx},'${l._id}')`;
+    const lidx=state.st.ledger.indexOf(l),guard=`sameRecord('ledger',${lidx},'${l._id}')`;
     const actionsHtml=actions?`<button class="btn sm edit" onclick="${guard}&&openLdgEdit(${lidx})">編集</button><button class="btn sm del" onclick="${guard}&&delLedger(${lidx})">削除</button>`:'';
     push(-1,'',`<div class="ri"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge ${l.type==='expense'?'bexp':'binc'}">${MoneyUI.escapeHtml(l.cat)}</span><div style="min-width:0"><div style="font-size:14px">${MoneyUI.escapeHtml(l.name)}</div><div style="font-size:12px;color:var(--color-text-secondary)">${MoneyUI.escapeHtml(ledgerPayLabel(l))}</div></div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${amt.toLocaleString()}</span>${actionsHtml}</div></div>`);
   });
@@ -301,7 +301,8 @@ export function closeDayDetail(): void{
 // 日の詳細のボタンが指す記録（list の idx 番目）が、描いたときと同じ記録（id）かを確かめる。
 // 画面が古いと、番号が別の記録を指していることがある（別の端末で消した・読み込み直した）。
 // 違えば何もせず、日の詳細を描き直す
-export function sameRecord(list: { _id?: string }[], idx: number, id: string): boolean{
+export function sameRecord(kind: 'plans' | 'ledger', idx: number, id: string): boolean{
+  const list = state.st[kind];
   if(list[idx] && list[idx]._id===id) return true;
   console.warn('日の詳細が古かったので、描き直しました');
   refreshDayViews();
@@ -377,4 +378,4 @@ export function togglePlanDone(idx: number): void{state.st.plans[idx].done=!stat
 export function deletePlan(idx: number): void{state.st.plans.splice(idx,1);save();renderCal();refreshDayViews();renderHome();}
 
 
-export const LEGACY_CALENDAR = { renderCal, refreshDayViews, prevM, nextM, setCalView, jumpToDay, closeDayDetail, sameRecord, dayClick, dayCellClick, togglePlanDone, deletePlan, onCalendarDayChanged };
+export const LEGACY_CALENDAR = { renderCal, refreshDayViews, prevM, nextM, setCalView, jumpToDay, closeDayDetail, sameRecord, dayClick, dayCellClick, togglePlanDone, deletePlan, getSelectedCalDay };

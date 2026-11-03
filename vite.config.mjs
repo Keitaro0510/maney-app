@@ -25,7 +25,7 @@ function supaTarget(command) {
 }
 
 // まだ Vite を通さないファイル（そのまま公開する）
-const STATIC_FILES = ['js', 'css', 'sw.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const STATIC_FILES = ['css', 'sw.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 function copyStaticFiles() {
   let outDir;

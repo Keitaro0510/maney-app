@@ -103,9 +103,9 @@
   <div class="card" id="day-detail" style="display:none">
     <div id="day-detail-content"></div>
     <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(selDay)">＋ 予定</button>
-      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(selDay)">＋ シフト</button>
-      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(selDay)">＋ 支出</button>
+      <button class="btn plan-btn" style="flex:1" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
+      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
+      <button class="btn" style="flex:1;background:var(--color-background-secondary)" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:4px">
@@ -433,7 +433,5 @@
 
 <!-- まだふつうの <script> の js/（D4 の手順4 で少しずつ src/ に移す）。Vite には触らせず、そのまま公開する（vite-ignore）。
      defer を付けて <body> に置く: 上のモジュールのあとで、この順に動く。<head> に置くと、ビルドしたときだけモジュールより先に動いてしまう（D17） -->
-<script src="js/app-core.js" defer vite-ignore></script>
-<script src="js/app-bootstrap.js" defer vite-ignore></script>
 </body>
 </html>

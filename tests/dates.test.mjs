@@ -2,7 +2,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync, readdirSync } from 'node:fs';
 import {
   DAYS, getNow, getToday, setNow, gY, gM, gD, toDS, fmtMD, addM, ds2d, monthDay, monthDate, calcH, exposeLegacyDates, LEGACY_DATES,
 } from '../src/dates.ts'; // Node が型を消して読む（D17）
@@ -95,13 +94,4 @@ test('最初のカテゴリとグラフの色', () => {
   assert.deepEqual(DEF_INC, ['給与', 'バイト', '仕送り', 'その他']);
   assert.equal(CAT_COL['食費'], '#185FA5');
   assert.deepEqual(Object.keys(LEGACY_PALETTE).sort(), ['CAT_COL', 'COLOR_NAMES', 'DEF_EXP', 'DEF_INC', 'DOTC', 'PLAN_COLORS', 'jobColorByName', 'jobColorObj', 'planColor']);
-});
-
-test('js/ のファイルは、window に出した日付・色の名前を宣言していない（宣言すると window の名前を上書きしてしまう）', () => {
-  const names = [...Object.keys(LEGACY_DATES), ...Object.keys(LEGACY_PALETTE), '_now', 'TODAY'];
-  const dir = new URL('../js/', import.meta.url);
-  for (const f of readdirSync(dir).filter(f => f.endsWith('.js'))) {
-    const src = readFileSync(new URL(f, dir), 'utf8');
-    for (const n of names) assert.doesNotMatch(src, new RegExp(`^((async )?function|let|var|const)\\s+${n}\\b`, 'm'), `js/${f} に ${n} の宣言があります`);
-  }
 });
