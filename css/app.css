@@ -341,6 +341,13 @@ dialog.sheet{
   overflow-y:auto;
 }
 dialog.sheet::backdrop{background:rgba(0,0,0,.5)}
+/* 起動時のタスクだけは、ゲームのログイン時のお知らせのように中央へ出す（#139） */
+dialog.sheet.task-startup-dialog{
+  box-sizing:border-box;margin:auto;width:calc(100% - 32px);max-width:480px;
+  max-height:min(80dvh, calc(100dvh - 32px - var(--safe-bottom)));
+  padding:1.25rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);
+  box-shadow:0 16px 48px rgba(0,0,0,.24);
+}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .sheet-head h2{font-size:17px;font-weight:700}
 /* 短い知らせ（「元に戻す」など）。画面の下に数秒だけ出す */
