@@ -312,3 +312,61 @@ test('ATM の数字キーと引き出し履歴の削除', async ({ page }) => {
   await expect(page.locator('#wd-hist .wd-hist-item').first()).not.toContainText('-¥12,000');
   expect(await page.evaluate(() => 'nk' in window || 'delWd' in window)).toBe(false);
 });
+
+test('家計簿の選択肢と毎月のお金の編集シート', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-ledger').click();
+  const header = page.locator('#ldg-list .ldg-day-header').first();
+  await header.focus();
+  await header.press('Enter');
+  await expect(header).toHaveAttribute('aria-expanded', 'true');
+  await header.press('Space');
+  await expect(header).toHaveAttribute('aria-expanded', 'false');
+  await header.click();
+  await page.locator('#ldg-list [data-ledger-action="list-edit"]').first().click();
+  await expect(page.locator('#ldg-edit-mbg')).toHaveClass(/open/);
+  await page.locator('#ldg-edit-mbg [data-ledger-action="edit-type-income"]').click();
+  await page.locator('#lde-receive-chips [data-value="口座振込"]').click();
+  await expect(page.locator('#lde-receive-chips [data-value="口座振込"]')).toHaveClass(/sel/);
+  await page.locator('#ldg-edit-mbg [data-ledger-action="close-edit"]').click();
+
+  await page.locator('#sec-ledger [data-ledger-action="open-add"]').click();
+  await expect(page.locator('#ldg-mbg')).toHaveClass(/open/);
+  await page.locator('#ldg-mbg [data-ledger-action="type-income"]').click();
+  await page.locator('#ldg-receive-chips [data-value="口座振込"]').click();
+  await expect(page.locator('#ldg-receive-chips [data-value="口座振込"]')).toHaveClass(/sel/);
+  await page.locator('#ldg-mbg [data-ledger-action="type-expense"]').click();
+  await page.locator('#cat-chips [data-ledger-action="select-cat"]').last().click();
+  await expect(page.locator('#cat-chips [data-ledger-action="select-cat"]').last()).toHaveClass(/sel/);
+  await page.locator('#ldg-pay-chips [data-ledger-action="select-pay"]').nth(1).click();
+  await expect(page.locator('#ldg-pay-chips [data-ledger-action="select-pay"]').nth(1)).toHaveClass(/sel/);
+  await page.locator('#ldg-repeat').check();
+  await expect(page.locator('#ldg-repeat-hint')).toBeVisible();
+  await page.locator('#ldg-mbg [data-ledger-action="close-add"]').click();
+
+  await page.locator('#sec-ledger [data-ledger-action="open-add"]').click();
+  await page.locator('#ldg-amount').fill('123');
+  await page.locator('#ldg-name').fill('イベント登録の家計簿確認');
+  await page.locator('#ldg-mbg [data-ledger-action="save-add"]').click();
+  await expect(page.locator('#ldg-mbg')).not.toHaveClass(/open/);
+  const addedGroup = page.locator('#ldg-list .ldg-day-group').filter({ hasText: 'イベント登録の家計簿確認' });
+  await addedGroup.locator('.ldg-day-header').click();
+  await addedGroup.locator('.ri').filter({ hasText: 'イベント登録の家計簿確認' }).locator('[data-ledger-action="list-delete"]').click();
+  await expect(page.locator('#ldg-list')).not.toContainText('イベント登録の家計簿確認');
+
+  await page.locator('#ldg-main-tabs button').nth(2).click();
+  await page.locator('#sec-ledger [data-ledger-action="open-monthly-add"]').click();
+  await expect(page.locator('#ldg-repeat')).toBeChecked();
+  await page.locator('#ldg-mbg [data-ledger-action="close-add"]').click();
+  await page.locator('#monthly-list .monthly-row').first().click();
+  await expect(page.locator('#monthly-sheet')).toBeVisible();
+  await page.locator('#monthly-sheet [data-monthly-action="change-amount"]').click();
+  await expect(page.locator('#monthly-amount-err')).toBeVisible();
+  await page.locator('#monthly-sheet [data-monthly-action="close"]').click();
+  await expect(page.locator('#monthly-sheet')).not.toBeVisible();
+  await page.locator('#settings-btn').click();
+  await page.locator('#settings-open-monthly').click();
+  await expect(page.locator('#ldg-monthly-sec')).toBeVisible();
+  expect(await page.evaluate(() => 'selLdgType' in window || 'stopMonthly' in window)).toBe(false);
+});

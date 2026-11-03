@@ -4,8 +4,8 @@
 </div>
 <h3>記録を編集</h3>
 <div class="pay-chips" id="lde-type-chips">
-<button type="button" class="pay-chip sel" onclick="selLdeType('expense')" aria-pressed="true">支出</button>
-<button type="button" class="pay-chip" onclick="selLdeType('income')" aria-pressed="false">収入</button>
+<button type="button" class="pay-chip sel" data-ledger-action="edit-type-expense" aria-pressed="true">支出</button>
+<button type="button" class="pay-chip" data-ledger-action="edit-type-income" aria-pressed="false">収入</button>
 </div>
 <div class="fg">
 <label for="lde-amount">金額 (¥)</label>
@@ -14,18 +14,18 @@
 <div class="fg">
 <label>カテゴリ</label>
 <div class="cat-chips" id="lde-cat-chips" role="group" aria-label="カテゴリ">
-<button type="button" class="chip sel" onclick="selLdeCat('食費')" aria-pressed="true">食費</button>
-<button type="button" class="chip" onclick="selLdeCat('交通費')" aria-pressed="false">交通費</button>
-<button type="button" class="chip" onclick="selLdeCat('その他')" aria-pressed="false">その他</button>
+<button type="button" class="chip sel" data-ledger-action="select-edit-cat" data-value="食費" aria-pressed="true">食費</button>
+<button type="button" class="chip" data-ledger-action="select-edit-cat" data-value="交通費" aria-pressed="false">交通費</button>
+<button type="button" class="chip" data-ledger-action="select-edit-cat" data-value="その他" aria-pressed="false">その他</button>
 </div>
 </div>
 <div class="fg" id="lde-pay-wrap" style="display: block;">
 <label>支払い方法</label>
 <div class="pay-chips" id="lde-pay-chips" role="group" aria-label="支払い方法">
-<button type="button" class="pay-chip" onclick="selLdePayAt(0)" aria-pressed="false">現金</button>
-<button type="button" class="pay-chip" onclick="selLdePayAt(1)" aria-pressed="false">口座</button>
-<button type="button" class="pay-chip" onclick="selLdePayAt(2)" aria-pressed="false">Aカード</button>
-<button type="button" class="pay-chip sel" onclick="selLdePayAt(3)" aria-pressed="true">Bカード</button>
+<button type="button" class="pay-chip" data-ledger-action="select-edit-pay" data-index="0" aria-pressed="false">現金</button>
+<button type="button" class="pay-chip" data-ledger-action="select-edit-pay" data-index="1" aria-pressed="false">口座</button>
+<button type="button" class="pay-chip" data-ledger-action="select-edit-pay" data-index="2" aria-pressed="false">Aカード</button>
+<button type="button" class="pay-chip sel" data-ledger-action="select-edit-pay" data-index="3" aria-pressed="true">Bカード</button>
 </div>
 <div class="hint" id="lde-pay-hint">カードの引き落とし日に、口座から引きます</div>
 </div>
@@ -49,8 +49,8 @@
 </textarea>
 </div>
 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-<button class="btn" onclick="closeLdgEdit()">キャンセル</button>
-<button class="btn primary" onclick="saveLdgEdit()">保存</button>
+<button class="btn" data-ledger-action="close-edit">キャンセル</button>
+<button class="btn primary" data-ledger-action="save-edit">保存</button>
 </div>
 </div>
 </div>

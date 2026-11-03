@@ -13,6 +13,7 @@ import { bindTaskControls, maybeShowStartupTasks } from './screens/tasks.ts';
 import { bindBackupControls } from './screens/backup.ts';
 import { bindHomeControls } from './screens/home.ts';
 import { bindAtmControls } from './screens/atm.ts';
+import { bindMonthlyControls } from './screens/monthly.ts';
 import { elementById } from './ui.ts';
 
 function onDayChange(now: Date, prevKey: string): void {
@@ -47,6 +48,7 @@ export function startBootstrap(): void {
   bindBackupControls();
   bindHomeControls();
   bindAtmControls();
+  bindMonthlyControls();
   elementById('google-login-btn').addEventListener('click', () => { void loginWithGoogle(); });
   elementById('logout-btn').addEventListener('click', () => { void logout(); });
   if ('serviceWorker' in navigator && ENV.target === 'prod') {

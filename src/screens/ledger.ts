@@ -24,14 +24,14 @@ const yenSigned = (v: number): string => (v<0?'-':'')+'¥'+Math.abs(v).toLocaleS
 export function openLedgerModal(ds?: string, opts: { repeat?: boolean } = {}): void{ldgType='expense';ldgPay='現金';ldgCardIdx=-1;ldgCat=state.st.catExp[0]||'';ldgReceive='現金';ui.inputById('ldg-date').value=ds||getToday();ui.inputById('ldg-amount').value='';ui.inputById('ldg-name').value='';ui.textareaById('ldg-memo').value='';ui.inputById('ldg-repeat').checked=!!opts.repeat;renderLdgType();renderCatChips();renderPayChips();renderLdgRepeat();ui.elementById('ldg-mbg').classList.add('open');setTimeout(()=>ui.elementById('ldg-amount')?.focus(),80);}
 export function selLdgType(t: string): void{ldgType=t;ldgCat=(t==='expense'?state.st.catExp[0]:state.st.catInc[0])||'';renderLdgType();renderCatChips();renderPayChips();renderLdgRepeat();}
 export function renderLdgType(): void{document.querySelectorAll('#ldg-type-chips .pay-chip').forEach((el,i)=>el.classList.toggle('sel',['expense','income'][i]===ldgType));}
-export function renderCatChips(): void{const cats=ldgType==='expense'?state.st.catExp:state.st.catInc;if(!cats.includes(ldgCat))ldgCat=cats[0]||'';ui.elementById('cat-chips').innerHTML=cats.map(c=>`<button type="button" class="chip${ldgCat===c?' sel':''}" onclick="selCat('${c}')">${c}</button>`).join('');}
+export function renderCatChips(): void{const cats=ldgType==='expense'?state.st.catExp:state.st.catInc;if(!cats.includes(ldgCat))ldgCat=cats[0]||'';ui.elementById('cat-chips').innerHTML=cats.map(c=>`<button type="button" class="chip${ldgCat===c?' sel':''}" data-ledger-action="select-cat" data-value="${ui.escapeHtml(c)}">${ui.escapeHtml(c)}</button>`).join('');}
 export function selCat(c: string): void{ldgCat=c;document.querySelectorAll('#cat-chips .chip').forEach(el=>el.classList.toggle('sel',el.textContent===c));}
 // 支払い方法の選択肢: 現金・口座（D11）・カード。削除済みのカードは、その記録が使っているときだけ出す
 type PayOption = { label: string; pay: string; ci: number; hidden?: boolean };
 export function payOptions(curCardIdx: number): PayOption[]{const opts: PayOption[]=[{label:'現金',pay:'現金',ci:-1},{label:'口座',pay:'口座',ci:-1},...state.st.cards.map((c,i)=>({label:c.name,pay:c.name,ci:i,hidden:c._deleted&&curCardIdx!==i}))];return opts.filter(o=>!o.hidden);}
 const isPaySel=(o: PayOption,pay: string,ci: number): boolean=>o.ci>=0?ci===o.ci:(ci<0&&(pay==='口座')===(o.pay==='口座'));
 const payHint=(pay: string,ci: number): string=>ci>=0?'カードの引き落とし日に、口座から引きます':pay==='口座'?'振込・口座引き落としなど。その日に口座の残高から引きます':'現金は、ATM で引き出したときに口座から引いています';
-export function payChipsHtml(pay: string, ci: number, fn: string): string{return payOptions(ci).map((o,k)=>`<button type="button" class="pay-chip${isPaySel(o,pay,ci)?' sel':''}" onclick="${fn}(${k})">${ui.escapeHtml(o.label)}</button>`).join('');}
+export function payChipsHtml(pay: string, ci: number, mode: 'add' | 'edit'): string{return payOptions(ci).map((o,k)=>`<button type="button" class="pay-chip${isPaySel(o,pay,ci)?' sel':''}" data-ledger-action="${mode==='add'?'select-pay':'select-edit-pay'}" data-index="${k}">${ui.escapeHtml(o.label)}</button>`).join('');}
 export function renderPayChips(): void{
   const pw=ui.elementById('ldg-pay-wrap');
   const rw=ui.elementById('ldg-receive-wrap');
@@ -40,14 +40,14 @@ export function renderPayChips(): void{
     rw.style.display=ui.inputById('ldg-repeat').checked?'none':'block'; // 毎月の収入は口座に入るものとして数える（D14）
     // 受取方法：現金 or 口座振込
     ui.elementById('ldg-receive-chips').innerHTML=
-      ['現金','口座振込'].map(o=>`<button type="button" class="pay-chip${ldgReceive===o?' sel':''}" onclick="selReceive('${o}')">${o}</button>`).join('');
+      ['現金','口座振込'].map(o=>`<button type="button" class="pay-chip${ldgReceive===o?' sel':''}" data-ledger-action="select-receive" data-value="${o}">${o}</button>`).join('');
     ui.elementById('ldg-receive-hint').textContent=
       ldgReceive==='口座振込'?'口座振込は口座残高にプラスされます':'現金受取は口座残高に影響しません';
     return;
   }
   rw.style.display='none';
   pw.style.display='block';
-  ui.elementById('ldg-pay-chips').innerHTML=payChipsHtml(ldgPay,ldgCardIdx,'selPayAt');
+  ui.elementById('ldg-pay-chips').innerHTML=payChipsHtml(ldgPay,ldgCardIdx,'add');
   ui.elementById('ldg-pay-hint').textContent=payHint(ldgPay,ldgCardIdx);
 }
 export function selReceive(r: string): void{ldgReceive=r;renderPayChips();}
@@ -79,7 +79,7 @@ export function openLdgEdit(i: number): void{ldeIdx=i;const l=state.st.ledger[i]
 export function closeLdgEdit(): void{ui.elementById('ldg-edit-mbg').classList.remove('open');}
 export function selLdeType(t: string): void{ldeType=t;renderLdeType();renderLdeCatChips();renderLdePayChips();}
 export function renderLdeType(): void{document.querySelectorAll('#lde-type-chips .pay-chip').forEach((el,i)=>el.classList.toggle('sel',['expense','income'][i]===ldeType));}
-export function renderLdeCatChips(): void{const cats=ldeType==='expense'?state.st.catExp:state.st.catInc;if(!cats.includes(ldeCat))ldeCat=cats[0]||'';ui.elementById('lde-cat-chips').innerHTML=cats.map(c=>`<button type="button" class="chip${ldeCat===c?' sel':''}" onclick="selLdeCat('${c}')">${c}</button>`).join('');}
+export function renderLdeCatChips(): void{const cats=ldeType==='expense'?state.st.catExp:state.st.catInc;if(!cats.includes(ldeCat))ldeCat=cats[0]||'';ui.elementById('lde-cat-chips').innerHTML=cats.map(c=>`<button type="button" class="chip${ldeCat===c?' sel':''}" data-ledger-action="select-edit-cat" data-value="${ui.escapeHtml(c)}">${ui.escapeHtml(c)}</button>`).join('');}
 export function selLdeCat(c: string): void{ldeCat=c;document.querySelectorAll('#lde-cat-chips .chip').forEach(el=>el.classList.toggle('sel',el.textContent===c));}
 export function renderLdePayChips(): void{
   const pw=ui.elementById('lde-pay-wrap');
@@ -88,14 +88,14 @@ export function renderLdePayChips(): void{
     pw.style.display='none';
     rw.style.display='block';
     ui.elementById('lde-receive-chips').innerHTML=
-      ['現金','口座振込'].map(o=>`<button type="button" class="pay-chip${ldeReceive===o?' sel':''}" onclick="selLdeReceive('${o}')">${o}</button>`).join('');
+      ['現金','口座振込'].map(o=>`<button type="button" class="pay-chip${ldeReceive===o?' sel':''}" data-ledger-action="select-edit-receive" data-value="${o}">${o}</button>`).join('');
     ui.elementById('lde-receive-hint').textContent=
       ldeReceive==='口座振込'?'口座振込は口座残高にプラスされます':'現金受取は口座残高に影響しません';
     return;
   }
   rw.style.display='none';
   pw.style.display='block';
-  ui.elementById('lde-pay-chips').innerHTML=payChipsHtml(ldePay,ldeCardIdx,'selLdePayAt');
+  ui.elementById('lde-pay-chips').innerHTML=payChipsHtml(ldePay,ldeCardIdx,'edit');
   ui.elementById('lde-pay-hint').textContent=payHint(ldePay,ldeCardIdx);
 }
 export function selLdeReceive(r: string): void{ldeReceive=r;renderLdePayChips();}
@@ -191,15 +191,15 @@ export function renderLedger(): void{
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:14px;font-weight:600;color:${l.type==='expense'?'#A32D2D':'#3B6D11'}">${l.type==='expense'?'-':'+'}¥${parseInt(String(l.amount)).toLocaleString()}</span>
-          <button class="btn sm edit" onclick="openLdgEdit(${ri})">編集</button>
-          <button class="btn sm del" onclick="delLedger(${ri})">削除</button>
+          <button class="btn sm edit" data-ledger-action="list-edit" data-index="${ri}">編集</button>
+          <button class="btn sm del" data-ledger-action="list-delete" data-index="${ri}">削除</button>
         </div>
       </div>`;
     }).join('');
 
     const groupId=`ldg-group-${date}`;
     return `<div class="ldg-day-group">
-      <div class="ldg-day-header" id="${groupId}-header" role="button" tabindex="0" aria-expanded="false" aria-controls="${groupId}" onclick="toggleLdgGroup('${groupId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('${groupId}')}">
+      <div class="ldg-day-header" id="${groupId}-header" role="button" tabindex="0" aria-expanded="false" aria-controls="${groupId}" data-ledger-action="toggle-group" data-group-id="${groupId}">
         <div class="ldg-day-header-left">
           <span class="ldg-day-date">${dateStr}</span>
           <span class="ldg-day-summary">${summary}</span>
@@ -272,7 +272,45 @@ export function bindLedgerControls(): void {
       button.addEventListener('click', i === 0 ? previous : next);
     });
   }
+  for (const id of ['sec-ledger', 'ldg-mbg', 'ldg-edit-mbg']) {
+    ui.elementById(id).addEventListener('click', event => {
+      if (!(event.target instanceof Element)) return;
+      const target = event.target.closest<HTMLElement>('[data-ledger-action]');
+      if (!target) return;
+      const action = target.dataset.ledgerAction;
+      const value = target.dataset.value;
+      const index = Number(target.dataset.index);
+      if (action === 'open-add') openLedgerModal();
+      else if (action === 'open-monthly-add') openLedgerModal(undefined, { repeat: true });
+      else if (action === 'type-expense') selLdgType('expense');
+      else if (action === 'type-income') selLdgType('income');
+      else if (action === 'edit-type-expense') selLdeType('expense');
+      else if (action === 'edit-type-income') selLdeType('income');
+      else if (action === 'close-add') closeLdgModal();
+      else if (action === 'save-add') saveLedger();
+      else if (action === 'close-edit') closeLdgEdit();
+      else if (action === 'save-edit') saveLdgEdit();
+      else if (action === 'select-cat' && value !== undefined) selCat(value);
+      else if (action === 'select-edit-cat' && value !== undefined) selLdeCat(value);
+      else if (action === 'select-receive' && value !== undefined) selReceive(value);
+      else if (action === 'select-edit-receive' && value !== undefined) selLdeReceive(value);
+      else if (action === 'select-pay' && Number.isInteger(index)) selPayAt(index);
+      else if (action === 'select-edit-pay' && Number.isInteger(index)) selLdePayAt(index);
+      else if (action === 'list-edit' && Number.isInteger(index)) openLdgEdit(index);
+      else if (action === 'list-delete' && Number.isInteger(index)) delLedger(index);
+      else if (action === 'toggle-group' && target.dataset.groupId) toggleLdgGroup(target.dataset.groupId);
+    });
+  }
+  ui.elementById('ldg-list').addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if (!(event.target instanceof HTMLElement) || !event.target.matches('.ldg-day-header[data-group-id]')) return;
+    event.preventDefault();
+    if (event.target.dataset.groupId) toggleLdgGroup(event.target.dataset.groupId);
+  });
+  for (const id of ['ldg-date', 'ldg-repeat']) {
+    ui.inputById(id).addEventListener('change', renderLdgRepeat);
+  }
 }
 
-export const LEGACY_LEDGER_SCREEN = { openLedgerModal, selLdgType, renderLdgType, renderCatChips, selCat, payOptions, payChipsHtml, renderPayChips, selReceive, selPayAt, renderLdgRepeat, saveLedger, closeLdgModal, openLdgEdit, closeLdgEdit, selLdeType, renderLdeType, renderLdeCatChips, selLdeCat, renderLdePayChips, selLdeReceive, selLdePayAt, saveLdgEdit, updateLdgNav_, renderLedgerAll_, renderLedgerMetrics, renderLedger, toggleLdgGroup, delLedger, renderCatChart_, renderChartsMonth_, renderChartsYear_, renderCharts, onLedgerDayChanged };
+export const LEGACY_LEDGER_SCREEN = { openLedgerModal, openLdgEdit };
 

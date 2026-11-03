@@ -34,10 +34,10 @@
 <div class="met-l">収支</div>
 </div>
 </div>
-<button class="btn primary full" onclick="openLedgerModal(null)" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 支出・収入を記録</button>
+<button class="btn primary full" data-ledger-action="open-add" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 支出・収入を記録</button>
 <div id="ldg-list">
 <div class="ldg-day-group">
-<div class="ldg-day-header" id="ldg-group-2026-11-12-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-12" onclick="toggleLdgGroup('ldg-group-2026-11-12')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-12')}">
+<div class="ldg-day-header" id="ldg-group-2026-11-12-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-12" data-ledger-action="toggle-group" data-group-id="ldg-group-2026-11-12">
 <div class="ldg-day-header-left">
 <span class="ldg-day-date">11/12(木)</span>
 <span class="ldg-day-summary">1件</span>
@@ -60,14 +60,14 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
-<button class="btn sm edit" onclick="openLdgEdit(7)">編集</button>
-<button class="btn sm del" onclick="delLedger(7)">削除</button>
+<button class="btn sm edit" data-ledger-action="list-edit" data-index="7">編集</button>
+<button class="btn sm del" data-ledger-action="list-delete" data-index="7">削除</button>
 </div>
 </div>
 </div>
 </div>
 <div class="ldg-day-group">
-<div class="ldg-day-header" id="ldg-group-2026-11-08-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-08" onclick="toggleLdgGroup('ldg-group-2026-11-08')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-08')}">
+<div class="ldg-day-header" id="ldg-group-2026-11-08-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-08" data-ledger-action="toggle-group" data-group-id="ldg-group-2026-11-08">
 <div class="ldg-day-header-left">
 <span class="ldg-day-date">11/8(日)</span>
 <span class="ldg-day-summary">1件</span>
@@ -90,14 +90,14 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥6,000</span>
-<button class="btn sm edit" onclick="openLdgEdit(6)">編集</button>
-<button class="btn sm del" onclick="delLedger(6)">削除</button>
+<button class="btn sm edit" data-ledger-action="list-edit" data-index="6">編集</button>
+<button class="btn sm del" data-ledger-action="list-delete" data-index="6">削除</button>
 </div>
 </div>
 </div>
 </div>
 <div class="ldg-day-group">
-<div class="ldg-day-header" id="ldg-group-2026-11-04-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-04" onclick="toggleLdgGroup('ldg-group-2026-11-04')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-04')}">
+<div class="ldg-day-header" id="ldg-group-2026-11-04-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-04" data-ledger-action="toggle-group" data-group-id="ldg-group-2026-11-04">
 <div class="ldg-day-header-left">
 <span class="ldg-day-date">11/4(水)</span>
 <span class="ldg-day-summary">1件</span>
@@ -120,14 +120,14 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥1,500</span>
-<button class="btn sm edit" onclick="openLdgEdit(5)">編集</button>
-<button class="btn sm del" onclick="delLedger(5)">削除</button>
+<button class="btn sm edit" data-ledger-action="list-edit" data-index="5">編集</button>
+<button class="btn sm del" data-ledger-action="list-delete" data-index="5">削除</button>
 </div>
 </div>
 </div>
 </div>
 <div class="ldg-day-group">
-<div class="ldg-day-header" id="ldg-group-2026-11-01-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-01" onclick="toggleLdgGroup('ldg-group-2026-11-01')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLdgGroup('ldg-group-2026-11-01')}">
+<div class="ldg-day-header" id="ldg-group-2026-11-01-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ldg-group-2026-11-01" data-ledger-action="toggle-group" data-group-id="ldg-group-2026-11-01">
 <div class="ldg-day-header-left">
 <span class="ldg-day-date">11/1(日)</span>
 <span class="ldg-day-summary">1件</span>
@@ -150,8 +150,8 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(59, 109, 17);">+¥5,000</span>
-<button class="btn sm edit" onclick="openLdgEdit(4)">編集</button>
-<button class="btn sm del" onclick="delLedger(4)">削除</button>
+<button class="btn sm edit" data-ledger-action="list-edit" data-index="4">編集</button>
+<button class="btn sm del" data-ledger-action="list-delete" data-index="4">削除</button>
 </div>
 </div>
 </div>
@@ -181,7 +181,7 @@
 <!-- 毎月のお金（D14。動きは js/monthly-ui.js） -->
 <div id="ldg-monthly-sec" style="display: block;">
 <div class="monthly-lead">家賃・サブスク・仕送りなど、毎月同じ日に動くお金です。残高の見込みに入ります（家計簿の記録には1件ずつは出ません）。</div>
-<button class="btn primary full" onclick="openLedgerModal(null,{repeat:true})" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 毎月のお金を入れる</button>
+<button class="btn primary full" data-ledger-action="open-monthly-add" style="margin-top: 0px; margin-bottom: 0.75rem;">＋ 毎月のお金を入れる</button>
 <div id="monthly-list">
 <section class="card monthly-section">
 <h2 class="monthly-section-title">続いているもの</h2>
