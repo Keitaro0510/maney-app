@@ -79,7 +79,7 @@ npm install
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
 - **ほかの PC で続きを始めるとき**（2026-11-03 時点。Phase 4 の途中）:
   1. `git pull` → `npm install`（`package.json` が変わっている）。Node.js 24 が要る
-  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は D20 の 7「家計簿・毎月のお金」）。やり方は [D20](docs/DECISIONS.md) の「作り（2）」（画面は `src/screens/<機能>.ts`・`window` に出すのは `LEGACY_<機能>`・`js/` を呼ぶのは `src/js-bridge.ts`）
+  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は D20 の 8「ホーム」）。やり方は [D20](docs/DECISIONS.md) の「作り（2）」（画面は `src/screens/<機能>.ts`・`window` に出すのは `LEGACY_<機能>`・`js/` を呼ぶのは `src/js-bridge.ts`）
   3. 画面を `src/` に移す PR は、**`npm run test:screens` で表示が変わっていないこと**を確かめる。ローカルの Supabase が要る: Docker Desktop を起動 → `npx supabase start`（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。初めての PC は `npx playwright install chromium` も。Mac では、画面の写真の基準（`*-darwin.png`）をまず手元で作る
   4. 保存の流れをブラウザで確かめるときは、本番ではなく `npm run preview:local`（ローカルの Supabase）。操作の確かめは、`tests/screens/` に一時の `zz-*.spec.mjs` を置いて `node scripts/local-supabase.mjs npx playwright test zz-…` で流し、終わったら消す
   5. PR は CI（Node のテスト・結合テスト＋画面の比較）が通るとマージできる。マージは Claude がしてよい（CLAUDE.md）
