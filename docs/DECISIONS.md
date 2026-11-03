@@ -755,6 +755,12 @@ PR の順:
 - 予定の追加・編集画面を `src/screens/plans.ts` に移し、編集対象・日付モード・色・カードの選択をモジュール内に置いた。まだ `js/` にある `renderCal`・`refreshDayViews`・`renderHome` は `src/js-bridge.ts` を通す
 - 変更前と移行後に `npm run test:screens` の5件が通った。Node テスト・型検査も通した。ローカルの Supabase で期間と時刻・カード払いの予定を追加・編集し、読み込み直しても残ることを一時のブラウザテストで確かめた
 
+作り（7。家計簿・毎月のお金。2026-11-03）:
+- `monthLedger`・`getLedgerForDay`・`ledgerPayLabel` を `src/ledger.ts` に移した。ホームとカレンダーは `LEGACY_LEDGER` で呼ぶ
+- `js/monthly-ui.js` を `src/screens/monthly.ts` に移し、行の読み書きは引き続き `currentRows`・`saveRows` を使う。`js/app-ledger.js` は `src/screens/ledger.ts` に移し、表示月・入力状態・`catChart`・`dayChart` をモジュール内に置いた
+- `renderCurrentSection` など、まだ `js/` にある画面とナビへの呼び出しは `src/js-bridge.ts` を通す。カード削除から `moveMonthlyOffCard` は直接 import する
+- 変更前と移行後の画面比較5件、Node テスト175件、型検査が通った。ローカルの Supabase で記録の追加・編集、毎月のお金の作成と金額変更、カード削除に伴う口座払いへの切り替えを行い、読み込み直しても残ることを一時のブラウザテストで確かめた
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

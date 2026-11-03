@@ -111,7 +111,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 4. 設定・カード・ATM（2026-11-03。`src/cards.ts`・`src/screens/settings.ts`・`cards.ts`・`atm.ts`。計算→設定→カード→ATM の順にコミット。カード見本の不要な push/pop は別コミットで削除）　ブランチ: `feature/settings-cards-atm-screen`
       - [x] 5. シフト・バイト先・給与の実績（2026-11-03。`src/shifts.ts`・`src/screens/shift.ts`。計算→画面の順に移した）　ブランチ: `feature/shift-screen`
       - [x] 6. 予定（2026-11-03。`src/plans.ts` に `getPlansForDay`・`planTimeOnDay`・`hm2min`、`src/screens/plans.ts` に入力画面）　ブランチ: `feature/plans-screen`
-      - [ ] 7. 家計簿・毎月のお金（`catChart`・`dayChart` を含む）
+      - [x] 7. 家計簿・毎月のお金（2026-11-03。`src/ledger.ts`・`src/screens/ledger.ts`・`src/screens/monthly.ts`。`catChart`・`dayChart` も移した）　ブランチ: `feature/ledger-monthly-screen`
       - [ ] 8. ホーム（`renderBalanceChart`・`balChart` を含む）
       - [ ] 9. カレンダー
       - [ ] 10. ナビゲーション・bootstrap・状態の互換の層の整理（関数を `window` に出す層は手順5まで残す）

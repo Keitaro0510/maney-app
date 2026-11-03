@@ -15,10 +15,7 @@ let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
 let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
-let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
-let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
-let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
-let catChart=null,dayChart=null,balChart=null;
+let balChart=null;
 
 // ============================================================
 // Supabase設定
@@ -122,7 +119,7 @@ function onDayChange(now, prevKey){
   const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
   ({y:calY,m:calM}=follow(calY,calM));
   onShiftDayChanged(prev,now);
-  ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
+  onLedgerDayChanged(prev,now);
   if(calAnchor===prevKey) calAnchor=TODAY;
   if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
 }
@@ -181,8 +178,6 @@ function sw(t){
 // ============================================================
 // ユーティリティ
 // ============================================================
-const monthLedger=(y,m)=>st.ledger.filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m;});
-const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
 
 // ============================================================
 // 実績
@@ -199,11 +194,6 @@ const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
 // ============================================================
 // その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
 // 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
-function ledgerPayLabel(l){
-  if(l.type === 'income') return l.receive || '現金';
-  const card = l.cardIdx >= 0 ? st.cards[l.cardIdx] : null;
-  return card ? card.name : (l.pay || '');
-}
 // カードの締め日を実際の日付で取得（31=末日として扱う）
 
 // カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す

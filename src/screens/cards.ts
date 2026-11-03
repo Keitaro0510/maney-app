@@ -5,7 +5,8 @@ import { getToday, gY, gM, gD, addM, monthDate, fmtMD } from '../dates.ts';
 import * as ui from '../ui.ts';
 import { cycle, cardBillForDate, getActualCard, setActualCard, cardActualKey } from '../cards.ts';
 import type { StCard } from '../compat.ts';
-import { renderHome, moveMonthlyOffCard } from '../js-bridge.ts';
+import { renderHome } from '../js-bridge.ts';
+import { moveMonthlyOffCard } from './monthly.ts';
 
 let cardEditIdx = -1;
 if (typeof document !== 'undefined') {
