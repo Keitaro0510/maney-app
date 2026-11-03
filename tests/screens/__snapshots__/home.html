@@ -21,10 +21,10 @@
 <span class="home-tasks-more" aria-hidden="true">›</span>
 </button>
 <div class="home-actions">
-<button class="btn primary quick-ledger" onclick="openLedgerModal(null)">
+<button class="btn primary quick-ledger" id="home-add-ledger">
 <span aria-hidden="true">＋</span> 支出を記録</button>
-<button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
-<button class="btn quick-wd" onclick="openWd()">ATM</button>
+<button class="btn quick-plan" id="home-add-plan">予定を追加</button>
+<button class="btn quick-wd" id="home-open-atm">ATM</button>
 </div>
 <!-- 今日のお知らせ（引き落とし日・給料日・締め日・今日のシフトと予定） -->
 <div id="alerts-home">
@@ -53,7 +53,7 @@
 </div>
 <!-- くわしく（ふだんはたたむ。開いたときに描く） -->
 <!-- くわしく（D11）: 押すと下から画面が出る。中身は #home-more（#71） -->
-<button type="button" class="home-tasks home-more-btn" id="home-more-btn" aria-haspopup="dialog" onclick="openHomeMore(this)">
+<button type="button" class="home-tasks home-more-btn" id="home-more-btn" aria-haspopup="dialog">
 <span class="home-more-copy">
 <span class="home-more-title">くわしく見る</span>
 <span class="home-more-hint">残高の推移・今月の収支・予算</span>

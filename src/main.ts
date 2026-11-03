@@ -2,7 +2,7 @@
 import { ENV } from './env.ts';
 import { defaultSt, fixDefaults } from './state.ts';
 import { initSync, LEGACY_SYNC } from './sync.ts';
-import { initAuth, LEGACY_AUTH } from './auth.ts';
+import { initAuth } from './auth.ts';
 import { createSupa } from './supa.ts';
 import { appUi } from './navigation.ts';
 import { startBootstrap } from './bootstrap.ts';
@@ -18,7 +18,6 @@ import { LEGACY_PLAN_SCREEN } from './screens/plans.ts';
 import { LEGACY_LEDGER } from './ledger.ts';
 import { LEGACY_MONTHLY_SCREEN } from './screens/monthly.ts';
 import { LEGACY_LEDGER_SCREEN } from './screens/ledger.ts';
-import { LEGACY_HOME } from './screens/home.ts';
 import { LEGACY_CALENDAR } from './screens/calendar.ts';
 import { mountLocalLogin } from './local-login.ts';
 
@@ -27,10 +26,10 @@ initSync({ supa: supaClient, storagePrefix: ENV.storagePrefix, defaultSt, fixDef
 initAuth({ supa: supaClient, storagePrefix: ENV.storagePrefix, fixDefaults, ui: appUi });
 
 // HTML の onclick がある間は、関数名を window に出す（D18 の手順5まで）。
-Object.assign(window, LEGACY_SYNC, LEGACY_AUTH, LEGACY_TASKS, LEGACY_CARDS,
+Object.assign(window, LEGACY_SYNC, LEGACY_TASKS, LEGACY_CARDS,
   LEGACY_SETTINGS, LEGACY_CARD_SCREEN, LEGACY_ATM, LEGACY_SHIFTS, LEGACY_SHIFT_SCREEN,
   LEGACY_PLANS, LEGACY_PLAN_SCREEN, LEGACY_LEDGER, LEGACY_MONTHLY_SCREEN, LEGACY_LEDGER_SCREEN,
-  LEGACY_HOME, LEGACY_CALENDAR);
+  LEGACY_CALENDAR);
 
 if (__MANEY_TARGET__ === 'local') mountLocalLogin(ENV);
 startBootstrap();
