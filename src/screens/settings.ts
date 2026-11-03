@@ -1,9 +1,10 @@
+import { renderCal } from '../js-bridge.ts';
 // 設定タブ。カードと ATM の表示はそれぞれの画面モジュールに任せる（D20 の 4）。
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday } from '../dates.ts';
 import { inputById, selectById, elementById, escapeHtml, toast } from '../ui.ts';
-import { renderHome, renderCal } from '../js-bridge.ts';
 import { renderCardList } from './cards.ts';
 import { renderWdHist } from './atm.ts';
 

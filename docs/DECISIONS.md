@@ -761,6 +761,11 @@ PR の順:
 - `renderCurrentSection` など、まだ `js/` にある画面とナビへの呼び出しは `src/js-bridge.ts` を通す。カード削除から `moveMonthlyOffCard` は直接 import する
 - 変更前と移行後の画面比較5件、Node テスト175件、型検査が通った。ローカルの Supabase で記録の追加・編集、毎月のお金の作成と金額変更、カード削除に伴う口座払いへの切り替えを行い、読み込み直しても残ることを一時のブラウザテストで確かめた
 
+作り（8。ホーム。2026-11-03）:
+- 口座残高の推定、残高推移のデータ、今後の収入・確定引き落とし・予定予算を `src/home.ts` に移した。表示と「くわしく」の開閉、残高グラフの描画・`balChart` は `src/screens/home.ts` に移した
+- TypeScript の各画面は `renderHome` を直接 import し、`src/js-bridge.ts` から同名の呼び出しを消した。`js/app-core.js` のナビ、`js/app-calendar.js` と HTML の onclick のために `LEGACY_HOME` を `window` に出す。`js/app-home.js` は読み込みとキャッシュから外した
+- Node テスト175件、型検査、ローカルの Supabase を使った画面比較5件が通った。画面比較は Windows で Git for Windows の bash を PATH の先頭に置いて実行した
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

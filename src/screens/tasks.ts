@@ -4,6 +4,7 @@
 // - ホームの1行（#home-tasks）
 // 完了できるのは、タブと開いたときの一覧の2か所だけ（D10）。
 // まだ js/ と index.html が名前で呼ぶものは、src/main.ts が LEGACY_TASKS を window に出す（期限付きの互換の層。D20）
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { currentRows, saveRows, userKey } from '../sync.ts';
 import { getToday } from '../dates.ts';

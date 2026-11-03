@@ -1,11 +1,11 @@
 // カード設定の画面（D20 の 4）。請求の計算は src/cards.ts。
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday, gY, gM, gD, addM, monthDate, fmtMD } from '../dates.ts';
 import * as ui from '../ui.ts';
 import { cycle, cardBillForDate, getActualCard, setActualCard, cardActualKey } from '../cards.ts';
 import type { StCard } from '../compat.ts';
-import { renderHome } from '../js-bridge.ts';
 import { moveMonthlyOffCard } from './monthly.ts';
 
 let cardEditIdx = -1;

@@ -1,10 +1,11 @@
+import { renderCal, refreshDayViews } from '../js-bridge.ts';
 // 予定の入力画面（D20 の 6）。
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday, ds2d } from '../dates.ts';
 import { PLAN_COLORS, COLOR_NAMES } from '../palette.ts';
 import * as ui from '../ui.ts';
-import { renderCal, refreshDayViews, renderHome } from '../js-bridge.ts';
 import type { StPlan } from '../compat.ts';
 
 let planEditIdx=-1, planDateMode='single', planColorSel='pink';
