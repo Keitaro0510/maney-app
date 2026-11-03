@@ -58,27 +58,27 @@
 <div class="card">
 <div class="st">支出カテゴリ</div>
 <div id="cat-exp-tags" style="margin-bottom: 12px;">
-<span class="cat-tag">食費<button type="button" class="cat-tag-del" aria-label="「食費」を消す" onclick="delCatExp(0)">×</button>
+<span class="cat-tag">食費<button type="button" class="cat-tag-del" aria-label="「食費」を消す" data-cat-index="0">×</button>
 </span>
-<span class="cat-tag">交通費<button type="button" class="cat-tag-del" aria-label="「交通費」を消す" onclick="delCatExp(1)">×</button>
+<span class="cat-tag">交通費<button type="button" class="cat-tag-del" aria-label="「交通費」を消す" data-cat-index="1">×</button>
 </span>
-<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" onclick="delCatExp(2)">×</button>
+<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" data-cat-index="2">×</button>
 </span>
 </div>
 <div style="display: flex; gap: 8px;">
 <input id="new-cat-exp" placeholder="新しいカテゴリ名" style="flex: 1 1 0%; padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary);">
-<button class="btn primary" onclick="addCatExp()">追加</button>
+<button class="btn primary" id="add-cat-exp">追加</button>
 </div>
 <div class="st" style="margin-top: 14px;">収入カテゴリ</div>
 <div id="cat-inc-tags" style="margin-bottom: 12px;">
-<span class="cat-tag">給与<button type="button" class="cat-tag-del" aria-label="「給与」を消す" onclick="delCatInc(0)">×</button>
+<span class="cat-tag">給与<button type="button" class="cat-tag-del" aria-label="「給与」を消す" data-cat-index="0">×</button>
 </span>
-<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" onclick="delCatInc(1)">×</button>
+<span class="cat-tag">その他<button type="button" class="cat-tag-del" aria-label="「その他」を消す" data-cat-index="1">×</button>
 </span>
 </div>
 <div style="display: flex; gap: 8px;">
 <input id="new-cat-inc" placeholder="新しいカテゴリ名" style="flex: 1 1 0%; padding: 10px 12px; font-size: 15px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary);">
-<button class="btn primary" onclick="addCatInc()">追加</button>
+<button class="btn primary" id="add-cat-inc">追加</button>
 </div>
 </div>
 <!-- カードタブ（設定内） -->
@@ -94,7 +94,7 @@
 <div style="display: flex; align-items: center; gap: 8px;">
 <input id="cn-close" type="number" inputmode="numeric" min="1" max="31" placeholder="15" style="flex: 1 1 0%;">
 <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; margin-bottom: 0px;">
-<input type="checkbox" id="cn-close-eom" onchange="toggleCardCloseEom('cn')"> 末日</label>
+<input type="checkbox" id="cn-close-eom"> 末日</label>
 </div>
 </div>
 <div class="fg">
@@ -104,14 +104,14 @@
 </div>
 <div id="cn-cycle-preview" class="cycle-box" style="display: none;">
 </div>
-<button class="btn primary" onclick="addCard()">追加</button>
+<button class="btn primary" id="add-card">追加</button>
 <div id="card-list-sec" style="margin-top: 10px;">
 <div style="border-top: 0.5px solid var(--color-border-tertiary); padding-top: 10px; margin-top: 10px;">
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
 <span style="font-size: 15px; font-weight: 600;">Aカード</span>
 <div style="display: flex; gap: 6px;">
-<button class="btn sm edit" onclick="openCardEdit(0)">編集</button>
-<button class="btn sm del" onclick="delCard(0)">削除</button>
+<button class="btn sm edit" data-card-action="edit" data-index="0">編集</button>
+<button class="btn sm del" data-card-action="delete" data-index="0">削除</button>
 </div>
 </div>
 <div class="fgr" style="margin-bottom: 10px;">
@@ -148,7 +148,7 @@
 <span style="font-size: 10px;">6月27日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,5,980,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="0" data-year="2026" data-month="5" data-estimated="980">
 </div>
 </div>
 <div class="salary-row">
@@ -157,7 +157,7 @@
 <span style="font-size: 10px;">7月27日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,6,980,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="0" data-year="2026" data-month="6" data-estimated="980">
 </div>
 </div>
 <div class="salary-row">
@@ -166,7 +166,7 @@
 <span style="font-size: 10px;">8月27日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,7,980,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="0" data-year="2026" data-month="7" data-estimated="980">
 </div>
 </div>
 <div class="salary-row">
@@ -175,7 +175,7 @@
 <span style="font-size: 10px;">9月27日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(0,2026,8,980,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="0" data-year="2026" data-month="8" data-estimated="980">
 </div>
 </div>
 <div class="salary-row">
@@ -184,7 +184,7 @@
 <span style="font-size: 10px;">10月27日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="4100" onchange="onCardBillChange(0,2026,9,980,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="4100" data-card-action="bill-change" data-index="0" data-year="2026" data-month="9" data-estimated="980">
 <span class="act-badge">入力済</span>
 </div>
 </div>
@@ -194,8 +194,8 @@
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
 <span style="font-size: 15px; font-weight: 600;">Bカード</span>
 <div style="display: flex; gap: 6px;">
-<button class="btn sm edit" onclick="openCardEdit(1)">編集</button>
-<button class="btn sm del" onclick="delCard(1)">削除</button>
+<button class="btn sm edit" data-card-action="edit" data-index="1">編集</button>
+<button class="btn sm del" data-card-action="delete" data-index="1">削除</button>
 </div>
 </div>
 <div class="fgr" style="margin-bottom: 10px;">
@@ -233,7 +233,7 @@
 <span style="font-size: 10px;">6月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,5,1200,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="1" data-year="2026" data-month="5" data-estimated="1200">
 </div>
 </div>
 <div class="salary-row">
@@ -242,7 +242,7 @@
 <span style="font-size: 10px;">7月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,6,1200,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="1" data-year="2026" data-month="6" data-estimated="1200">
 </div>
 </div>
 <div class="salary-row">
@@ -251,7 +251,7 @@
 <span style="font-size: 10px;">8月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,7,1200,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="1" data-year="2026" data-month="7" data-estimated="1200">
 </div>
 </div>
 <div class="salary-row">
@@ -260,7 +260,7 @@
 <span style="font-size: 10px;">9月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,8,1200,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="1" data-year="2026" data-month="8" data-estimated="1200">
 </div>
 </div>
 <div class="salary-row">
@@ -269,7 +269,7 @@
 <span style="font-size: 10px;">10月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" onchange="onCardBillChange(1,2026,9,1200,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="" data-card-action="bill-change" data-index="1" data-year="2026" data-month="9" data-estimated="1200">
 </div>
 </div>
 <div class="salary-row">
@@ -278,7 +278,7 @@
 <span style="font-size: 10px;">11月10日引き落とし</span>
 </span>
 <div style="display: flex; align-items: center; gap: 6px;">
-<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="2700" onchange="onCardBillChange(1,2026,10,2400,this.value)">
+<input class="salary-input" type="number" inputmode="numeric" placeholder="実績額" value="2700" data-card-action="bill-change" data-index="1" data-year="2026" data-month="10" data-estimated="2400">
 <span class="act-badge">入力済</span>
 </div>
 </div>

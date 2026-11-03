@@ -8,7 +8,6 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { LEGACY_SYNC } from '../src/sync.ts'; // Node が型を消して読む（D17）
 import { LEGACY_TASKS } from '../src/screens/tasks.ts';
 import { LEGACY_CARDS } from '../src/cards.ts';
-import { LEGACY_SETTINGS } from '../src/screens/settings.ts';
 import { LEGACY_CARD_SCREEN } from '../src/screens/cards.ts';
 import { LEGACY_SHIFTS } from '../src/shifts.ts';
 import { LEGACY_SHIFT_SCREEN } from '../src/screens/shift.ts';
@@ -25,7 +24,7 @@ const srcFiles = readdirSync(new URL('../src/', import.meta.url), { recursive: t
   .filter(f => f.endsWith('.ts')).map(f => `src/${f}`);
 
 // src/main.ts が window に出す名前（名前のまま出すもの）
-const LEGACY = { ...LEGACY_SYNC, ...LEGACY_TASKS, ...LEGACY_CARDS, ...LEGACY_SETTINGS, ...LEGACY_CARD_SCREEN, ...LEGACY_SHIFTS, ...LEGACY_SHIFT_SCREEN, ...LEGACY_PLANS, ...LEGACY_PLAN_SCREEN, ...LEGACY_LEDGER, ...LEGACY_MONTHLY_SCREEN, ...LEGACY_LEDGER_SCREEN };
+const LEGACY = { ...LEGACY_SYNC, ...LEGACY_TASKS, ...LEGACY_CARDS, ...LEGACY_CARD_SCREEN, ...LEGACY_SHIFTS, ...LEGACY_SHIFT_SCREEN, ...LEGACY_PLANS, ...LEGACY_PLAN_SCREEN, ...LEGACY_LEDGER, ...LEGACY_MONTHLY_SCREEN, ...LEGACY_LEDGER_SCREEN };
 // js/ のトップレベルの関数・変数
 const jsNames = new Set(jsFiles.flatMap(f => [...read(f).matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)|^(?:let|const|var)\s+([A-Za-z_$][\w$]*)/mg)].map(m => m[1] || m[2])));
 // ブラウザにもともとある名前と、JavaScript の言葉

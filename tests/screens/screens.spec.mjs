@@ -370,3 +370,36 @@ test('家計簿の選択肢と毎月のお金の編集シート', async ({ page 
   await expect(page.locator('#ldg-monthly-sec')).toBeVisible();
   expect(await page.evaluate(() => 'selLdgType' in window || 'stopMonthly' in window)).toBe(false);
 });
+
+test('設定のカテゴリとカードを実際の操作で追加・編集・削除する', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#settings-btn').click();
+  await page.locator('#new-cat-exp').fill('操作テストのカテゴリ');
+  await page.locator('#add-cat-exp').click();
+  const category = page.locator('#cat-exp-tags .cat-tag').filter({ hasText: '操作テストのカテゴリ' });
+  await expect(category).toBeVisible();
+  await category.locator('button').click();
+  await expect(category).toHaveCount(0);
+
+  await page.locator('#cn-name').fill('操作テストのカード');
+  await page.locator('#cn-close-eom').check();
+  await expect(page.locator('#cn-close')).toBeDisabled();
+  await page.locator('#cn-bill').fill('27');
+  await page.locator('#add-card').click();
+  const card = page.locator('#card-list-sec > div').filter({ hasText: '操作テストのカード' });
+  await expect(card).toBeVisible();
+  await card.locator('[data-card-action="edit"]').click();
+  await expect(page.locator('#card-edit-mbg')).toHaveClass(/open/);
+  await page.locator('#ce-name').fill('操作テストのカード編集');
+  await page.locator('#card-edit-mbg [data-card-action="save-edit"]').click();
+  await expect(page.locator('#card-edit-mbg')).not.toHaveClass(/open/);
+  const edited = page.locator('#card-list-sec > div').filter({ hasText: '操作テストのカード編集' });
+  await expect(edited).toBeVisible();
+  await edited.locator('[data-card-action="bill-change"]').first().fill('1234');
+  await edited.locator('[data-card-action="bill-change"]').first().dispatchEvent('change');
+  await expect(edited.locator('[data-card-action="bill-change"]').first()).toHaveValue('1234');
+  await edited.locator('[data-card-action="delete"]').click();
+  await expect(edited).toHaveCount(0);
+  expect(await page.evaluate(() => 'addCatExp' in window || 'addCard' in window)).toBe(false);
+});

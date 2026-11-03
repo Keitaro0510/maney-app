@@ -14,8 +14,8 @@ export function delCatExp(i: number): void { if (state.st.catExp.length <= 1) re
 export function delCatInc(i: number): void { if (state.st.catInc.length <= 1) return; state.st.catInc.splice(i, 1); save(); renderCatTags(); }
 export function renderCatTags(): void {
   const e = document.getElementById('cat-exp-tags'), n = document.getElementById('cat-inc-tags');
-  if (e) e.innerHTML = state.st.catExp.map((c, i) => `<span class="cat-tag">${escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${escapeHtml(c)}」を消す" onclick="delCatExp(${i})">×</button></span>`).join('');
-  if (n) n.innerHTML = state.st.catInc.map((c, i) => `<span class="cat-tag">${escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${escapeHtml(c)}」を消す" onclick="delCatInc(${i})">×</button></span>`).join('');
+  if (e) e.innerHTML = state.st.catExp.map((c, i) => `<span class="cat-tag">${escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${escapeHtml(c)}」を消す" data-cat-index="${i}">×</button></span>`).join('');
+  if (n) n.innerHTML = state.st.catInc.map((c, i) => `<span class="cat-tag">${escapeHtml(c)}<button type="button" class="cat-tag-del" aria-label="「${escapeHtml(c)}」を消す" data-cat-index="${i}">×</button></span>`).join('');
 }
 export function initSettingTab(): void {
   const s = state.st;
@@ -24,9 +24,23 @@ export function initSettingTab(): void {
   inputById('set-bud').value = String(s.budget || ''); selectById('set-fuyou').value = s.fuyouLimit || '1300000';
   inputById('set-other-inc').value = String(s.otherIncome || '');
   updateShiftCyclePreview(); renderWdHist(); renderCatTags(); renderCardList();
-  elementById('set-close').onchange = () => { updateShiftCyclePreview(); saveSettingFields(); };
-  elementById('set-pay').oninput = updateShiftCyclePreview;
-  for (const id of ['set-bal', 'set-bal-date', 'set-pay', 'set-bud', 'set-fuyou', 'set-other-inc']) elementById(id).onchange = saveSettingFields;
+}
+/** 設定の入力とカテゴリ操作を起動時に一度だけ登録する。 */
+export function bindSettingsControls(): void {
+  elementById('add-cat-exp').addEventListener('click', addCatExp);
+  elementById('add-cat-inc').addEventListener('click', addCatInc);
+  for (const [id, remove] of [['cat-exp-tags', delCatExp], ['cat-inc-tags', delCatInc]] as const) {
+    elementById(id).addEventListener('click', event => {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest<HTMLElement>('[data-cat-index]');
+      if (button && button.dataset.catIndex !== undefined) remove(Number(button.dataset.catIndex));
+    });
+  }
+  elementById('set-close').addEventListener('change', () => { updateShiftCyclePreview(); saveSettingFields(); });
+  elementById('set-pay').addEventListener('input', updateShiftCyclePreview);
+  for (const id of ['set-bal', 'set-bal-date', 'set-pay', 'set-bud', 'set-fuyou', 'set-other-inc']) {
+    elementById(id).addEventListener('change', saveSettingFields);
+  }
 }
 export function updateShiftCyclePreview(): void {
   const cd = selectById('set-close').value, pd = inputById('set-pay').value;
@@ -42,4 +56,3 @@ export function saveSettingFields(): void {
   if ((Object.keys(next) as (keyof typeof next)[]).every(k => String(state.st[k] ?? '') === String(next[k]))) return;
   Object.assign(state.st, next); save(); renderHome(); renderCal(); toast('設定を保存しました');
 }
-export const LEGACY_SETTINGS = { addCatExp, addCatInc, delCatExp, delCatInc, renderCatTags, initSettingTab, updateShiftCyclePreview, saveSettingFields };
