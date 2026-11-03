@@ -13,7 +13,7 @@
 <div style="display: flex; align-items: center; gap: 8px;">
 <input id="ce-close" type="number" inputmode="numeric" min="1" max="31" style="flex: 1 1 0%;" disabled="">
 <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; margin-bottom: 0px;">
-<input type="checkbox" id="ce-close-eom" onchange="toggleCardCloseEom('ce')"> 末日</label>
+<input type="checkbox" id="ce-close-eom"> 末日</label>
 </div>
 </div>
 <div class="fg">
@@ -22,8 +22,8 @@
 </div>
 </div>
 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-<button class="btn" onclick="closeCardEdit()">キャンセル</button>
-<button class="btn primary" onclick="saveCardEdit()">保存</button>
+<button class="btn" data-card-action="close-edit">キャンセル</button>
+<button class="btn primary" data-card-action="save-edit">保存</button>
 </div>
 </div>
 </div>
