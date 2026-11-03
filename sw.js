@@ -13,7 +13,6 @@ const ASSETS = [
   './js/app-core.js',
   './js/app-home.js',
   './js/app-calendar.js',
-  './js/app-cards.js',
   './js/app-shift.js',
   './js/app-ledger.js',
   './js/app-plan.js',

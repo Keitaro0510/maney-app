@@ -7,7 +7,6 @@ type JsFunctions = {
   renderHome(): void;
   renderCal(): void;
   moveMonthlyOffCard(cardId: string | undefined): void;
-  renderWdHist(): void;
 };
 
 function call<K extends keyof JsFunctions>(name: K): JsFunctions[K] {
@@ -20,4 +19,3 @@ export const sw = (tab: string): void => call('sw')(tab);
 export const renderHome = (): void => call('renderHome')();
 export const renderCal = (): void => call('renderCal')();
 export const moveMonthlyOffCard = (cardId: string | undefined): void => call('moveMonthlyOffCard')(cardId);
-export const renderWdHist = (): void => call('renderWdHist')();

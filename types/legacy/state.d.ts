@@ -86,6 +86,16 @@ declare var openCardEdit: typeof import('../../src/screens/cards.ts').openCardEd
 declare var closeCardEdit: typeof import('../../src/screens/cards.ts').closeCardEdit;
 declare var saveCardEdit: typeof import('../../src/screens/cards.ts').saveCardEdit;
 
+// ATM（src/screens/atm.ts）
+declare var openWd: typeof import('../../src/screens/atm.ts').openWd;
+declare var closeWd: typeof import('../../src/screens/atm.ts').closeWd;
+declare var nk: typeof import('../../src/screens/atm.ts').nk;
+declare var nd: typeof import('../../src/screens/atm.ts').nd;
+declare var updWd: typeof import('../../src/screens/atm.ts').updWd;
+declare var doWd: typeof import('../../src/screens/atm.ts').doWd;
+declare var renderWdHist: typeof import('../../src/screens/atm.ts').renderWdHist;
+declare var delWd: typeof import('../../src/screens/atm.ts').delWd;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
