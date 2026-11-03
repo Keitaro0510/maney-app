@@ -29,6 +29,7 @@ import { LEGACY_PLANS } from './plans.ts';
 import { LEGACY_PLAN_SCREEN } from './screens/plans.ts';
 import { LEGACY_LEDGER } from './ledger.ts';
 import { LEGACY_MONTHLY_SCREEN } from './screens/monthly.ts';
+import { LEGACY_LEDGER_SCREEN } from './screens/ledger.ts';
 import { mountLocalLogin } from './local-login.ts';
 
 window.MoneyData = { ...data };
@@ -59,6 +60,7 @@ Object.assign(window, LEGACY_PLANS);
 Object.assign(window, LEGACY_PLAN_SCREEN);
 Object.assign(window, LEGACY_LEDGER);
 Object.assign(window, LEGACY_MONTHLY_SCREEN);
+Object.assign(window, LEGACY_LEDGER_SCREEN);
 
 // 保存・送信・読み込みの流れ（D19 の手順4）。js/app-core.js が MoneySync.initSync で画面の関数を渡す。
 // まだ js/ の画面が名前で呼ぶもの（save・currentRows など）は、同じ名前で window に出す（期限付きの互換の層）

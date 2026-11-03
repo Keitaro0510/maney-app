@@ -44,3 +44,12 @@ test('予定の画面は TypeScript に移り、古い画面スクリプトを�
   const src = readFileSync(new URL('../src/screens/plans.ts', import.meta.url), 'utf8');
   assert.match(src, /LEGACY_PLAN_SCREEN/);
 });
+
+test('家計簿と毎月のお金は TypeScript に移り、古い画面スクリプトを読まない', () => {
+  assert.equal(appFiles.includes('app-ledger.js'), false);
+  assert.doesNotMatch(html, /<script src="js\/monthly-ui\.js"/);
+  for (const [name, legacy] of [['ledger', 'LEGACY_LEDGER_SCREEN'], ['monthly', 'LEGACY_MONTHLY_SCREEN']]) {
+    const src = readFileSync(new URL(`../src/screens/${name}.ts`, import.meta.url), 'utf8');
+    assert.match(src, new RegExp(legacy));
+  }
+});

@@ -8,7 +8,6 @@ type JsFunctions = {
   renderCal(): void;
   refreshDayViews(): void;
   renderCurrentSection(): void;
-  ldgTab(tab: string): void;
 };
 
 function call<K extends keyof JsFunctions>(name: K): JsFunctions[K] {
@@ -22,4 +21,3 @@ export const renderHome = (): void => call('renderHome')();
 export const renderCal = (): void => call('renderCal')();
 export const refreshDayViews = (): void => call('refreshDayViews')();
 export const renderCurrentSection = (): void => call('renderCurrentSection')();
-export const ldgTab = (tab: string): void => call('ldgTab')(tab);

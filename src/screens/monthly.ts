@@ -5,7 +5,8 @@ import { getToday } from '../dates.ts';
 import { activeInMonth } from '../money.ts';
 import * as monthly from '../monthly.ts';
 import * as ui from '../ui.ts';
-import { sw, ldgTab, renderCurrentSection } from '../js-bridge.ts';
+import { sw, renderCurrentSection } from '../js-bridge.ts';
+import { ldgTab } from './ledger.ts';
 import type { MonthlyRow } from '../monthly.ts';
 export function monthlyRows(): MonthlyRow[] { return state.server ? (currentRows().fixed_costs || []) as unknown as MonthlyRow[] : []; }
 const findMonthly = (id: string | null): MonthlyRow | undefined => monthlyRows().find(r => r.id === id);
