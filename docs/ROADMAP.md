@@ -108,7 +108,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 1. 共通の補助と今日（2026-11-02。`src/dates.ts`・`src/palette.ts`。機能のお金の補助は、その機能の PR で移す）　ブランチ: `feature/common-helpers`
       - [x] 2. タスク（試しの1つめ）（2026-11-02。`src/screens/tasks.ts`。画面の部品 `src/ui.ts` も移した。移し方は D20 の「作り（2）」）　ブランチ: `feature/tasks-screen`
       - [x] 3. 書き出し・読み込み（2026-11-02。`src/screens/backup.ts`。`downloadJson` は `src/ui.ts` へ）　ブランチ: `feature/backup-screen`
-      - [ ] 4. 設定・カード・ATM（**次はここ**。`js/app-settings.js`・`js/app-cards.js`。ホーム・家計簿・カレンダーも使うカードの集計（`cardCycle`・`cardBillAmount`・`cardRowOf`・`cardCloseDay`・カードの実績など）を一緒に移す。まとまりの切り方に判断が入るので、始める前に案を出す）
+      - [x] 4. 設定・カード・ATM（2026-11-03。`src/cards.ts`・`src/screens/settings.ts`・`cards.ts`・`atm.ts`。計算→設定→カード→ATM の順にコミット。カード見本の不要な push/pop は別コミットで削除）　ブランチ: `feature/settings-cards-atm-screen`
       - [ ] 5. シフト・バイト先・給与の実績
       - [ ] 6. 予定（`getPlansForDay`・`planTimeOnDay` を含む）
       - [ ] 7. 家計簿・毎月のお金（`catChart`・`dayChart` を含む）

@@ -43,7 +43,9 @@ export function cycle(card: CardInput, idx: number) {
 
 export const cardBillForGraphDate = (card: StCard, ci: number, y: number, m: number): number => cardCycleForBillMonth(card, ci, y, m).amount;
 export const cardBillForDate = (card: StCard, y: number, m: number): number => cardBillForGraphDate(card, state.st.cards.indexOf(card), y, m);
-export const cardBillAmount = (card: StCard, ci: number, y: number, m: number): number =>
-  getActualCard(ci, y, m)?.actualAmount ?? cardCycleForBillMonth(card, ci, y, m).amount;
+export function cardBillAmount(card: StCard, ci: number, y: number, m: number): number {
+  const actual = getActualCard(ci, y, m);
+  return actual ? parseInt(String(actual.actualAmount)) : cardCycleForBillMonth(card, ci, y, m).amount;
+}
 
 export const LEGACY_CARDS = { cardActualKey, getActualCard, setActualCard, cardRowOf, cardCloseDay, cardCycleForBillMonth, cycle, cardBillForGraphDate, cardBillForDate, cardBillAmount };
