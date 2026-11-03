@@ -1,4 +1,4 @@
-// 共通部分: 定数・状態・認証・データの読み込みと保存・同期・起動の関数・ナビ・計算の補助・グラフ
+// 共通部分: 状態の初期値・ログイン画面・ナビなど、まだ js/ にある入口
 // js/app.js を中身を変えずに分けたファイル（D18）。ふつうの <script> を、index.html に書いた順に読む（共通部分 → 画面 → bootstrap）。
 // アプリの画面と動き（D4 の手順3 で index.html の <script> から出した）。まだふつうの <script>（import/export ではない）なので、
 // 関数は今までどおり window から見え、HTML の onclick から呼べる。index.html の最後（<body> の終わり）で読む
@@ -15,7 +15,6 @@ let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
 let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
-let balChart=null;
 
 // ============================================================
 // Supabase設定
@@ -199,17 +198,3 @@ function sw(t){
 // カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
 // 登録の前の見本（_id のないカード）は、記録のない仮のカードとして数える
 // idx: 0 は確定（次に引き落とされる分）、1 は集計中（その次）
-
-// ============================================================
-// 口座推定
-// ============================================================
-// 今日の口座の残高（推定）。src/money.ts で数える（D11）
-function estimateAcct(){return server?MoneyCalc.balanceAt(currentRows(),TODAY):(parseInt(String(st.acctBase))||0);}
-
-// ============================================================
-// グラフ
-// ============================================================
-// 残高推移（今後90日）。src/money.ts で数える（D11。予定はカード払い以外を予定の日に、先の日付の口座の記録もその日に）
-function buildBalanceSeries(){const s=MoneyCalc.balanceSeries(currentRows(),TODAY,90);return{labels:s.map((p,i)=>{const d=ds2d(p.date);return i===0?'今日':`${d.getMonth()+1}/${d.getDate()}`;}),balances:s.map(p=>Math.round(p.balance))};}
-function renderBalanceChart(){const{labels,balances}=buildBalanceSeries();const ctx=/** @type {HTMLCanvasElement} */ (document.getElementById('balance-chart')).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:ctx2=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx2=>labels[ctx2[0].dataIndex],label:ctx2=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:item=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(v,i)=>labels[i]},grid:{display:false}},y:{ticks:{callback:v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});document.getElementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
-

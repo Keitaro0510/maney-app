@@ -236,3 +236,8 @@ declare var renderChartsMonth_: typeof import('../../src/screens/ledger.ts').ren
 declare var renderChartsYear_: typeof import('../../src/screens/ledger.ts').renderChartsYear_;
 declare var renderCharts: typeof import('../../src/screens/ledger.ts').renderCharts;
 declare var onLedgerDayChanged: typeof import('../../src/screens/ledger.ts').onLedgerDayChanged;
+
+// ホーム（src/screens/home.ts。ナビ・カレンダーと HTML が呼ぶ）
+declare var renderHome: typeof import('../../src/screens/home.ts').renderHome;
+declare var openHomeMore: typeof import('../../src/screens/home.ts').openHomeMore;
+declare var closeHomeMore: typeof import('../../src/screens/home.ts').closeHomeMore;

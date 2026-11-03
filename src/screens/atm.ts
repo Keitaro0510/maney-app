@@ -1,9 +1,9 @@
 // ATM の入力と引き出し履歴（D20 の 4）。
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday } from '../dates.ts';
 import { elementById } from '../ui.ts';
-import { renderHome } from '../js-bridge.ts';
 
 let wdStr = '';
 export function openWd(): void { wdStr = ''; updWd(); elementById('wd-mbg').classList.add('open'); }

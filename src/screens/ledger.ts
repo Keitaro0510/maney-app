@@ -1,11 +1,12 @@
 // 家計簿の入力・一覧・グラフ（D20 の 7）。
+import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday, getNow, gY, gM, addM, ds2d, DAYS } from '../dates.ts';
 import { followMonth } from '../clock.ts';
 import { CAT_COL, DOTC } from '../palette.ts';
 import * as ui from '../ui.ts';
-import { renderCal, refreshDayViews, renderHome, renderCurrentSection } from '../js-bridge.ts';
+import { renderCurrentSection, renderCal, refreshDayViews } from '../js-bridge.ts';
 import { monthLedger, ledgerPayLabel } from '../ledger.ts';
 import { renderCardList } from './cards.ts';
 import { renderMonthlyTab, saveMonthlyFromLedger } from './monthly.ts';
