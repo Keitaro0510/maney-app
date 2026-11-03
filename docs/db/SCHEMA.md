@@ -129,6 +129,7 @@ erDiagram
     date due_date "期限（空なら期限なし）"
     timestamptz completed_at "終えた日時（空なら未完了）"
     text memo
+    text[] tags "用途タグ（複数可。空ならタグなし）"
   }
 ```
 

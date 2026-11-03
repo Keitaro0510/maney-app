@@ -46,6 +46,8 @@ function taskRow(t: TaskRow): HTMLDivElement {
   edit.innerHTML = ICON_MORE;
   edit.addEventListener('click', () => openTaskSheet(t.id, edit));
   const row = checkRow({ title: t.title, sub, done: !!t.completed_at, onChange: done => setTaskDone(t.id, done), end: edit });
+  if (t.tags?.length) child(row, '.check-body').append(el('div', { className: 'task-tags' },
+    t.tags.map(tag => el('span', { className: 'task-tag', textContent: tag }))));
   if (overdue) row.classList.add('overdue');
   child(row, '.check-body').addEventListener('click', () => openTaskSheet(t.id, edit)); // 閉じたら「>」に戻す
   return row;
@@ -53,11 +55,42 @@ function taskRow(t: TaskRow): HTMLDivElement {
 
 // ---------- タスクのタブ ----------
 let taskAddDue: string | null = null; // 追加するときの期限（'YYYY-MM-DD' か null）
+let taskFilter: string | null = null;
+
+/** 使われているタグを候補に出す。押すと入力欄で付け外しできる。 */
+function renderTagSuggestions(inputId: string, boxId: string): void {
+  const input = inputById(inputId);
+  const selected = calc.parseTags(input.value);
+  elementById(boxId).replaceChildren(...calc.taskTags(taskRows()).map(tag => {
+    const button = el('button', { type: 'button', className: 'task-tag-choice', textContent: tag, 'aria-pressed': String(selected.includes(tag)) });
+    button.addEventListener('click', () => {
+      input.value = (selected.includes(tag) ? selected.filter(item => item !== tag) : [...selected, tag]).join('、');
+      renderTagSuggestions(inputId, boxId);
+      input.focus();
+    });
+    return button;
+  }));
+}
+
+function renderTaskFilter(tags: string[]): void {
+  const box = elementById('task-filter');
+  if (!tags.length) { box.replaceChildren(); return; }
+  box.replaceChildren(el('span', { className: 'task-filter-label', textContent: 'タグで絞る' }),
+    ...[null, ...tags].map(tag => {
+      const button = el('button', { type: 'button', className: 'task-tag-choice', textContent: tag || 'すべて', 'aria-pressed': String(taskFilter === tag) });
+      button.addEventListener('click', () => { taskFilter = tag; renderTaskTab(); });
+      return button;
+    }));
+}
 
 export function renderTaskTab(): void {
   renderTaskAddDue();
   const box = elementById('task-list');
   const tasks = taskRows();
+  const tags = calc.taskTags(tasks);
+  if (taskFilter && !tags.includes(taskFilter)) taskFilter = null;
+  renderTaskFilter(tags);
+  renderTagSuggestions('task-add-tags', 'task-add-tag-suggestions');
   if (!tasks.length) {
     box.replaceChildren(el('div', { className: 'card task-empty' }, [
       el('div', { className: 'task-empty-title', textContent: 'タスクはまだありません' }),
@@ -65,7 +98,12 @@ export function renderTaskTab(): void {
     ]));
     return;
   }
-  const { sections, folded } = calc.groupForTab(tasks, getToday(), new Date());
+  const shown = taskFilter ? tasks.filter(task => task.tags?.includes(taskFilter!)) : tasks;
+  if (!shown.length) {
+    box.replaceChildren(el('div', { className: 'card task-filter-empty', textContent: `「${taskFilter}」のタスクはありません` }));
+    return;
+  }
+  const { sections, folded } = calc.groupForTab(shown, getToday(), new Date());
   const cards: HTMLElement[] = sections.map(s => {
     const left = s.tasks.filter(t => !t.completed_at).length;
     return el('section', { className: `card task-section task-${s.key}` }, [
@@ -121,10 +159,11 @@ export function addTaskQuick(): void {
   const title = input.value.trim();
   if (!title) { input.focus(); return; }
   const ok = saveRows([{ table: 'tasks', action: 'insert', id: crypto.randomUUID(), row: {
-    title, due_date: taskAddDue, completed_at: null, memo: '', position: calc.nextPosition(taskRows()),
+    title, due_date: taskAddDue, completed_at: null, memo: '', tags: calc.parseTags(inputById('task-add-tags').value), position: calc.nextPosition(taskRows()),
   } }]);
   if (!ok) return;
   input.value = '';
+  inputById('task-add-tags').value = '';
   input.focus(); // 続けて入れられるように
   renderTaskTab();
 }
@@ -147,6 +186,8 @@ export function openTaskSheet(id: string | null, opener?: HTMLElement | null): v
   inputById('task-title').value = t.title;
   inputById('task-due').value = t.due_date || '';
   textareaById('task-memo').value = t.memo || '';
+  inputById('task-tags').value = (t.tags || []).join('、');
+  renderTagSuggestions('task-tags', 'task-edit-tag-suggestions');
   elementById('task-title-err').hidden = true;
   closeTaskSheetFn = openSheet(dialogById('task-sheet'), opener);
 }
@@ -165,7 +206,7 @@ export function saveTaskSheet(): void {
   }
   if (!findTask(taskEditId) || !taskEditId) { closeTaskSheet(); return refreshTaskViews(); }
   const ok = saveRows([{ table: 'tasks', action: 'update', id: taskEditId, row: {
-    title, due_date: inputById('task-due').value || null, memo: textareaById('task-memo').value.trim(),
+    title, due_date: inputById('task-due').value || null, memo: textareaById('task-memo').value.trim(), tags: calc.parseTags(inputById('task-tags').value),
   } }]);
   if (!ok) return;
   closeTaskSheet();
@@ -179,12 +220,12 @@ export function deleteTaskFromSheet(): void {
   if (!t) return refreshTaskViews();
   if (!saveRows([{ table: 'tasks', action: 'delete', id: t.id }])) return;
   refreshTaskViews();
-  const { title, due_date, completed_at, memo, position } = t;
+  const { title, due_date, completed_at, memo, position, tags } = t;
   toast(`「${title}」を消しました`, {
     actionLabel: '元に戻す',
     onAction: () => {
       if (findTask(t.id)) return;
-      saveRows([{ table: 'tasks', action: 'insert', id: t.id, row: { title, due_date, completed_at, memo, position } }]);
+      saveRows([{ table: 'tasks', action: 'insert', id: t.id, row: { title, due_date, completed_at, memo, position, tags: tags || [] } }]);
       refreshTaskViews();
     },
   });
@@ -282,6 +323,8 @@ export function bindTaskControls(): void {
   });
   const homeTasks = elementById('home-tasks');
   homeTasks.addEventListener('click', () => openStartupTasks(homeTasks));
+  inputById('task-add-tags').addEventListener('input', () => renderTagSuggestions('task-add-tags', 'task-add-tag-suggestions'));
+  inputById('task-tags').addEventListener('input', () => renderTagSuggestions('task-tags', 'task-edit-tag-suggestions'));
 
   const sheet = dialogById('task-sheet');
   sheet.querySelectorAll<HTMLButtonElement>('.task-sheet-due button[data-due]').forEach(button => {

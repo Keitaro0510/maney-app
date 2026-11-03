@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   daysBetween, sortTasks, isFolded, groupForTab, startupGroups, shouldShowStartup, dueLabel, nextPosition,
-  tasksOnDay, countByDay, homeSummary,
+  tasksOnDay, countByDay, homeSummary, parseTags, taskTags,
 } from '../src/tasks.ts'; // Node が型を消して読む（D17）
 
 const TODAY = '2026-11-02';                       // 月曜
@@ -14,6 +14,11 @@ const task = (props = {}) => ({
   created_at: `2026-10-${String(10 + n).padStart(2, '0')}T00:00:00Z`, ...props,
 });
 const titles = list => list.map(t => t.title);
+
+test('複数タグの入力は区切り・空欄・重複を整え、一覧の候補を作る', () => {
+  assert.deepEqual(parseTags('仕事、就活, 仕事\nお金、、'), ['仕事', '就活', 'お金']);
+  assert.deepEqual(taskTags([task({ tags: ['仕事', 'お金'] }), task({ tags: ['仕事'] }), task()]), ['お金', '仕事']);
+});
 
 test('日数の差（月・年をまたぐ）', () => {
   assert.equal(daysBetween('2026-11-02', '2026-11-02'), 0);

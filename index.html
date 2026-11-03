@@ -209,6 +209,10 @@
     <button type="button" class="task-chip" data-due="tomorrow">明日</button>
     <label class="task-chip" data-due="pick"><span class="task-chip-text">日付…</span><input type="date" aria-label="期限の日付を選ぶ"/></label>
   </div>
+  <label class="task-tags-field" for="task-add-tags">タグ <span>複数は「、」で区切る</span></label>
+  <input id="task-add-tags" class="task-tags-input" placeholder="仕事、就活など" autocomplete="off"/>
+  <div class="task-tag-suggestions" id="task-add-tag-suggestions"></div>
+  <div class="task-filter" id="task-filter" role="group" aria-label="タグでタスクを絞り込む"></div>
   <div id="task-list"></div>
 </div>
 
@@ -335,6 +339,7 @@
       <button type="button" class="task-chip" data-due="tomorrow">明日</button>
     </div></div>
   <div class="fg"><label for="task-memo">メモ</label><textarea id="task-memo" rows="3" style="height:auto;font-size:16px"></textarea></div>
+  <div class="fg"><label for="task-tags">タグ <span class="task-tags-hint">複数は「、」で区切る</span></label><input id="task-tags" class="task-tags-input" placeholder="仕事、就活など" autocomplete="off"/><div class="task-tag-suggestions" id="task-edit-tag-suggestions"></div></div>
   <div class="task-sheet-actions">
     <button type="button" class="ui-btn danger" data-task-action="delete">削除</button>
     <span class="spacer"></span>

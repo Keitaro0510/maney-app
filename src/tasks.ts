@@ -18,6 +18,17 @@ export interface TaskRow extends TaskLike {
   completed_at: string | null;
   memo: string;
   position: number;
+  tags?: string[]; // 古い端末の写しにはまだないことがある
+}
+
+/** 入力欄の区切りをそろえ、空欄と重複を除く。 */
+export function parseTags(input: string): string[] {
+  return [...new Set(input.split(/[、,\n]/).map(tag => tag.trim()).filter(Boolean))];
+}
+
+/** 絞り込みと入力候補に使う、今のタスクに付いているタグ。 */
+export function taskTags(tasks: TaskRow[]): string[] {
+  return [...new Set(tasks.flatMap(task => task.tags || []))].sort((a, b) => a.localeCompare(b, 'ja'));
 }
 
 export type SectionKey = 'overdue' | 'today' | 'tomorrow' | 'soon' | 'later' | 'none';
