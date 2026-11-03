@@ -1,7 +1,7 @@
-// ログインと起動の流れ（D19 の手順5）。js/app-core.js から移した。
+// ログインと起動の流れ（D19 の手順5）。
 // - 状態は src/state.ts、保存・送信・読み込みは src/sync.ts
-// - DOM には触らず、js/ から渡す AuthUi だけを呼ぶ（ログイン画面・最初の描画・開いたときのタスク・読み込み直し）
-// - まだ js/ と index.html が名前で呼ぶもの（loginWithGoogle・logout・loadData）は、src/main.ts が window に出す（期限付きの互換の層）
+// - DOM には触らず、src/main.ts から渡す AuthUi だけを呼ぶ（ログイン画面・最初の描画・開いたときのタスク・読み込み直し）
+// - HTML のログイン・ログアウトボタンは src/bootstrap.ts がイベントを登録する
 import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import type { Op, Server } from './data.ts';
 import { state } from './state.ts';
@@ -25,7 +25,7 @@ export interface AuthDeps {
   ui: AuthUi;
   /** 端末の保存場所のキーの頭（本番は maney:prod:。src/env.ts） */
   storagePrefix: string;
-  /** st の足りない項目を埋める（js/app-core.js） */
+  /** st の足りない項目を埋める（src/state.ts） */
   fixDefaults(): void;
   /** テストで差し替える */
   storage?: Storage;
@@ -36,7 +36,7 @@ export interface AuthDeps {
 type Deps = Required<AuthDeps>;
 let deps: Deps | null = null;
 
-/** 起動するときに、js/app-core.js が1回呼ぶ（テストは何度でも呼んでよい） */
+/** 起動するときに src/main.ts が1回呼ぶ（テストは何度でも呼んでよい） */
 export function initAuth(d: AuthDeps): void {
   deps = { storage: globalThis.localStorage, currentUrl: () => globalThis.location.href, ...d };
 }
@@ -92,7 +92,7 @@ export async function startWithUser(user: User): Promise<void> {
   handleLegacyLocalData();
 }
 
-/** アプリを開いたとき（js/app-bootstrap.js が最後に1回呼ぶ。D18） */
+/** アプリを開いたとき（src/bootstrap.ts が最後に1回呼ぶ） */
 export async function loadData(): Promise<void> {
   const { supa, ui, fixDefaults } = need();
   fixDefaults();
@@ -156,6 +156,3 @@ export function handleLegacyLocalData(): void {
       { label: '捨てる', onclick: () => { forget(); ui.hideBanner(); } },
     ]);
 }
-
-/** まだ js/ と index.html が名前で呼ぶもの（src/main.ts が window に出す。期限付きの互換の層。D19） */
-export const LEGACY_AUTH = { loginWithGoogle, logout, loadData };

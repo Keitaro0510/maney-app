@@ -62,7 +62,7 @@ test('開いたときのタスクと、ホーム', async ({ page }) => {
   expect.soft(await dom(page, '#sec-home')).toMatchSnapshot('home.html');
   await shot(page, 'home.png');
 
-  await page.evaluate(() => openHomeMore(document.body));
+  await page.locator('#home-more-btn').click();
   await settle(page);
   expect.soft(await dom(page, '#home-more')).toMatchSnapshot('home-more.html');
   await shot(page, 'home-more.png', { fullPage: false });
@@ -218,4 +218,26 @@ test('書き出したファイルを読み込みの確認画面で開いて閉�
   await page.locator('#import-close').click();
   await expect(page.locator('#import-sheet')).not.toBeVisible();
   expect(await page.evaluate(() => 'exportBackup' in window)).toBe(false);
+});
+
+test('ホームの操作ボタンとログアウト', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  for (const [button, modal] of [
+    ['#home-add-ledger', '#ldg-mbg'],
+    ['#home-add-plan', '#plan-mbg'],
+    ['#home-open-atm', '#wd-mbg'],
+  ]) {
+    await page.locator(button).click();
+    await expect(page.locator(modal)).toHaveClass(/open/);
+    await closeAll(page);
+  }
+  await page.locator('#home-more-btn').click();
+  await expect(page.locator('#home-more')).toBeVisible();
+  await page.locator('#home-more-close').click();
+  await expect(page.locator('#home-more')).not.toBeVisible();
+  await page.locator('#settings-btn').click();
+  await page.locator('#logout-btn').click();
+  await expect(page.locator('#login-screen')).toBeVisible();
+  expect(await page.evaluate(() => 'loginWithGoogle' in window || 'logout' in window)).toBe(false);
 });

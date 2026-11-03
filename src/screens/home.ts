@@ -12,6 +12,9 @@ import { monthLedger } from '../ledger.ts';
 import { getPlansForDay } from '../plans.ts';
 import { planColor } from '../palette.ts';
 import { renderHomeTasks } from './tasks.ts';
+import { openLedgerModal } from './ledger.ts';
+import { openPlanModal } from './plans.ts';
+import { openWd } from './atm.ts';
 import type { Rows } from '../money.ts';
 
 let balChart: { destroy(): void } | null = null;
@@ -66,4 +69,12 @@ function renderHomeBudget(): void{
 
 function renderBalanceChart(): void{const{labels,balances}=buildBalanceSeries();const ctx=(MoneyUI.elementById('balance-chart') as HTMLCanvasElement).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:(ctx2: { p0DataIndex: number })=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:(ctx2: { dataIndex: number }[])=>labels[ctx2[0].dataIndex],label:(ctx2: { datasetIndex: number; raw: number })=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:(item: { datasetIndex: number })=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(_v: unknown,i: number)=>labels[i]},grid:{display:false}},y:{ticks:{callback:(v: number)=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});MoneyUI.elementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
 
-export const LEGACY_HOME = { renderHome, openHomeMore, closeHomeMore };
+/** ホームの固定ボタンを登録する。 */
+export function bindHomeControls(): void {
+  MoneyUI.elementById('home-add-ledger').addEventListener('click', () => openLedgerModal());
+  MoneyUI.elementById('home-add-plan').addEventListener('click', () => openPlanModal());
+  MoneyUI.elementById('home-open-atm').addEventListener('click', openWd);
+  const more = MoneyUI.elementById('home-more-btn');
+  more.addEventListener('click', () => openHomeMore(more));
+  MoneyUI.elementById('home-more-close').addEventListener('click', closeHomeMore);
+}
