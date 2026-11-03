@@ -259,10 +259,10 @@
   <div class="card"><div class="st">データの書き出し・読み込み</div>
     <div class="backup-note">すべてのデータを JSON のファイルに書き出します。何かあったときに、このファイルを読み込むと、書き出したときの状態に戻せます。</div>
     <div class="backup-actions">
-      <button type="button" class="ui-btn" onclick="exportBackup()">書き出す</button>
-      <button type="button" class="ui-btn" id="backup-import-btn" onclick="pickBackupFile()">ファイルから読み込む</button>
+      <button type="button" class="ui-btn" id="backup-export-btn">書き出す</button>
+      <button type="button" class="ui-btn" id="backup-import-btn">ファイルから読み込む</button>
     </div>
-    <input type="file" id="backup-file" accept=".json,application/json" hidden onchange="readBackupFile(this)"/>
+    <input type="file" id="backup-file" accept=".json,application/json" hidden/>
     <div class="backup-err" id="backup-err" role="alert" hidden></div>
   </div>
   <!-- アカウント（いちばん下。D10） -->
@@ -385,15 +385,15 @@
 <dialog class="sheet" id="import-sheet" aria-labelledby="import-sheet-title" aria-describedby="import-warn">
   <div class="sheet-head">
     <h2 id="import-sheet-title">ファイルから読み込む</h2>
-    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeImportSheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button type="button" class="icon-btn" id="import-close" aria-label="閉じる"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="import-file" id="import-file"></div>
   <table class="import-counts" id="import-counts"></table>
   <div class="import-warn" id="import-warn">今のデータは、すべてこのファイルの中身に置き換わります。ファイルを書き出したあとに記録した分は消えます。読み込む直前の状態は、サーバーに写しとして90日残ります。</div>
   <div class="backup-err" id="import-err" role="alert" hidden></div>
   <div class="import-actions">
-    <button type="button" class="ui-btn" id="import-cancel" onclick="closeImportSheet()">やめる</button>
-    <button type="button" class="ui-btn danger" id="import-run" onclick="runImport()">置き換える</button>
+    <button type="button" class="ui-btn" id="import-cancel">やめる</button>
+    <button type="button" class="ui-btn danger" id="import-run">置き換える</button>
   </div>
 </dialog>
 

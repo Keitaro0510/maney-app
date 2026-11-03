@@ -118,6 +118,7 @@ Phase の番号の順ではなく、次の順で進める。
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
   - [x] 固定のナビ・カレンダー・家計簿の表示切替と期間ボタン20か所（2026-11-03。`src/navigation.ts`・`src/screens/calendar.ts`・`ledger.ts`。不要になった関数10個の `window` 公開も削除）　ブランチ: `feature/events-navigation`
   - [x] タスクの固定 HTML にある15か所のイベントと起動時一覧のチェック（2026-11-03。`src/screens/tasks.ts`。タスク一覧の行はもともと DOM のイベント登録を使う）　ブランチ: `feature/events-tasks`
+  - [x] データの書き出し・読み込みの固定イベント6か所（2026-11-03。`src/screens/backup.ts`。書き出したファイルを確認画面で開き、取り消すところまで確かめた）　ブランチ: `feature/events-backup`
   - [ ] 残りの固定 HTML の `onclick`・`onchange`・`onsubmit` と、画面が組み立てる HTML のハンドラを機能ごとに移す
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）

@@ -2,7 +2,6 @@
 // 設定の「データの書き出し・読み込み」から使う。
 // - 書き出し: 今の行（サーバーの写しに送信待ちを重ねたもの。画面に出ている内容）を JSON のファイルにする
 // - 読み込み: 今のデータを全部、ファイルの中身に置き換える（DB の public.import_backup。直前の状態は写しに残る）
-// まだ index.html の onclick が名前で呼ぶものは、src/main.ts が LEGACY_BACKUP を window に出す（期限付きの互換の層。D20）
 import { state } from '../state.ts';
 import { currentRows, flushOutbox, loadRemote, TABLE_LABELS } from '../sync.ts';
 import { TABLES } from '../data.ts';
@@ -136,5 +135,13 @@ export async function runImport(): Promise<void> {
   }
 }
 
-/** まだ index.html の onclick が名前で呼ぶもの（src/main.ts が window に出す。期限付きの互換の層。D20） */
-export const LEGACY_BACKUP = { exportBackup, pickBackupFile, readBackupFile, closeImportSheet, runImport };
+/** 設定の書き出し・読み込みボタンを登録する。 */
+export function bindBackupControls(): void {
+  elementById('backup-export-btn').addEventListener('click', exportBackup);
+  elementById('backup-import-btn').addEventListener('click', pickBackupFile);
+  const file = inputById('backup-file');
+  file.addEventListener('change', () => { void readBackupFile(file); });
+  elementById('import-close').addEventListener('click', closeImportSheet);
+  elementById('import-cancel').addEventListener('click', closeImportSheet);
+  elementById('import-run').addEventListener('click', () => { void runImport(); });
+}

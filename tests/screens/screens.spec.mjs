@@ -193,3 +193,29 @@ test('タスクの追加・編集・削除をボタンとフォームで行う',
   await page.locator('#task-sheet [data-task-action="delete"]').click();
   await expect(row).toHaveCount(0);
 });
+
+test('書き出したファイルを読み込みの確認画面で開いて閉じる', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#settings-btn').click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#backup-export-btn').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^maney-export-\d{4}-\d{2}-\d{2}\.json$/);
+  const filePath = await download.path();
+  const chooseExport = async () => {
+    const chooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#backup-import-btn').click();
+    await (await chooserPromise).setFiles(filePath);
+  };
+  await chooseExport();
+  await expect(page.locator('#import-sheet')).toBeVisible();
+  await expect(page.locator('#import-file')).toContainText('書き出したファイル');
+  await page.locator('#import-cancel').click();
+  await expect(page.locator('#import-sheet')).not.toBeVisible();
+  await chooseExport();
+  await expect(page.locator('#import-sheet')).toBeVisible();
+  await page.locator('#import-close').click();
+  await expect(page.locator('#import-sheet')).not.toBeVisible();
+  expect(await page.evaluate(() => 'exportBackup' in window)).toBe(false);
+});
