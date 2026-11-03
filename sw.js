@@ -9,7 +9,6 @@ const ASSETS = [
   './index.html',
   './css/app.css',
   './assets/main.js', // src/ をビルドしたもの（Vite が作る。リポジトリにはない。D17）
-  './js/monthly-ui.js',
   './js/app-core.js',
   './js/app-home.js',
   './js/app-calendar.js',

@@ -179,3 +179,18 @@ declare var savePlan: typeof import('../../src/screens/plans.ts').savePlan;
 declare var monthLedger: (...args: any[]) => any[];
 declare var getLedgerForDay: (...args: any[]) => any[];
 declare var ledgerPayLabel: typeof import('../../src/ledger.ts').ledgerPayLabel;
+
+// 毎月のお金の画面（src/screens/monthly.ts）
+declare var monthlyRowsIn: typeof import('../../src/screens/monthly.ts').monthlyRowsIn;
+declare var monthlyPayLabel: typeof import('../../src/screens/monthly.ts').monthlyPayLabel;
+declare var openMonthlyTab: typeof import('../../src/screens/monthly.ts').openMonthlyTab;
+declare var renderMonthlyTab: typeof import('../../src/screens/monthly.ts').renderMonthlyTab;
+declare var monthlyRow: typeof import('../../src/screens/monthly.ts').monthlyRow;
+declare var openMonthlySheet: typeof import('../../src/screens/monthly.ts').openMonthlySheet;
+declare var closeMonthlySheet: typeof import('../../src/screens/monthly.ts').closeMonthlySheet;
+declare var saveMonthly: typeof import('../../src/screens/monthly.ts').saveMonthly;
+declare var changeMonthlyAmount: typeof import('../../src/screens/monthly.ts').changeMonthlyAmount;
+declare var stopMonthly: typeof import('../../src/screens/monthly.ts').stopMonthly;
+declare var deleteMonthly: typeof import('../../src/screens/monthly.ts').deleteMonthly;
+declare var saveMonthlyFromLedger: typeof import('../../src/screens/monthly.ts').saveMonthlyFromLedger;
+declare var moveMonthlyOffCard: typeof import('../../src/screens/monthly.ts').moveMonthlyOffCard;
