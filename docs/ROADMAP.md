@@ -109,7 +109,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 2. タスク（試しの1つめ）（2026-11-02。`src/screens/tasks.ts`。画面の部品 `src/ui.ts` も移した。移し方は D20 の「作り（2）」）　ブランチ: `feature/tasks-screen`
       - [x] 3. 書き出し・読み込み（2026-11-02。`src/screens/backup.ts`。`downloadJson` は `src/ui.ts` へ）　ブランチ: `feature/backup-screen`
       - [x] 4. 設定・カード・ATM（2026-11-03。`src/cards.ts`・`src/screens/settings.ts`・`cards.ts`・`atm.ts`。計算→設定→カード→ATM の順にコミット。カード見本の不要な push/pop は別コミットで削除）　ブランチ: `feature/settings-cards-atm-screen`
-      - [ ] 5. シフト・バイト先・給与の実績
+      - [x] 5. シフト・バイト先・給与の実績（2026-11-03。`src/shifts.ts`・`src/screens/shift.ts`。計算→画面の順に移した）　ブランチ: `feature/shift-screen`
       - [ ] 6. 予定（`getPlansForDay`・`planTimeOnDay` を含む）
       - [ ] 7. 家計簿・毎月のお金（`catChart`・`dayChart` を含む）
       - [ ] 8. ホーム（`renderBalanceChart`・`balChart` を含む）
