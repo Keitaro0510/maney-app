@@ -112,7 +112,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 5. シフト・バイト先・給与の実績（2026-11-03。`src/shifts.ts`・`src/screens/shift.ts`。計算→画面の順に移した）　ブランチ: `feature/shift-screen`
       - [x] 6. 予定（2026-11-03。`src/plans.ts` に `getPlansForDay`・`planTimeOnDay`・`hm2min`、`src/screens/plans.ts` に入力画面）　ブランチ: `feature/plans-screen`
       - [x] 7. 家計簿・毎月のお金（2026-11-03。`src/ledger.ts`・`src/screens/ledger.ts`・`src/screens/monthly.ts`。`catChart`・`dayChart` も移した）　ブランチ: `feature/ledger-monthly-screen`
-      - [ ] 8. ホーム（`renderBalanceChart`・`balChart` を含む）
+      - [ ] 8. ホーム（**次はここ**。`js/app-home.js`。`renderBalanceChart`・`balChart` を含む。始める前に分け方の案を出す）
       - [ ] 9. カレンダー
       - [ ] 10. ナビゲーション・bootstrap・状態の互換の層の整理（関数を `window` に出す層は手順5まで残す）
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
