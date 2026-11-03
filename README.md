@@ -74,12 +74,12 @@ npm install
 | 公開と同じ形にビルドする | `MANEY_TARGET=prod bash scripts/build-pages.sh`（`_site` に出る。接続先の指定が要る。D19） |
 | ローカルの Supabase につないで開く | `npm run preview:local`・`npm run dev:local`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 
-- Vite を使っている（[D4](docs/DECISIONS.md)）。計算・データ・画面・起動を `src/` の TypeScript（ES モジュール）に移した（D20 の 0〜10。2026-11-03）。`js/` に実行ファイルは残っていない。HTML の `onclick` 用の関数公開は D18 の手順5まで残す
+- Vite を使っている（[D4](docs/DECISIONS.md)）。計算・データ・画面・起動を `src/` の TypeScript（ES モジュール）に移した（D20 の 0〜10。2026-11-03）。`js/` に実行ファイルは残っていない。HTML のイベント属性と、そのための `window` への関数公開も D18 の手順5で削除した
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
 - **ほかの PC で続きを始めるとき**（2026-11-03 時点。Phase 4 の途中）:
   1. `git pull` → `npm install`（`package.json` が変わっている）。Node.js 24 が要る
-  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は D18 の手順5「`onclick` をイベントの登録に置き換える」）。D20 の画面移行は完了し、画面は `src/screens/<機能>.ts` にある
+  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は手順6「Service Worker の先読み一覧と版」）。D20 の画面移行と D18 のイベント登録は完了し、画面は `src/screens/<機能>.ts` にある
   3. 画面を `src/` に移す PR は、**`npm run test:screens` で表示が変わっていないこと**を確かめる。ローカルの Supabase が要る: Docker Desktop を起動 → `npx supabase start`（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。初めての PC は `npx playwright install chromium` も。Mac では、画面の写真の基準（`*-darwin.png`）をまず手元で作る
   4. 保存の流れをブラウザで確かめるときは、本番ではなく `npm run preview:local`（ローカルの Supabase）。操作の確かめは、`tests/screens/` に一時の `zz-*.spec.mjs` を置いて `node scripts/local-supabase.mjs npx playwright test zz-…` で流し、終わったら消す
   5. PR は CI（Node のテスト・結合テスト＋画面の比較）が通るとマージできる。マージは Claude がしてよい（CLAUDE.md）

@@ -79,7 +79,7 @@ function showSyncBanner(message: string, actions: BannerAction[]): void {
     const button = document.createElement('button');
     button.className = 'btn sm' + (action.primary ? ' primary' : '');
     button.textContent = action.label;
-    button.onclick = action.onclick;
+    button.addEventListener('click', action.onclick);
     box.appendChild(button);
   });
   elementById('sync-banner').classList.add('show');

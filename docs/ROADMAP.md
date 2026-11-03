@@ -115,7 +115,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 8. ホーム（`src/home.ts`・`src/screens/home.ts`。`renderBalanceChart`・`balChart` を含む）　ブランチ: `feature/home-screen`
       - [x] 9. カレンダー（`src/screens/calendar.ts`。月・週・日と日の詳細、祝日）　ブランチ: `feature/calendar-screen`
       - [x] 10. ナビゲーション・bootstrap・状態の互換の層の整理（2026-11-03。`src/navigation.ts`・`src/bootstrap.ts`。`js/` の実行ファイルと状態の getter・setter を削除。関数を `window` に出す層は手順5まで残す）　ブランチ: `feature/navigation-bootstrap-screen`
-- [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
+- [x] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
   - [x] 固定のナビ・カレンダー・家計簿の表示切替と期間ボタン20か所（2026-11-03。`src/navigation.ts`・`src/screens/calendar.ts`・`ledger.ts`。不要になった関数10個の `window` 公開も削除）　ブランチ: `feature/events-navigation`
   - [x] タスクの固定 HTML にある15か所のイベントと起動時一覧のチェック（2026-11-03。`src/screens/tasks.ts`。タスク一覧の行はもともと DOM のイベント登録を使う）　ブランチ: `feature/events-tasks`
   - [x] データの書き出し・読み込みの固定イベント6か所（2026-11-03。`src/screens/backup.ts`。書き出したファイルを確認画面で開き、取り消すところまで確かめた）　ブランチ: `feature/events-backup`
@@ -126,7 +126,7 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] 設定のカテゴリとカードの入力・編集・実績など12か所（2026-11-03。`src/screens/settings.ts`・`cards.ts`。設定欄のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-settings-cards`
   - [x] 予定の入力画面の期間・時刻・色・支払い・保存など9か所（2026-11-03。`src/screens/plans.ts`。期間入力のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-plans`
   - [x] シフト・バイト先・給与実績の固定と描画時のハンドラ20か所（2026-11-03。`src/screens/shift.ts`。プレビュー入力のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-shift`
-  - [ ] 残りの固定 HTML の `onclick`・`onchange`・`onsubmit` と、画面が組み立てる HTML のハンドラを機能ごとに移す
+  - [x] 固定 HTML と画面が組み立てる HTML のイベント属性を全て移し、起動時の `window` 公開を削除（2026-11-03。画面比較も UI 操作で開く。同期バナーの動的ボタンもイベント登録に変更）　ブランチ: `feature/events-compat-cleanup`
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）
 - [ ] 本番の前に確認できる環境を作る（練習9、D8）

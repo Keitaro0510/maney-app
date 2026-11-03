@@ -118,20 +118,20 @@ test('シフト・設定・タスク', async ({ page }) => {
 test('入力画面', async ({ page }) => {
   await open(page);
   await closeAll(page);
-  // [名前, 開く処理, 写す要素, 写真も撮るか]
+  // [名前, 画面の操作, 写す要素, 写真も撮るか]
   const modals = [
-    ['ledger-add', () => openLedgerModal(), '#ldg-mbg', true],
-    ['ledger-edit', () => openLdgEdit(0), '#ldg-edit-mbg', false],
-    ['plan-add', () => openPlanModal('2026-11-12'), '#plan-mbg', true],
-    ['shift-add', () => openShiftModal('2026-11-12'), '#shift-mbg', false],
-    ['job-edit', () => openJobEdit(0), '#job-edit-mbg', false],
-    ['card-edit', () => openCardEdit(0), '#card-edit-mbg', false],
-    ['atm', () => document.getElementById('home-open-atm').click(), '#wd-mbg', false],
-    ['task-add', () => openTaskSheet(null, document.body), '#task-sheet', true],
-    ['monthly-add', () => openMonthlySheet(null, document.body), '#monthly-sheet', false],
+    ['ledger-add', async () => { await page.locator('#nav-ledger').click(); await page.locator('#sec-ledger [data-ledger-action="open-add"]').click(); }, '#ldg-mbg', true],
+    ['ledger-edit', async () => { await page.locator('#nav-ledger').click(); await page.locator('#ldg-list .ldg-day-header').first().click(); await page.locator('#ldg-list [data-ledger-action="list-edit"]').first().click(); }, '#ldg-edit-mbg', false],
+    ['plan-add', async () => { await page.locator('#nav-home').click(); await page.locator('#home-add-plan').click(); }, '#plan-mbg', true],
+    ['shift-add', async () => { await page.locator('#nav-shift').click(); await page.locator('#sec-shift [data-shift-action="open-add"]').click(); }, '#shift-mbg', false],
+    ['job-edit', async () => { await page.locator('#nav-shift').click(); await page.locator('#job-list [data-shift-action="edit-job"]').first().click(); }, '#job-edit-mbg', false],
+    ['card-edit', async () => { await page.locator('#settings-btn').click(); await page.locator('#card-list-sec [data-card-action="edit"]').first().click(); }, '#card-edit-mbg', false],
+    ['atm', async () => { await page.locator('#nav-home').click(); await page.locator('#home-open-atm').click(); }, '#wd-mbg', false],
+    ['task-edit', async () => { await page.locator('#nav-task').click(); await page.locator('#task-list .task-edit').first().click(); }, '#task-sheet', true],
+    ['monthly-edit', async () => { await page.locator('#nav-ledger').click(); await page.locator('#ldg-main-tabs button').nth(2).click(); await page.locator('#monthly-list .monthly-row').first().click(); }, '#monthly-sheet', false],
   ];
   for (const [name, openIt, selector, withShot] of modals) {
-    await page.evaluate(openIt);
+    await openIt();
     await settle(page);
     expect.soft(await dom(page, selector)).toMatchSnapshot(`modal-${name}.html`);
     if (withShot) await shot(page, `modal-${name}.png`, { fullPage: false });
