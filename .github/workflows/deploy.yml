@@ -1,6 +1,6 @@
 # 公開: main に入ったら、アプリのファイルだけを GitHub Pages に出す（D15）
 # テストを通してから、scripts/build-pages.sh で公開するファイルを Vite で _site にビルドし、
-# sw.js の CACHE_NAME（'money-app-dev'）を、公開するファイルの中身の指紋に置き換える。
+# ビルド成果物から sw.js の先読み一覧と版（CACHE_NAME）を作る。
 # 失敗したときは公開しない（前の版が出たまま）。GitHub の Actions の画面から手で動かし直せる
 name: 公開
 
@@ -37,7 +37,7 @@ jobs:
         run: node --test "tests/*.test.mjs"
       - name: 部品を入れる（package-lock.json のとおり）
         run: npm ci
-      - name: 公開するファイルを集め、CACHE_NAME を中身の指紋にする
+      - name: 公開するファイルを集め、先読み一覧と版を作る
         env:
           MANEY_TARGET: prod # 本番の Supabase につなぐ（D19。指定しないとビルドが止まる）
         run: |
