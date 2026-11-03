@@ -1,7 +1,6 @@
-<dialog class="sheet" id="monthly-sheet" aria-labelledby="monthly-sheet-title">
+<dialog class="sheet" id="monthly-sheet" aria-labelledby="monthly-sheet-title" open="">
 <div class="sheet-head">
-<h2 id="monthly-sheet-title">
-</h2>
+<h2 id="monthly-sheet-title">音楽</h2>
 <button type="button" class="icon-btn" aria-label="閉じる" data-monthly-action="close">
 <svg viewBox="0 0 24 24" aria-hidden="true">
 <path d="M6 6l12 12M18 6L6 18">
@@ -10,27 +9,28 @@
 </button>
 </div>
 <div class="monthly-info" id="monthly-sheet-info">
+<div class="monthly-info-amount out">-¥980</div>
+<div>毎月2日・Aカードで払う</div>
+<div>前から続いています</div>
 </div>
 <div class="monthly-state" id="monthly-state" hidden="">
 </div>
 <section class="monthly-part" id="monthly-amount-part">
-<h3 id="monthly-amount-title">来月から金額を変える</h3>
+<h3 id="monthly-amount-title">来月（12月）から金額を変える</h3>
 <div class="monthly-amount-form">
 <input id="monthly-new-amount" type="number" inputmode="numeric" min="1" placeholder="新しい金額" aria-labelledby="monthly-amount-title" aria-describedby="monthly-amount-hint monthly-amount-err">
 <button type="button" class="ui-btn primary" data-monthly-action="change-amount">変える</button>
 </div>
-<div class="monthly-hint" id="monthly-amount-hint">
-</div>
+<div class="monthly-hint" id="monthly-amount-hint">今月までは、今の金額のまま数えます</div>
 <div class="task-field-err" id="monthly-amount-err" role="alert" hidden="">金額を入れてください</div>
 </section>
 <section class="monthly-part" id="monthly-stop-part">
 <h3>やめる</h3>
 <div class="monthly-stop-btns">
-<button type="button" class="ui-btn" id="monthly-stop-this" data-monthly-action="stop-this">今月まで</button>
-<button type="button" class="ui-btn" id="monthly-stop-last" data-monthly-action="stop-last">先月まで</button>
+<button type="button" class="ui-btn" id="monthly-stop-this" data-monthly-action="stop-this">今月（11月）まで</button>
+<button type="button" class="ui-btn" id="monthly-stop-last" data-monthly-action="stop-last">先月（10月）まで</button>
 </div>
-<div class="monthly-hint" id="monthly-stop-hint">
-</div>
+<div class="monthly-hint" id="monthly-stop-hint">やめても、それまでの月の分は数えたままです</div>
 </section>
 <section class="monthly-part">
 <button type="button" class="ui-btn danger" data-monthly-action="delete">削除</button>
