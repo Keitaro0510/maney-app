@@ -181,8 +181,8 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
-<button class="btn sm edit" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
-<button class="btn sm del" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
+<button class="btn sm edit" onclick="sameRecord('ledger',7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
+<button class="btn sm del" onclick="sameRecord('ledger',7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
 </div>
 </div>
 </div>
@@ -192,7 +192,7 @@
 <div class="ri">
 <div style="display: flex; align-items: center; gap: 4px;">
 <label class="plan-done" title="済みにすると、予算を見込みの支出に入れません">
-<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
+<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
 </label>
 <div>
 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
@@ -204,16 +204,16 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 13px; font-weight: 600; color: rgb(186, 117, 23);">-¥4,000</span>
-<button class="btn sm edit" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
-<button class="btn sm del" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
+<button class="btn sm edit" onclick="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
+<button class="btn sm del" onclick="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
 </div>
 </div>
 </div>
 </div>
 <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
-<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(selDay)">＋ 予定</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(selDay)">＋ シフト</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(selDay)">＋ 支出</button>
+<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
 </div>
 </div>
 </div>
@@ -243,14 +243,14 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 14px; font-weight: 600; color: rgb(163, 45, 45);">-¥800</span>
-<button class="btn sm edit" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
-<button class="btn sm del" onclick="sameRecord(st.ledger,7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
+<button class="btn sm edit" onclick="sameRecord('ledger',7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;openLdgEdit(7)">編集</button>
+<button class="btn sm del" onclick="sameRecord('ledger',7,'c0000000-0000-4000-8000-000000000108')&amp;&amp;delLedger(7)">削除</button>
 </div>
 </div>
 <div class="ri">
 <div style="display: flex; align-items: center; gap: 4px;">
 <label class="plan-done" title="済みにすると、予算を見込みの支出に入れません">
-<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
+<input type="checkbox" aria-label="「飲み会」を済みにする（予算に含めない）" onchange="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;togglePlanDone(2)">
 </label>
 <div>
 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
@@ -262,15 +262,15 @@
 </div>
 <div style="display: flex; align-items: center; gap: 6px;">
 <span style="font-size: 13px; font-weight: 600; color: rgb(186, 117, 23);">-¥4,000</span>
-<button class="btn sm edit" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
-<button class="btn sm del" onclick="sameRecord(st.plans,2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
+<button class="btn sm edit" onclick="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;openPlanEdit(2)">編集</button>
+<button class="btn sm del" onclick="sameRecord('plans',2,'c0000000-0000-4000-8000-000000000303')&amp;&amp;deletePlan(2)">削除</button>
 </div>
 </div>
 </div>
 <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
-<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(selDay)">＋ 予定</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(selDay)">＋ シフト</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(selDay)">＋ 支出</button>
+<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
 </div>
 </div>
 <div style="display: flex; gap: 8px; margin-top: 4px;">

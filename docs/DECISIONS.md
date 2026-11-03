@@ -771,6 +771,11 @@ PR の順:
 - TypeScript の各画面は `renderCal`・`refreshDayViews` を直接 import し、`src/js-bridge.ts` から両方を消した。ナビ・起動と HTML の onclick のために `LEGACY_CALENDAR` を `window` に出す。HTML の追加ボタンが読む `selDay` は、画面モジュールの選択日を読む getter で一時的に公開する
 - Node テスト175件、型検査、ローカルの Supabase を使った画面比較5件が通った。さらに日付の選択から予定入力を開く操作、予定の「済み」、月送りをブラウザで確かめた
 
+作り（10。ナビゲーション・起動・状態の互換の層。2026-11-03）:
+- `js/app-core.js` のナビと `appUi` を `src/navigation.ts`、`js/app-bootstrap.js` の起動処理を `src/bootstrap.ts` に移した。`src/main.ts` が同期・ログインを初期化して起動する
+- 画面と起動は `src/state.ts` の状態を import する。`window` の状態 getter・setter と逆向きの `src/js-bridge.ts` を削除し、`js/` の実行ファイルはなくなった。HTML の `onclick` が使う関数の公開は D18 の手順5まで残す
+- ローカルの Supabase を使う画面比較5件、Node テスト、型検査と本番ビルドで移行を確かめた。DOM の写しは、状態の直接参照を関数呼び出しに変えた属性だけ更新した
+
 理由:
 - 保存先でまとめれば、1つの PR の中で保存先と画面がそろい、確かめる範囲がはっきりする
 - 依存の少ないものからなら、移すたびに `src/` の中で import でつながり、逆向きのつなぎを作らずに済む

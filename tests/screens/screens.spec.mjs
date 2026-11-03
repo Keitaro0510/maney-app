@@ -15,8 +15,8 @@ async function open(page) {
   await form.locator('input[name=password]').fill(PASSWORD);
   await form.locator('button[value=signin]').click();
   // ログインできたら読み込み直して起動する。サーバーから読み終えるまで待つ
-  await page.waitForFunction(() => window.remoteReady === true && !window.loadingRemote && !window.sending
-    && getComputedStyle(document.getElementById('login-screen')).display === 'none');
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('login-screen')).display === 'none'
+    && document.getElementById('home-spendable').textContent !== '¥0');
   await settle(page);
 }
 

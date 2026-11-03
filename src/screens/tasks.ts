@@ -12,7 +12,7 @@ import { dayKey } from '../clock.ts';
 import * as calc from '../tasks.ts';
 import type { TaskRow } from '../tasks.ts';
 import { el, checkRow, inputById, textareaById, dialogById, elementById, openSheet, toast } from '../ui.ts';
-import { sw } from '../js-bridge.ts';
+import { sw } from '../navigation.ts';
 
 /** 今のタスクの行（サーバーの写しに、送信待ちを重ねたもの） */
 export function taskRows(): TaskRow[] {

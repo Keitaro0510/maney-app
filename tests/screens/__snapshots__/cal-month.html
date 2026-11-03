@@ -161,9 +161,9 @@
 <div id="day-detail-content">
 </div>
 <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
-<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(selDay)">＋ 予定</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(selDay)">＋ シフト</button>
-<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(selDay)">＋ 支出</button>
+<button class="btn plan-btn" style="flex: 1 1 0%;" onclick="openPlanModal(getSelectedCalDay())">＋ 予定</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openShiftModal(getSelectedCalDay())">＋ シフト</button>
+<button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" onclick="openLedgerModal(getSelectedCalDay())">＋ 支出</button>
 </div>
 </div>
 <div style="display: flex; gap: 8px; margin-top: 4px;">

@@ -103,7 +103,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] state store と `window` の互換の層（ブラウザで `js/` の読み書きが変わらないことを確かめる）（2026-11-02。`src/state.ts` にデータと同期の状態の8つ。ローカルのビルドで、保存・送信・読み込み直し・ログアウトと再ログインを確かめた）　ブランチ: `feature/state-store`
       - [x] 保存・送信・読み込みの流れ（失敗・競合・通信の失敗・送り直しも確かめる）（2026-11-02。`src/sync.ts`。偽の Supabase と本物の DB の両方で、本物の流れを通して確かめた）　ブランチ: `feature/sync-flow`
       - [x] ログインと起動の流れ（ログインした直後・ログアウト・戻ったときの読み直しを確かめる）（2026-11-02。`src/auth.ts`・`src/supa.ts`。ブラウザでログイン・ログアウト・再ログイン・戻ったときの読み直しを確かめた）　ブランチ: `feature/auth-start`
-    - [ ] 画面を、状態と保存先を共有する機能のまとまりごとに `src/` に移す（`strict`。`window` に出す関数は画面ごとに一覧にする）。まとまりと順番は [D20](DECISIONS.md)（2026-11-02）
+    - [x] 画面を、状態と保存先を共有する機能のまとまりごとに `src/` に移す（`strict`。`window` に出す関数は画面ごとに一覧にする）。まとまりと順番は [D20](DECISIONS.md)（2026-11-02）
       - [x] 0. 画面を比べる道具（ローカルの Supabase・固定した時刻とデータで DOM の写しと画面の写真を比べる。CI でも）（2026-11-02。Playwright。`npm run test:screens`。DOM の写し 22・写真 11（Windows と Linux））　ブランチ: `feature/screen-compare`
       - [x] 1. 共通の補助と今日（2026-11-02。`src/dates.ts`・`src/palette.ts`。機能のお金の補助は、その機能の PR で移す）　ブランチ: `feature/common-helpers`
       - [x] 2. タスク（試しの1つめ）（2026-11-02。`src/screens/tasks.ts`。画面の部品 `src/ui.ts` も移した。移し方は D20 の「作り（2）」）　ブランチ: `feature/tasks-screen`
@@ -114,7 +114,7 @@ Phase の番号の順ではなく、次の順で進める。
       - [x] 7. 家計簿・毎月のお金（2026-11-03。`src/ledger.ts`・`src/screens/ledger.ts`・`src/screens/monthly.ts`。`catChart`・`dayChart` も移した）　ブランチ: `feature/ledger-monthly-screen`
       - [x] 8. ホーム（`src/home.ts`・`src/screens/home.ts`。`renderBalanceChart`・`balChart` を含む）　ブランチ: `feature/home-screen`
       - [x] 9. カレンダー（`src/screens/calendar.ts`。月・週・日と日の詳細、祝日）　ブランチ: `feature/calendar-screen`
-      - [ ] 10. ナビゲーション・bootstrap・状態の互換の層の整理（次はここ。関数を `window` に出す層は手順5まで残す）
+      - [x] 10. ナビゲーション・bootstrap・状態の互換の層の整理（2026-11-03。`src/navigation.ts`・`src/bootstrap.ts`。`js/` の実行ファイルと状態の getter・setter を削除。関数を `window` に出す層は手順5まで残す）　ブランチ: `feature/navigation-bootstrap-screen`
 - [ ] 5. `onclick` を少しずつイベントの登録に置き換える（移す間は、モジュールの関数を `window` に出す互換の層を置く）
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）

@@ -2,6 +2,8 @@
 // - 予定・バイト先の色の選択肢（PLAN_COLORS）と、色の読み上げの名前、カテゴリごとのグラフの色、最初のカテゴリ
 // - まだ js/ の画面のために、src/main.ts が LEGACY_PALETTE を window に同じ名前で出す（期限付きの互換の層。D20）
 import { state } from './state.ts';
+import { DEF_EXP, DEF_INC } from './default-categories.ts';
+export { DEF_EXP, DEF_INC } from './default-categories.ts';
 
 export interface PlanColor { key: string; bg: string; fg: string; dot: string }
 
@@ -32,8 +34,6 @@ export function jobColorByName(name: string): PlanColor {
 }
 
 /** 最初のカテゴリ（新しいユーザー・カテゴリが空のとき） */
-export const DEF_EXP = ['食費', '交通費', '外食', '娯楽', '日用品', '通信費', '固定費', 'その他'];
-export const DEF_INC = ['給与', 'バイト', '仕送り', 'その他'];
 
 /** グラフのカテゴリごとの色 */
 export const CAT_COL: Record<string, string> = {

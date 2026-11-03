@@ -3,11 +3,11 @@
 今のアプリ（`index.html`）で、どこを押すとどの画面に行くかをまとめた「今の地図」。画面を作り直すとき（タスクを足す・タブを組み替える）の出発点にする。
 
 - 図は今の動きを書いたもので、こうあるべきという案ではない。問題点は [design-review/audit-claude.md](design-review/audit-claude.md) と [design-review/audit-codex.md](design-review/audit-codex.md)
-- 画面の HTML は `index.html`、動きは `src/screens/<機能>.ts`（移したもの）と `js/app-*.js`（まだ移していないもの）。`js/app.js` を2026-11-02に分け（D18）、D20 で画面を `src/` に移している。**この文書の `js/app.js:行番号` は、分ける前の `js/app.js` の行**。今の場所は次の表で探す。画面を変えたら、この図も直す
+- 画面の HTML は `index.html`、動きは `src/screens/<機能>.ts`、ナビと起動は `src/navigation.ts`・`src/bootstrap.ts`。D20 で `js/` の実行ファイルをすべて `src/` に移した。**この文書の `js/app.js:行番号` は、分ける前の `js/app.js` の行**。今の場所は次の表で探す。画面を変えたら、この図も直す
 
   | 分ける前の行 | 今の場所（2026-11-03 時点） |
   |---|---|
-  | 1〜621 | `js/app-core.js`（共通部分）。日付・色・部品などは `src/dates.ts`・`palette.ts`・`ui.ts`、カードの集計は `src/cards.ts`、シフトの合計は `src/shifts.ts`、家計簿の補助は `src/ledger.ts` へ移した |
+  | 1〜621 | ナビは `src/navigation.ts`、日付・色・部品は `src/dates.ts`・`palette.ts`・`ui.ts`、カード・シフト・家計簿の補助は `src/cards.ts`・`shifts.ts`・`ledger.ts` |
   | 622〜699 | `src/home.ts`・`src/screens/home.ts`。予定の補助は `src/plans.ts` |
   | 700〜1059 | `src/screens/calendar.ts`（祝日・カレンダー） |
   | 1060〜1135 | `src/screens/cards.ts`・`src/screens/atm.ts`（カード設定・ATM） |
@@ -15,7 +15,7 @@
   | 1270〜1507 | `src/screens/ledger.ts`・`src/screens/monthly.ts` |
   | 1508〜1538 | `src/screens/settings.ts` |
   | 1539〜1662 | `src/screens/plans.ts` |
-  | 1663〜1708 | `js/app-bootstrap.js`（起動。ログインと起動の流れは `src/auth.ts`） |
+  | 1663〜1708 | `src/bootstrap.ts`（起動。ログインの流れは `src/auth.ts`） |
 
 ## 用語
 
@@ -159,4 +159,4 @@ flowchart LR
 | タスク | `renderTaskTab`（`src/screens/tasks.ts`） | `src/tasks.ts` の `groupForTab`・`startupGroups`・`dueLabel` |
 | 設定 | `initSettingTab`（2166）、`renderCardList`（1786）、`renderFcList`（2157）、`renderFiList`（2164）、`renderCatTags`（2162） | `cardCycleForBillMonth`（1333） |
 
-タブの切り替えは `sw()`（`js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。
+タブの切り替えは `sw()`（`src/navigation.ts`、旧 `js/app.js:522`）。切り替えるたびに、そのタブを全部描き直す。

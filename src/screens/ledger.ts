@@ -6,7 +6,7 @@ import { getToday, getNow, gY, gM, addM, ds2d, DAYS } from '../dates.ts';
 import { followMonth } from '../clock.ts';
 import { CAT_COL, DOTC } from '../palette.ts';
 import * as ui from '../ui.ts';
-import { renderCurrentSection } from '../js-bridge.ts';
+import { renderCurrentSection } from '../navigation.ts';
 import { renderCal, refreshDayViews } from './calendar.ts';
 import { monthLedger, ledgerPayLabel } from '../ledger.ts';
 import { renderCardList } from './cards.ts';

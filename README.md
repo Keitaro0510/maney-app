@@ -29,7 +29,7 @@ iPhoneのホーム画面から毎日使っている。
 
 ## 方針: 動いているアプリを壊さずに改修する
 
-今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（計算と画面の多くは `src/` の TypeScript、共通部分・起動は `js/` に残っている）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。毎日使いながら、次の順で少しずつ直す。
+今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（`src/` の TypeScript）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。毎日使いながら、次の順で少しずつ直す。
 
 1. **ブランチとPRで変更する流れを身につける**（main がそのまま本番なので、main で直接作業しない）
 2. **安全網を張る**（データのエクスポート、計算ロジックのテスト、CI）
@@ -74,12 +74,12 @@ npm install
 | 公開と同じ形にビルドする | `MANEY_TARGET=prod bash scripts/build-pages.sh`（`_site` に出る。接続先の指定が要る。D19） |
 | ローカルの Supabase につないで開く | `npm run preview:local`・`npm run dev:local`（[db/LOCAL.md](docs/db/LOCAL.md)） |
 
-- Vite を使っている（[D4](docs/DECISIONS.md)）。計算とデータの層は `src/` の TypeScript（ES モジュール）に移した。画面も `src/screens/` に移した（D20 の 0〜9。2026-11-03）。`js/` に残るのは `app-core`・`app-bootstrap` で、これらは Vite がそのまま公開する。少しずつ移す（[D17](docs/DECISIONS.md)）
+- Vite を使っている（[D4](docs/DECISIONS.md)）。計算・データ・画面・起動を `src/` の TypeScript（ES モジュール）に移した（D20 の 0〜10。2026-11-03）。`js/` に実行ファイルは残っていない。HTML の `onclick` 用の関数公開は D18 の手順5まで残す
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
 - **ほかの PC で続きを始めるとき**（2026-11-03 時点。Phase 4 の途中）:
   1. `git pull` → `npm install`（`package.json` が変わっている）。Node.js 24 が要る
-  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は D20 の 10「ナビゲーション・bootstrap・状態の互換の層の整理」）。やり方は [D20](docs/DECISIONS.md) の「作り（2）」（画面は `src/screens/<機能>.ts`・`window` に出すのは `LEGACY_<機能>`・`js/` を呼ぶのは `src/js-bridge.ts`）
+  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は D18 の手順5「`onclick` をイベントの登録に置き換える」）。D20 の画面移行は完了し、画面は `src/screens/<機能>.ts` にある
   3. 画面を `src/` に移す PR は、**`npm run test:screens` で表示が変わっていないこと**を確かめる。ローカルの Supabase が要る: Docker Desktop を起動 → `npx supabase start`（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。初めての PC は `npx playwright install chromium` も。Mac では、画面の写真の基準（`*-darwin.png`）をまず手元で作る
   4. 保存の流れをブラウザで確かめるときは、本番ではなく `npm run preview:local`（ローカルの Supabase）。操作の確かめは、`tests/screens/` に一時の `zz-*.spec.mjs` を置いて `node scripts/local-supabase.mjs npx playwright test zz-…` で流し、終わったら消す
   5. PR は CI（Node のテスト・結合テスト＋画面の比較）が通るとマージできる。マージは Claude がしてよい（CLAUDE.md）

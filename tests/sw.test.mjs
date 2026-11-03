@@ -30,27 +30,17 @@ test('ASSETS のビルドで作るものは assets/main.js だけ（名前は vi
 test('index.html が読む js/・css/ のファイルと manifest.json は、すべて ASSETS にある（足し忘れると、通信できないときに開けない）', () => {
   const scripts = [...html.matchAll(/<script src="(js\/[^"]+)"/g)].map(m => m[1]);
   const styles = [...html.matchAll(/<link rel="stylesheet" href="(css\/[^"]+)"/g)].map(m => m[1]);
-  assert.ok(scripts.length > 0);
+  assert.deepEqual(scripts, []);
   assert.ok(styles.length > 0);
   for (const f of [...scripts, ...styles, 'manifest.json', 'index.html']) assert.ok(assets.includes(f), `${f} が sw.js の ASSETS にありません`);
 });
 
-// js/ は window.MoneyCalc などを使うので、src/main.ts（モジュール）が先に動かないといけない（D17）。
-// モジュールはいつも HTML を読み終えてから動くので、js/ にも defer を付けて同じ列に並べる。
-// <head> に置くと、ビルドしたときに Vite がモジュールを <head> の最後に動かし、js/ のほうが先になってしまう
 test('モジュールの入口は1つ（src/main.ts）で、ファイルがある', () => {
   const modules = [...html.matchAll(/<script type="module" src="([^"]+)"/g)].map(m => m[1]);
   assert.deepEqual(modules, ['src/main.ts']);
   assert.ok(existsSync(new URL('../src/main.ts', import.meta.url)));
 });
 
-test('js/ の <script> は、すべて defer を付けて <body> に置く（モジュールのあとに動くように）', () => {
-  const bodyAt = html.indexOf('<body');
-  const tags = [...html.matchAll(/<script src="js\/[^"]+"[^>]*>/g)];
-  assert.ok(tags.length > 0);
-  for (const m of tags) {
-    assert.match(m[0], /\sdefer[\s>]/, `${m[0]} に defer がありません`);
-    assert.ok(m.index > bodyAt, `${m[0]} が <body> の中にありません`);
-  }
-  assert.ok(html.indexOf('<script type="module"') < tags[0].index, 'モジュールの入口が js/ より後にあります');
+test('旧 js/ の script は HTML に残っていない', () => {
+  assert.doesNotMatch(html, /<script src="js\//);
 });

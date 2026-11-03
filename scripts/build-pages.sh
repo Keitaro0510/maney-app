@@ -47,18 +47,16 @@ done
 for f in $(grep -oE '<script[^>]* src="[^"]+"|<link[^>]* rel="(stylesheet|modulepreload)"[^>]* href="[^"]+"' "$OUT/index.html" | grep -oE '(src|href)="[^"]+"' | cut -d'"' -f2 | sed 's|^\./||' | grep -v '^https\?://'); do
   in_assets "$f" || fail "index.html が読む $f が、sw.js の ASSETS にありません"
 done
-# モジュール（assets/main.js）が、js/ の <script> より先に並んでいるか。js/ はすべて defer か（D17。逆だと js/ が window.MoneyCalc などを見つけられない）
-module_at=$(grep -n '<script type="module"' "$OUT/index.html" | head -1 | cut -d: -f1)
-classic_at=$(grep -n '<script src="js/' "$OUT/index.html" | head -1 | cut -d: -f1)
-[ -n "$module_at" ] && [ -n "$classic_at" ] && [ "$module_at" -lt "$classic_at" ] || fail "index.html で、モジュールが js/ の <script> より先に並んでいません"
-if grep '<script src="js/' "$OUT/index.html" | grep -qv ' defer'; then fail "index.html の js/ の <script> に defer がないものがあります"; fi
+# モジュールだけで起動する。旧 js/ の script が混ざると、別の起動処理が走る
+grep -q '<script type="module"' "$OUT/index.html" || fail "index.html にアプリのモジュールがありません"
+if grep -q '<script src="js/' "$OUT/index.html"; then fail "index.html に旧 js/ の script が残っています"; fi
 # manifest とアイコンを、名前を変えずに指しているか（Vite に名前を変えられると、ホーム画面のアプリが壊れる）
 if ! grep -q 'rel="manifest" href="manifest.json"' "$OUT/index.html"; then
   echo "index.html の manifest の場所が変わっています（vite-ignore を確かめる）" >&2
   exit 1
 fi
 # 見た目とアプリの本体を、名前を変えずに指しているか（Vite に名前を変えられると、sw.js の ASSETS と合わなくなる）
-for ref in 'rel="stylesheet" href="css/app.css"' '<script src="js/app-core.js"' '<script src="js/app-bootstrap.js"'; do
+for ref in 'rel="stylesheet" href="css/app.css"'; do
   if ! grep -q "$ref" "$OUT/index.html"; then
     echo "index.html に $ref がありません（vite-ignore を確かめる）" >&2
     exit 1
