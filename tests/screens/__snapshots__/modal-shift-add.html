@@ -23,10 +23,10 @@
 <div class="fg">
 <label for="m-rest">休憩時間（分）</label>
 <div class="pay-chips" id="m-rest-chips">
-<button type="button" class="pay-chip sel" onclick="setRestMin(0)" aria-pressed="true">なし</button>
-<button type="button" class="pay-chip" onclick="setRestMin(45)" aria-pressed="false">45分</button>
-<button type="button" class="pay-chip" onclick="setRestMin(60)" aria-pressed="false">60分</button>
-<button type="button" class="pay-chip" onclick="setRestMin(90)" aria-pressed="false">90分</button>
+<button type="button" class="pay-chip sel" data-shift-action="rest" data-minutes="0" aria-pressed="true">なし</button>
+<button type="button" class="pay-chip" data-shift-action="rest" data-minutes="45" aria-pressed="false">45分</button>
+<button type="button" class="pay-chip" data-shift-action="rest" data-minutes="60" aria-pressed="false">60分</button>
+<button type="button" class="pay-chip" data-shift-action="rest" data-minutes="90" aria-pressed="false">90分</button>
 </div>
 <input type="number" id="m-rest" value="0" min="0" step="5" placeholder="例: 60">
 </div>
@@ -37,8 +37,8 @@
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
 <span id="m-month-lbl" style="font-size: 13px; color: var(--color-text-secondary); font-weight: 500;">2026年11月</span>
 <div style="display: flex; gap: 6px;">
-<button class="btn sm" onclick="shiftCalPrev()">←</button>
-<button class="btn sm" onclick="shiftCalNext()">→</button>
+<button class="btn sm" data-shift-action="cal-prev">←</button>
+<button class="btn sm" data-shift-action="cal-next">→</button>
 </div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px;" id="shift-cal-dow">
@@ -51,48 +51,48 @@
 <div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">土</div>
 </div>
 <div id="shift-cal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;">
-<button type="button" class="chk-day" aria-label="11月1日" onclick="toggleShiftDay('2026-11-01',false)" aria-pressed="false">1</button>
-<button type="button" class="chk-day" aria-label="11月2日" onclick="toggleShiftDay('2026-11-02',false)" aria-pressed="false">2</button>
-<button type="button" class="chk-day" aria-label="11月3日" onclick="toggleShiftDay('2026-11-03',false)" aria-pressed="false">3</button>
-<button type="button" class="chk-day" aria-label="11月4日" onclick="toggleShiftDay('2026-11-04',false)" aria-pressed="false">4</button>
-<button type="button" class="chk-day" aria-label="11月5日" onclick="toggleShiftDay('2026-11-05',false)" aria-pressed="false">5</button>
-<button type="button" class="chk-day" aria-label="11月6日" onclick="toggleShiftDay('2026-11-06',false)" aria-pressed="false">6</button>
-<button type="button" class="chk-day" aria-label="11月7日" onclick="toggleShiftDay('2026-11-07',false)" aria-pressed="false">7</button>
-<button type="button" class="chk-day" aria-label="11月8日" onclick="toggleShiftDay('2026-11-08',false)" aria-pressed="false">8</button>
-<button type="button" class="chk-day" aria-label="11月9日" onclick="toggleShiftDay('2026-11-09',false)" aria-pressed="false">9</button>
-<button type="button" class="chk-day" aria-label="11月10日" onclick="toggleShiftDay('2026-11-10',false)" aria-pressed="false">10</button>
-<button type="button" class="chk-day" aria-label="11月11日" onclick="toggleShiftDay('2026-11-11',false)" aria-pressed="false">11</button>
-<button type="button" class="chk-day sel" aria-label="11月12日" onclick="toggleShiftDay('2026-11-12',false)" aria-pressed="true">12</button>
-<button type="button" class="chk-day" aria-label="11月13日" onclick="toggleShiftDay('2026-11-13',false)" aria-pressed="false">13</button>
-<button type="button" class="chk-day" aria-label="11月14日" onclick="toggleShiftDay('2026-11-14',false)" aria-pressed="false">14</button>
-<button type="button" class="chk-day" aria-label="11月15日" onclick="toggleShiftDay('2026-11-15',false)" aria-pressed="false">15</button>
-<button type="button" class="chk-day" aria-label="11月16日" onclick="toggleShiftDay('2026-11-16',false)" aria-pressed="false">16</button>
-<button type="button" class="chk-day" aria-label="11月17日" onclick="toggleShiftDay('2026-11-17',false)" aria-pressed="false">17</button>
-<button type="button" class="chk-day" aria-label="11月18日" onclick="toggleShiftDay('2026-11-18',false)" aria-pressed="false">18</button>
-<button type="button" class="chk-day" aria-label="11月19日" onclick="toggleShiftDay('2026-11-19',false)" aria-pressed="false">19</button>
-<button type="button" class="chk-day" aria-label="11月20日" onclick="toggleShiftDay('2026-11-20',false)" aria-pressed="false">20</button>
-<button type="button" class="chk-day" aria-label="11月21日" onclick="toggleShiftDay('2026-11-21',false)" aria-pressed="false">21</button>
-<button type="button" class="chk-day" aria-label="11月22日" onclick="toggleShiftDay('2026-11-22',false)" aria-pressed="false">22</button>
-<button type="button" class="chk-day" aria-label="11月23日" onclick="toggleShiftDay('2026-11-23',false)" aria-pressed="false">23</button>
-<button type="button" class="chk-day" aria-label="11月24日" onclick="toggleShiftDay('2026-11-24',false)" aria-pressed="false">24</button>
-<button type="button" class="chk-day" aria-label="11月25日" onclick="toggleShiftDay('2026-11-25',false)" aria-pressed="false">25</button>
-<button type="button" class="chk-day" aria-label="11月26日" onclick="toggleShiftDay('2026-11-26',false)" aria-pressed="false">26</button>
-<button type="button" class="chk-day" aria-label="11月27日" onclick="toggleShiftDay('2026-11-27',false)" aria-pressed="false">27</button>
-<button type="button" class="chk-day" aria-label="11月28日" onclick="toggleShiftDay('2026-11-28',false)" aria-pressed="false">28</button>
-<button type="button" class="chk-day" aria-label="11月29日" onclick="toggleShiftDay('2026-11-29',false)" aria-pressed="false">29</button>
-<button type="button" class="chk-day" aria-label="11月30日" onclick="toggleShiftDay('2026-11-30',false)" aria-pressed="false">30</button>
-<button type="button" class="chk-day off" aria-label="12月1日" onclick="toggleShiftDay('2026-12-01',true)" aria-pressed="false">1</button>
-<button type="button" class="chk-day off" aria-label="12月2日" onclick="toggleShiftDay('2026-12-02',true)" aria-pressed="false">2</button>
-<button type="button" class="chk-day off" aria-label="12月3日" onclick="toggleShiftDay('2026-12-03',true)" aria-pressed="false">3</button>
-<button type="button" class="chk-day off" aria-label="12月4日" onclick="toggleShiftDay('2026-12-04',true)" aria-pressed="false">4</button>
-<button type="button" class="chk-day off" aria-label="12月5日" onclick="toggleShiftDay('2026-12-05',true)" aria-pressed="false">5</button>
+<button type="button" class="chk-day" aria-label="11月1日" data-shift-action="day" data-date="2026-11-01" data-other="false" aria-pressed="false">1</button>
+<button type="button" class="chk-day" aria-label="11月2日" data-shift-action="day" data-date="2026-11-02" data-other="false" aria-pressed="false">2</button>
+<button type="button" class="chk-day" aria-label="11月3日" data-shift-action="day" data-date="2026-11-03" data-other="false" aria-pressed="false">3</button>
+<button type="button" class="chk-day" aria-label="11月4日" data-shift-action="day" data-date="2026-11-04" data-other="false" aria-pressed="false">4</button>
+<button type="button" class="chk-day" aria-label="11月5日" data-shift-action="day" data-date="2026-11-05" data-other="false" aria-pressed="false">5</button>
+<button type="button" class="chk-day" aria-label="11月6日" data-shift-action="day" data-date="2026-11-06" data-other="false" aria-pressed="false">6</button>
+<button type="button" class="chk-day" aria-label="11月7日" data-shift-action="day" data-date="2026-11-07" data-other="false" aria-pressed="false">7</button>
+<button type="button" class="chk-day" aria-label="11月8日" data-shift-action="day" data-date="2026-11-08" data-other="false" aria-pressed="false">8</button>
+<button type="button" class="chk-day" aria-label="11月9日" data-shift-action="day" data-date="2026-11-09" data-other="false" aria-pressed="false">9</button>
+<button type="button" class="chk-day" aria-label="11月10日" data-shift-action="day" data-date="2026-11-10" data-other="false" aria-pressed="false">10</button>
+<button type="button" class="chk-day" aria-label="11月11日" data-shift-action="day" data-date="2026-11-11" data-other="false" aria-pressed="false">11</button>
+<button type="button" class="chk-day sel" aria-label="11月12日" data-shift-action="day" data-date="2026-11-12" data-other="false" aria-pressed="true">12</button>
+<button type="button" class="chk-day" aria-label="11月13日" data-shift-action="day" data-date="2026-11-13" data-other="false" aria-pressed="false">13</button>
+<button type="button" class="chk-day" aria-label="11月14日" data-shift-action="day" data-date="2026-11-14" data-other="false" aria-pressed="false">14</button>
+<button type="button" class="chk-day" aria-label="11月15日" data-shift-action="day" data-date="2026-11-15" data-other="false" aria-pressed="false">15</button>
+<button type="button" class="chk-day" aria-label="11月16日" data-shift-action="day" data-date="2026-11-16" data-other="false" aria-pressed="false">16</button>
+<button type="button" class="chk-day" aria-label="11月17日" data-shift-action="day" data-date="2026-11-17" data-other="false" aria-pressed="false">17</button>
+<button type="button" class="chk-day" aria-label="11月18日" data-shift-action="day" data-date="2026-11-18" data-other="false" aria-pressed="false">18</button>
+<button type="button" class="chk-day" aria-label="11月19日" data-shift-action="day" data-date="2026-11-19" data-other="false" aria-pressed="false">19</button>
+<button type="button" class="chk-day" aria-label="11月20日" data-shift-action="day" data-date="2026-11-20" data-other="false" aria-pressed="false">20</button>
+<button type="button" class="chk-day" aria-label="11月21日" data-shift-action="day" data-date="2026-11-21" data-other="false" aria-pressed="false">21</button>
+<button type="button" class="chk-day" aria-label="11月22日" data-shift-action="day" data-date="2026-11-22" data-other="false" aria-pressed="false">22</button>
+<button type="button" class="chk-day" aria-label="11月23日" data-shift-action="day" data-date="2026-11-23" data-other="false" aria-pressed="false">23</button>
+<button type="button" class="chk-day" aria-label="11月24日" data-shift-action="day" data-date="2026-11-24" data-other="false" aria-pressed="false">24</button>
+<button type="button" class="chk-day" aria-label="11月25日" data-shift-action="day" data-date="2026-11-25" data-other="false" aria-pressed="false">25</button>
+<button type="button" class="chk-day" aria-label="11月26日" data-shift-action="day" data-date="2026-11-26" data-other="false" aria-pressed="false">26</button>
+<button type="button" class="chk-day" aria-label="11月27日" data-shift-action="day" data-date="2026-11-27" data-other="false" aria-pressed="false">27</button>
+<button type="button" class="chk-day" aria-label="11月28日" data-shift-action="day" data-date="2026-11-28" data-other="false" aria-pressed="false">28</button>
+<button type="button" class="chk-day" aria-label="11月29日" data-shift-action="day" data-date="2026-11-29" data-other="false" aria-pressed="false">29</button>
+<button type="button" class="chk-day" aria-label="11月30日" data-shift-action="day" data-date="2026-11-30" data-other="false" aria-pressed="false">30</button>
+<button type="button" class="chk-day off" aria-label="12月1日" data-shift-action="day" data-date="2026-12-01" data-other="true" aria-pressed="false">1</button>
+<button type="button" class="chk-day off" aria-label="12月2日" data-shift-action="day" data-date="2026-12-02" data-other="true" aria-pressed="false">2</button>
+<button type="button" class="chk-day off" aria-label="12月3日" data-shift-action="day" data-date="2026-12-03" data-other="true" aria-pressed="false">3</button>
+<button type="button" class="chk-day off" aria-label="12月4日" data-shift-action="day" data-date="2026-12-04" data-other="true" aria-pressed="false">4</button>
+<button type="button" class="chk-day off" aria-label="12月5日" data-shift-action="day" data-date="2026-12-05" data-other="true" aria-pressed="false">5</button>
 </div>
 <div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 8px;">選択中: <span id="sel-days-count">1日</span>　合計: <strong id="m-total-all">¥10,800</strong>
 </div>
 </div>
 <div style="display: flex; gap: 8px; justify-content: flex-end;">
-<button class="btn" onclick="closeShiftModal()">キャンセル</button>
-<button class="btn primary" onclick="saveShift()">一括保存</button>
+<button class="btn" data-shift-action="close-shift">キャンセル</button>
+<button class="btn primary" data-shift-action="save-shift">一括保存</button>
 </div>
 </div>
 </div>

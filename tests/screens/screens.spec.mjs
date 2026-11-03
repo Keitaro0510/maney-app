@@ -424,3 +424,55 @@ test('予定の入力画面で期間・時刻・色・支払いを選ぶ', async
   await expect(page.locator('#plan-mbg')).not.toHaveClass(/open/);
   expect(await page.evaluate(() => 'setDateMode' in window || 'savePlan' in window)).toBe(false);
 });
+
+test('シフトとバイト先の操作をボタンから行う', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-shift').click();
+  const month = await page.locator('#shift-list-month-label').textContent();
+  await page.locator('#sec-shift [data-shift-action="list-prev"]').click();
+  await expect(page.locator('#shift-list-month-label')).not.toHaveText(month);
+  await page.locator('#sec-shift [data-shift-action="list-next"]').click();
+  await expect(page.locator('#shift-list-month-label')).toHaveText(month);
+
+  await page.locator('#job-add-toggle').click();
+  await expect(page.locator('#job-add-form')).toBeVisible();
+  await page.locator('#job-name').fill('操作テストのバイト先');
+  await page.locator('#job-wage').fill('1200');
+  await page.locator('#job-color-swatches [data-shift-action="add-color"]').nth(1).click();
+  await page.locator('#job-add-form [data-shift-action="add-job"]').click();
+  const job = page.locator('#job-list .ri').filter({ hasText: '操作テストのバイト先' });
+  await expect(job).toBeVisible();
+  await job.locator('[data-shift-action="edit-job"]').click();
+  await page.locator('#je-name').fill('操作テストのバイト先編集');
+  await page.locator('#je-color-swatches [data-shift-action="edit-color"]').nth(2).click();
+  await page.locator('#job-edit-mbg [data-shift-action="save-job-edit"]').click();
+  const edited = page.locator('#job-list .ri').filter({ hasText: '操作テストのバイト先編集' });
+  await expect(edited).toBeVisible();
+
+  await page.locator('#sec-shift [data-shift-action="open-add"]').click();
+  await expect(page.locator('#shift-mbg')).toHaveClass(/open/);
+  await page.locator('#m-job').selectOption({ label: '操作テストのバイト先編集' });
+  await page.locator('#m-rest-chips [data-shift-action="rest"]').nth(2).click();
+  await expect(page.locator('#m-rest')).toHaveValue('60');
+  await page.locator('#shift-mbg [data-shift-action="cal-next"]').click();
+  await expect(page.locator('#m-month-lbl')).toContainText('12月');
+  await page.locator('#shift-mbg [data-shift-action="cal-prev"]').click();
+  await page.locator('#shift-cal-grid .chk-day:not(.off)').first().click();
+  await expect(page.locator('#sel-days-count')).toHaveText('1日');
+  await page.locator('#shift-mbg [data-shift-action="save-shift"]').click();
+  await expect(page.locator('#shift-mbg')).not.toHaveClass(/open/);
+  const shift = page.locator('#shift-list .ri').filter({ hasText: '操作テストのバイト先編集' });
+  await expect(shift).toBeVisible();
+  const salary = page.locator('#salary-table > div').filter({ hasText: '操作テストのバイト先編集' }).locator('.salary-input:visible').first();
+  await salary.fill('1234');
+  await salary.dispatchEvent('change');
+  await expect(salary).toHaveValue('1234');
+  await salary.fill('');
+  await salary.dispatchEvent('change');
+  await shift.locator('[data-shift-action="delete-shift"]').click();
+  await expect(shift).toHaveCount(0);
+  await edited.locator('[data-shift-action="delete-job"]').click();
+  await expect(edited).toHaveCount(0);
+  expect(await page.evaluate(() => 'openShiftModal' in window && 'saveShift' in window)).toBe(false);
+});

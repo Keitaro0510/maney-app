@@ -125,6 +125,7 @@ Phase の番号の順ではなく、次の順で進める。
   - [x] 家計簿の入力・編集・一覧と毎月のお金の編集など27か所（2026-11-03。`src/screens/ledger.ts`・`monthly.ts` の委譲イベント。画面比較と実際の操作を確認）　ブランチ: `feature/events-ledger-monthly`
   - [x] 設定のカテゴリとカードの入力・編集・実績など12か所（2026-11-03。`src/screens/settings.ts`・`cards.ts`。設定欄のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-settings-cards`
   - [x] 予定の入力画面の期間・時刻・色・支払い・保存など9か所（2026-11-03。`src/screens/plans.ts`。期間入力のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-plans`
+  - [x] シフト・バイト先・給与実績の固定と描画時のハンドラ20か所（2026-11-03。`src/screens/shift.ts`。プレビュー入力のイベント代入も起動時の登録に移した）　ブランチ: `feature/events-shift`
   - [ ] 残りの固定 HTML の `onclick`・`onchange`・`onsubmit` と、画面が組み立てる HTML のハンドラを機能ごとに移す
 - [ ] 6. ビルドしたファイルを元に、Service Worker の先読みの一覧と版を作る（名前に指紋の付いたファイルが出るようになったら必須）
 - [ ] 長く続くブランチで main の変更を取り込む（練習8）

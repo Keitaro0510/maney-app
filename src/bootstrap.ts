@@ -7,7 +7,7 @@ import { resyncRemote } from './sync.ts';
 import { loadData, loginWithGoogle, logout } from './auth.ts';
 import { bindNavigation, renderCurrentSection } from './navigation.ts';
 import { bindCalendarControls, onCalendarDayChanged } from './screens/calendar.ts';
-import { onShiftDayChanged } from './screens/shift.ts';
+import { bindShiftControls, onShiftDayChanged } from './screens/shift.ts';
 import { bindLedgerControls, onLedgerDayChanged } from './screens/ledger.ts';
 import { bindTaskControls, maybeShowStartupTasks } from './screens/tasks.ts';
 import { bindBackupControls } from './screens/backup.ts';
@@ -55,6 +55,7 @@ export function startBootstrap(): void {
   bindSettingsControls();
   bindCardControls();
   bindPlanControls();
+  bindShiftControls();
   elementById('google-login-btn').addEventListener('click', () => { void loginWithGoogle(); });
   elementById('logout-btn').addEventListener('click', () => { void logout(); });
   if ('serviceWorker' in navigator && ENV.target === 'prod') {
