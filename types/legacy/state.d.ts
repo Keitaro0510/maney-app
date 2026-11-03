@@ -174,3 +174,8 @@ declare var openPlanModal: typeof import('../../src/screens/plans.ts').openPlanM
 declare var openPlanEdit: typeof import('../../src/screens/plans.ts').openPlanEdit;
 declare var closePlanModal: typeof import('../../src/screens/plans.ts').closePlanModal;
 declare var savePlan: typeof import('../../src/screens/plans.ts').savePlan;
+
+// 家計簿の記録（src/ledger.ts）
+declare var monthLedger: (...args: any[]) => any[];
+declare var getLedgerForDay: (...args: any[]) => any[];
+declare var ledgerPayLabel: typeof import('../../src/ledger.ts').ledgerPayLabel;

@@ -181,8 +181,6 @@ function sw(t){
 // ============================================================
 // ユーティリティ
 // ============================================================
-const monthLedger=(y,m)=>st.ledger.filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m;});
-const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
 
 // ============================================================
 // 実績
@@ -199,11 +197,6 @@ const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
 // ============================================================
 // その月にカードから引き落とす金額（実額があれば実額、なければ集計した見込み）
 // 記録の下に出す小さな文字。支出は払い方（カード名・現金・口座）、収入は受け取り方（現金・口座振込）
-function ledgerPayLabel(l){
-  if(l.type === 'income') return l.receive || '現金';
-  const card = l.cardIdx >= 0 ? st.cards[l.cardIdx] : null;
-  return card ? card.name : (l.pay || '');
-}
 // カードの締め日を実際の日付で取得（31=末日として扱う）
 
 // カードの集計は src/money.ts の cardCycle（D11）。cs・ce は今の画面に合わせて Date で返す
