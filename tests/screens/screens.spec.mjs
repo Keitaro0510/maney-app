@@ -120,14 +120,14 @@ test('入力画面', async ({ page }) => {
   await closeAll(page);
   // [名前, 画面の操作, 写す要素, 写真も撮るか]
   const modals = [
-    ['ledger-add', async () => { await page.locator('#nav-ledger').click(); await page.locator('#sec-ledger [data-ledger-action="open-add"]').click(); }, '#ldg-mbg', true],
+    ['ledger-add', async () => { await page.locator('#home-add-ledger').click(); }, '#ldg-mbg', false],
     ['ledger-edit', async () => { await page.locator('#nav-ledger').click(); await page.locator('#ldg-list .ldg-day-header').first().click(); await page.locator('#ldg-list [data-ledger-action="list-edit"]').first().click(); }, '#ldg-edit-mbg', false],
     ['plan-add', async () => { await page.locator('#nav-home').click(); await page.locator('#home-add-plan').click(); }, '#plan-mbg', true],
     ['shift-add', async () => { await page.locator('#nav-shift').click(); await page.locator('#sec-shift [data-shift-action="open-add"]').click(); }, '#shift-mbg', false],
     ['job-edit', async () => { await page.locator('#nav-shift').click(); await page.locator('#job-list [data-shift-action="edit-job"]').first().click(); }, '#job-edit-mbg', false],
     ['card-edit', async () => { await page.locator('#settings-btn').click(); await page.locator('#card-list-sec [data-card-action="edit"]').first().click(); }, '#card-edit-mbg', false],
     ['atm', async () => { await page.locator('#nav-home').click(); await page.locator('#home-open-atm').click(); }, '#wd-mbg', false],
-    ['task-edit', async () => { await page.locator('#nav-task').click(); await page.locator('#task-list .task-edit').first().click(); }, '#task-sheet', true],
+    ['task-edit', async () => { await page.locator('#nav-task').click(); await page.locator('#task-list .task-edit').first().click(); }, '#task-sheet', false],
     ['monthly-edit', async () => { await page.locator('#nav-ledger').click(); await page.locator('#ldg-main-tabs button').nth(2).click(); await page.locator('#monthly-list .monthly-row').first().click(); }, '#monthly-sheet', false],
   ];
   for (const [name, openIt, selector, withShot] of modals) {
