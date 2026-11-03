@@ -10,6 +10,7 @@ import { bindCalendarControls, onCalendarDayChanged } from './screens/calendar.t
 import { onShiftDayChanged } from './screens/shift.ts';
 import { bindLedgerControls, onLedgerDayChanged } from './screens/ledger.ts';
 import { bindTaskControls, maybeShowStartupTasks } from './screens/tasks.ts';
+import { bindBackupControls } from './screens/backup.ts';
 
 function onDayChange(now: Date, prevKey: string): void {
   const prev = getNow();
@@ -40,6 +41,7 @@ export function startBootstrap(): void {
   bindCalendarControls();
   bindLedgerControls();
   bindTaskControls();
+  bindBackupControls();
   if ('serviceWorker' in navigator && ENV.target === 'prod') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(() => console.log('SW registered'))
