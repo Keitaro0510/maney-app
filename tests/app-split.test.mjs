@@ -32,3 +32,9 @@ test('設定・カード・ATM は TypeScript に移り、古い画面スクリ�
     assert.match(src, new RegExp(`LEGACY_${name === 'cards' ? 'CARD_SCREEN' : name.toUpperCase()}`));
   }
 });
+
+test('シフトの画面は TypeScript に移り、古い画面スクリプトを読まない', () => {
+  assert.equal(appFiles.includes('app-shift.js'), false);
+  const src = readFileSync(new URL('../src/screens/shift.ts', import.meta.url), 'utf8');
+  assert.match(src, /LEGACY_SHIFT_SCREEN/);
+});

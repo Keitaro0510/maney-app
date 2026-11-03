@@ -18,7 +18,7 @@ const tagsOf = id => new Set([...html.matchAll(/<(\w+)\b[^<>]*?\bid=["']([^"'$]+
 
 // js/・src/ で、id を文字そのままで渡している所。`${prefix}-close` のように組み立てる id は、ここでは確かめられない
 // js/ は MoneyUI.inputById('x')、src/ は import した inputById('x')
-const calls = [...jsFiles, ...srcFiles].flatMap(f => [...read(f).matchAll(/(?<![\w.])(?:MoneyUI\.)?(inputById|selectById|textareaById|dialogById)\('([^']+)'\)/g)]
+const calls = [...jsFiles, ...srcFiles].flatMap(f => [...read(f).matchAll(/(?<![\w.])(?:(?:MoneyUI|ui)\.)?(inputById|selectById|textareaById|dialogById)\('([^']+)'\)/g)]
   .map(m => ({ file: f, fn: m[1], id: m[2] })));
 
 test('MoneyUI.〜ById で取る要素を使っている', () => {

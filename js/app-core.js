@@ -15,10 +15,7 @@ let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
 let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
-let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
-let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
 let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
-let selShiftDays=new Set();
 let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
 let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
 let catChart=null,dayChart=null,balChart=null;
@@ -125,8 +122,7 @@ function onDayChange(now, prevKey){
   MoneyDates.setNow(now); // 今の日時と今日の日付（src/dates.ts）
   const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
   ({y:calY,m:calM}=follow(calY,calM));
-  ({y:shiftCalY,m:shiftCalM}=follow(shiftCalY,shiftCalM));
-  ({y:shiftListY,m:shiftListM}=follow(shiftListY,shiftListM));
+  onShiftDayChanged(prev,now);
   ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
   if(calAnchor===prevKey) calAnchor=TODAY;
   if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
