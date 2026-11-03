@@ -13,6 +13,7 @@ import { LEGACY_TASKS } from '../src/screens/tasks.ts';
 import { LEGACY_BACKUP } from '../src/screens/backup.ts';
 import { LEGACY_CARDS } from '../src/cards.ts';
 import { LEGACY_SETTINGS } from '../src/screens/settings.ts';
+import { LEGACY_CARD_SCREEN } from '../src/screens/cards.ts';
 import * as ui from '../src/ui.ts';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -21,7 +22,7 @@ const srcFiles = readdirSync(new URL('../src/', import.meta.url), { recursive: t
   .filter(f => f.endsWith('.ts')).map(f => `src/${f}`);
 
 // src/main.ts が window に出す名前（名前のまま出すもの）
-const LEGACY = { ...LEGACY_SYNC, ...LEGACY_AUTH, ...LEGACY_DATES, ...LEGACY_PALETTE, ...LEGACY_TASKS, ...LEGACY_BACKUP, ...LEGACY_CARDS, ...LEGACY_SETTINGS };
+const LEGACY = { ...LEGACY_SYNC, ...LEGACY_AUTH, ...LEGACY_DATES, ...LEGACY_PALETTE, ...LEGACY_TASKS, ...LEGACY_BACKUP, ...LEGACY_CARDS, ...LEGACY_SETTINGS, ...LEGACY_CARD_SCREEN };
 // js/ のトップレベルの関数・変数
 const jsNames = new Set(jsFiles.flatMap(f => [...read(f).matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)|^(?:let|const|var)\s+([A-Za-z_$][\w$]*)/mg)].map(m => m[1] || m[2])));
 // ブラウザにもともとある名前と、JavaScript の言葉

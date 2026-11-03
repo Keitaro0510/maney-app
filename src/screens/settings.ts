@@ -3,7 +3,8 @@ import { state } from '../state.ts';
 import { save } from '../sync.ts';
 import { getToday } from '../dates.ts';
 import { inputById, selectById, elementById, escapeHtml, toast } from '../ui.ts';
-import { renderHome, renderCal, renderCardList, renderWdHist } from '../js-bridge.ts';
+import { renderHome, renderCal, renderWdHist } from '../js-bridge.ts';
+import { renderCardList } from './cards.ts';
 
 export function addCatExp(): void { const e = inputById('new-cat-exp'), v = e.value.trim(); if (!v || state.st.catExp.includes(v)) return; state.st.catExp.push(v); save(); e.value = ''; renderCatTags(); }
 export function addCatInc(): void { const e = inputById('new-cat-inc'), v = e.value.trim(); if (!v || state.st.catInc.includes(v)) return; state.st.catInc.push(v); save(); e.value = ''; renderCatTags(); }

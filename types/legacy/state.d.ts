@@ -74,6 +74,18 @@ declare var initSettingTab: typeof import('../../src/screens/settings.ts').initS
 declare var updateShiftCyclePreview: typeof import('../../src/screens/settings.ts').updateShiftCyclePreview;
 declare var saveSettingFields: typeof import('../../src/screens/settings.ts').saveSettingFields;
 
+// カードの画面（src/screens/cards.ts）
+declare var toggleCardCloseEom: typeof import('../../src/screens/cards.ts').toggleCardCloseEom;
+declare var previewCycle: typeof import('../../src/screens/cards.ts').previewCycle;
+declare var addCard: typeof import('../../src/screens/cards.ts').addCard;
+declare var renderCardBillHistory: typeof import('../../src/screens/cards.ts').renderCardBillHistory;
+declare var onCardBillChange: typeof import('../../src/screens/cards.ts').onCardBillChange;
+declare var renderCardList: typeof import('../../src/screens/cards.ts').renderCardList;
+declare var delCard: typeof import('../../src/screens/cards.ts').delCard;
+declare var openCardEdit: typeof import('../../src/screens/cards.ts').openCardEdit;
+declare var closeCardEdit: typeof import('../../src/screens/cards.ts').closeCardEdit;
+declare var saveCardEdit: typeof import('../../src/screens/cards.ts').saveCardEdit;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
