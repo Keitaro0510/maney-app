@@ -14,7 +14,6 @@ const ASSETS = [
   './js/app-home.js',
   './js/app-calendar.js',
   './js/app-ledger.js',
-  './js/app-plan.js',
   './js/app-bootstrap.js',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'

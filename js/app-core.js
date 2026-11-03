@@ -19,7 +19,6 @@ let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
 let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
 let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
 let catChart=null,dayChart=null,balChart=null;
-let planEditIdx=-1,planDateMode='single',planColorSel='pink';
 
 // ============================================================
 // Supabase設定

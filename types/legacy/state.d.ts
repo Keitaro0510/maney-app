@@ -160,3 +160,17 @@ declare var onShiftDayChanged: typeof import('../../src/screens/shift.ts').onShi
 declare var getPlansForDay: typeof import('../../src/plans.ts').getPlansForDay;
 declare var planTimeOnDay: typeof import('../../src/plans.ts').planTimeOnDay;
 declare var hm2min: typeof import('../../src/plans.ts').hm2min;
+
+// 予定の入力画面（src/screens/plans.ts）
+declare var renderColorSwatches: typeof import('../../src/screens/plans.ts').renderColorSwatches;
+declare var selPlanColor: typeof import('../../src/screens/plans.ts').selPlanColor;
+declare var setDateMode: typeof import('../../src/screens/plans.ts').setDateMode;
+declare var updateRangePreview: typeof import('../../src/screens/plans.ts').updateRangePreview;
+declare var renderPlanPayChips: typeof import('../../src/screens/plans.ts').renderPlanPayChips;
+declare var selPlanPay: typeof import('../../src/screens/plans.ts').selPlanPay;
+declare var setPlanTimeMode: typeof import('../../src/screens/plans.ts').setPlanTimeMode;
+declare var togglePlanAllDay: typeof import('../../src/screens/plans.ts').togglePlanAllDay;
+declare var openPlanModal: typeof import('../../src/screens/plans.ts').openPlanModal;
+declare var openPlanEdit: typeof import('../../src/screens/plans.ts').openPlanEdit;
+declare var closePlanModal: typeof import('../../src/screens/plans.ts').closePlanModal;
+declare var savePlan: typeof import('../../src/screens/plans.ts').savePlan;
