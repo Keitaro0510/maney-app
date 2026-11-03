@@ -15,10 +15,7 @@ let calY=_now.getFullYear(),calM=_now.getMonth(),selDay=null;
 let calView='month';   // 'day' | 'week' | 'month'。デフォルトは月表示
 let calAnchor=TODAY;   // 日/週ビューの基準日 'YYYY-MM-DD'
 let calRenderSeq=0;    // 非同期レンダの競合ガード（←→連打・ビュー切替直後のレース対策）
-let shiftCalY=_now.getFullYear(),shiftCalM=_now.getMonth();
-let shiftListY=_now.getFullYear(),shiftListM=_now.getMonth();
 let ldgListY=_now.getFullYear(),ldgListM=_now.getMonth(),ldgGraphMode='month';
-let selShiftDays=new Set();
 let ldgType='expense',ldgPay='現金',ldgCardIdx=-1,ldgCat='',ldgReceive='現金';
 let ldeType='expense',ldePay='現金',ldeCardIdx=-1,ldeCat='',ldeIdx=-1,ldeReceive='現金';
 let catChart=null,dayChart=null,balChart=null;
@@ -125,8 +122,7 @@ function onDayChange(now, prevKey){
   MoneyDates.setNow(now); // 今の日時と今日の日付（src/dates.ts）
   const follow=(y,m)=>MoneyClock.followMonth({y,m},prev,now);
   ({y:calY,m:calM}=follow(calY,calM));
-  ({y:shiftCalY,m:shiftCalM}=follow(shiftCalY,shiftCalM));
-  ({y:shiftListY,m:shiftListM}=follow(shiftListY,shiftListM));
+  onShiftDayChanged(prev,now);
   ({y:ldgListY,m:ldgListM}=follow(ldgListY,ldgListM));
   if(calAnchor===prevKey) calAnchor=TODAY;
   if(currentUser){ renderCurrentSection(); maybeShowStartupTasks(); }
@@ -186,32 +182,18 @@ function sw(t){
 // ============================================================
 // ユーティリティ
 // ============================================================
-const monthShifts=(y,m)=>st.shifts.filter(s=>{const d=new Date(s.date);return d.getFullYear()===y&&d.getMonth()===m;});
 const monthLedger=(y,m)=>st.ledger.filter(l=>{const d=new Date(l.date);return d.getFullYear()===y&&d.getMonth()===m;});
 const getLedgerForDay=ds=>st.ledger.filter(l=>l.date===ds);
-const closeDay=(y,m)=>parseInt(String(st.shiftCloseDay))>=28?new Date(y,m+1,0).getDate():parseInt(String(st.shiftCloseDay));
-function jobPayDay(job){return parseInt(job&&job.payDay)||parseInt(String(st.shiftPayDay))||10;}
-function jobCloseDayNum(job,y,m){const cl=parseInt(job&&job.closeDay)||parseInt(String(st.shiftCloseDay))||31;return cl>=28?new Date(y,m+1,0).getDate():cl;}
 
 // ============================================================
 // 実績
 // ============================================================
-const salaryKeyForShiftMonth=(jobName,y,m)=>{const pm=addM(y,m,1);return `${jobName}|${pm.y}-${String(pm.m+1).padStart(2,'0')}`;};
-const getActualSalary=(jobName,y,m)=>st.actualInputs.find(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===salaryKeyForShiftMonth(jobName,y,m));
-function setActualSalary(jobName,y,m,amount){const key=salaryKeyForShiftMonth(jobName,y,m),pm=addM(y,m,1),job=st.jobs.find(j=>j.name===jobName),date=toDS(pm.y,pm.m,monthDay(pm.y,pm.m,jobPayDay(job)));const ei=st.actualInputs.findIndex(a=>a.type==='shift'&&a.job===jobName&&a.salaryKey===key);const entry={type:'shift',job:jobName,salaryKey:key,date,actualAmount:amount,estimatedAmount:totalShiftIncNoTransportForJob(jobName,y,m)};if(ei>=0){entry._id=st.actualInputs[ei]._id;st.actualInputs[ei]=entry;}else st.actualInputs.push(entry);}
 // カードの実績は src/cards.ts（window には LEGACY_CARDS）。
 
 // ============================================================
 // シフト計算
 // ============================================================
 // 1回のシフトの給料（src/money.ts。D11）
-function calcShiftInc(shift){const job=st.jobs.find(j=>j.name===shift.job);return MoneyCalc.shiftIncome({start:shift.start,end:shift.end,rest:shift.rest},job);}
-const totalShiftInc=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
-const totalShiftIncNoTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
-const totalTransport=(y,m)=>monthShifts(y,m).reduce((a,s)=>a+calcShiftInc(s).transport,0);
-const jobMonthShifts=(jobName,y,m)=>monthShifts(y,m).filter(s=>s.job===jobName);
-const totalShiftIncForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>a+calcShiftInc(s).total,0);
-const totalShiftIncNoTransportForJob=(jobName,y,m)=>jobMonthShifts(jobName,y,m).reduce((a,s)=>{const r=calcShiftInc(s);return a+r.wage+r.nightWage;},0);
 
 // ============================================================
 // カードサイクル

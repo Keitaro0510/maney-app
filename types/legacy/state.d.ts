@@ -96,9 +96,62 @@ declare var doWd: typeof import('../../src/screens/atm.ts').doWd;
 declare var renderWdHist: typeof import('../../src/screens/atm.ts').renderWdHist;
 declare var delWd: typeof import('../../src/screens/atm.ts').delWd;
 
+// シフト・給与の計算と実績（src/shifts.ts）
+declare var monthShifts: typeof import('../../src/shifts.ts').monthShifts;
+declare var closeDay: typeof import('../../src/shifts.ts').closeDay;
+declare var jobPayDay: typeof import('../../src/shifts.ts').jobPayDay;
+declare var jobCloseDayNum: typeof import('../../src/shifts.ts').jobCloseDayNum;
+declare var salaryKeyForShiftMonth: typeof import('../../src/shifts.ts').salaryKeyForShiftMonth;
+declare var getActualSalary: (...args: any[]) => any;
+declare var setActualSalary: typeof import('../../src/shifts.ts').setActualSalary;
+declare var calcShiftInc: typeof import('../../src/shifts.ts').calcShiftInc;
+declare var totalShiftInc: typeof import('../../src/shifts.ts').totalShiftInc;
+declare var totalShiftIncNoTransport: typeof import('../../src/shifts.ts').totalShiftIncNoTransport;
+declare var totalTransport: typeof import('../../src/shifts.ts').totalTransport;
+declare var jobMonthShifts: typeof import('../../src/shifts.ts').jobMonthShifts;
+declare var totalShiftIncForJob: typeof import('../../src/shifts.ts').totalShiftIncForJob;
+declare var totalShiftIncNoTransportForJob: typeof import('../../src/shifts.ts').totalShiftIncNoTransportForJob;
+
 // タスクの画面（src/screens/tasks.ts。D20 の 2）。src/main.ts が window に同じ名前で出す
 declare var taskRows: typeof import('../../src/screens/tasks.ts').taskRows;
 declare var renderTaskTab: typeof import('../../src/screens/tasks.ts').renderTaskTab;
 declare var renderHomeTasks: typeof import('../../src/screens/tasks.ts').renderHomeTasks;
 declare var maybeShowStartupTasks: typeof import('../../src/screens/tasks.ts').maybeShowStartupTasks;
 declare var openStartupTasks: typeof import('../../src/screens/tasks.ts').openStartupTasks;
+
+// シフト画面（src/screens/shift.ts）。ナビと HTML のイベントが使うため window に残す
+declare var openShiftModal: typeof import('../../src/screens/shift.ts').openShiftModal;
+declare var renderRestChips: typeof import('../../src/screens/shift.ts').renderRestChips;
+declare var setRestMin: typeof import('../../src/screens/shift.ts').setRestMin;
+declare var checkShiftTime: typeof import('../../src/screens/shift.ts').checkShiftTime;
+declare var updateShiftPreview: typeof import('../../src/screens/shift.ts').updateShiftPreview;
+declare var renderShiftCal: typeof import('../../src/screens/shift.ts').renderShiftCal;
+declare var toggleShiftDay: typeof import('../../src/screens/shift.ts').toggleShiftDay;
+declare var shiftCalPrev: typeof import('../../src/screens/shift.ts').shiftCalPrev;
+declare var shiftCalNext: typeof import('../../src/screens/shift.ts').shiftCalNext;
+declare var saveShift: typeof import('../../src/screens/shift.ts').saveShift;
+declare var closeShiftModal: typeof import('../../src/screens/shift.ts').closeShiftModal;
+declare var shiftListPrev: typeof import('../../src/screens/shift.ts').shiftListPrev;
+declare var shiftListNext: typeof import('../../src/screens/shift.ts').shiftListNext;
+declare var renderShiftList: typeof import('../../src/screens/shift.ts').renderShiftList;
+declare var renderShiftSection: typeof import('../../src/screens/shift.ts').renderShiftSection;
+declare var renderSalaryTable: typeof import('../../src/screens/shift.ts').renderSalaryTable;
+declare var onSalaryChangeByPayMonth: typeof import('../../src/screens/shift.ts').onSalaryChangeByPayMonth;
+declare var yearConfirmedIncome: typeof import('../../src/screens/shift.ts').yearConfirmedIncome;
+declare var yearEstimatedIncome: typeof import('../../src/screens/shift.ts').yearEstimatedIncome;
+declare var renderFuyou: typeof import('../../src/screens/shift.ts').renderFuyou;
+declare var renderMonthBars: typeof import('../../src/screens/shift.ts').renderMonthBars;
+declare var ensureJobAddColor: typeof import('../../src/screens/shift.ts').ensureJobAddColor;
+declare var renderJobAddColorSwatches: typeof import('../../src/screens/shift.ts').renderJobAddColorSwatches;
+declare var selJobAddColor: typeof import('../../src/screens/shift.ts').selJobAddColor;
+declare var renderJobList: typeof import('../../src/screens/shift.ts').renderJobList;
+declare var addJob: typeof import('../../src/screens/shift.ts').addJob;
+declare var toggleJobAdd: typeof import('../../src/screens/shift.ts').toggleJobAdd;
+declare var openJobEdit: typeof import('../../src/screens/shift.ts').openJobEdit;
+declare var closeJobEdit: typeof import('../../src/screens/shift.ts').closeJobEdit;
+declare var renderJobEditColorSwatches: typeof import('../../src/screens/shift.ts').renderJobEditColorSwatches;
+declare var selJobEditColor: typeof import('../../src/screens/shift.ts').selJobEditColor;
+declare var saveJobEdit: typeof import('../../src/screens/shift.ts').saveJobEdit;
+declare var delJob: typeof import('../../src/screens/shift.ts').delJob;
+declare var delShift: typeof import('../../src/screens/shift.ts').delShift;
+declare var onShiftDayChanged: typeof import('../../src/screens/shift.ts').onShiftDayChanged;
