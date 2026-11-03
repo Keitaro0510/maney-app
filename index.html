@@ -15,10 +15,9 @@
 <link rel="apple-touch-icon" href="icon-192.png" vite-ignore>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-<!-- アプリの入口（ES モジュール。D17）。src/ の計算を読み、下の js/ から使えるように window に出す。
-     ビルドすると Vite が assets/main.js にまとめ、この <head> の最後に置く -->
+<!-- アプリの入口（ES モジュール）。ビルドすると Vite が指紋付きの assets/ にまとめる -->
 <script type="module" src="src/main.ts"></script>
-<!-- 見た目。js/ と同じく Vite には触らせず、そのまま公開する（vite-ignore。D4 の手順3） -->
+<!-- 見た目は Vite に触らせず、そのまま公開する（vite-ignore。D4 の手順3） -->
 <link rel="stylesheet" href="css/app.css" vite-ignore>
 </head>
 <body>

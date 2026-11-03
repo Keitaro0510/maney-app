@@ -1,7 +1,7 @@
-// Vite の設定（D4 の手順2〜4）。src/ の .ts（ES モジュール）は Vite がまとめ、js/ のふつうの <script> と css/ はそのまま出す。
-// - src/main.ts（入口）は assets/main.js の1つにまとめる。名前は固定で、sw.js の ASSETS に書く（D17。指紋を付けるのは手順6）
-// - index.html の js/・css/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
-// - CSS・JavaScript を縮めない（出力の index.html を、元とほぼ同じにする。モジュールに移したら見直す）
+// Vite の設定（D4 の手順2〜6）。src/ の .ts（ES モジュール）は Vite がまとめ、css/ はそのまま出す。
+// - src/main.ts（入口）と分割したモジュールには指紋付きの名前を付ける。公開する一覧はビルド後に作る（D4 の手順6）
+// - index.html の css/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
+// - CSS・JavaScript を縮めない（画面比較の差分を追いやすくする）
 // - 公開するときは scripts/build-pages.sh がこのビルドを使い、sw.js の CACHE_NAME を中身の指紋にする（D15）
 // - 接続先（D19）: 環境変数 MANEY_TARGET が prod（本番）か local（ローカルの Supabase）。ビルドは、指定しないと止める（つなぎ間違えて公開しないように）。
 //   npm run dev は、指定しなければ今までどおり本番につなぐ。local のときは MANEY_LOCAL_API_URL・MANEY_LOCAL_PUBLISHABLE_KEY が要る（scripts/local-supabase.mjs が入れる）
@@ -58,7 +58,7 @@ export default defineConfig(({ command }) => {
     cssMinify: false,
     // トップレベルの await（ES2022）を使えない対象にする。使うと、待っている間に js/ の <script> が先に動いてしまう（D17）
     target: 'es2021',
-    modulePreload: false, // 出力は1つなので、先読みの <link> は要らない
+    modulePreload: false, // Service Worker がビルドした全ファイルを先読みする
     rolldownOptions: {
       onLog(level, log, handler) {
         // Vite は「対象では使えない」と警告するだけでビルドを続けるので、ここで止める
@@ -66,10 +66,9 @@ export default defineConfig(({ command }) => {
         handler(level, log);
       },
       output: {
-        // 名前を固定する。ほかのファイルが出たら、公開の手順（scripts/build-pages.sh）が ASSETS にないことを見つけて止める
-        entryFileNames: 'assets/main.js',
-        chunkFileNames: 'assets/[name].js',
-        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     },
   },

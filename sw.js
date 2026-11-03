@@ -1,5 +1,5 @@
 // 版の名前。リポジトリでは「money-app-dev」のまま手で変えない。
-// 公開するときに GitHub Actions が、公開するファイルの中身の指紋（money-app-1a2b3c4d5e6f など）に置き換える（D15。scripts/build-pages.sh）。
+// 公開するときに scripts/finalize-sw.mjs が、ビルドしたファイルの一覧と版を入れる（D4 の手順6）。
 // アプリのファイルが変わったときだけ版が変わり、端末のキャッシュが新しくなる
 const CACHE_NAME = 'money-app-dev';
 // 置き換えていない（手元で開いた）ときは、キャッシュより通信を先に見る（直したファイルがすぐ出るように）
@@ -8,13 +8,12 @@ const ASSETS = [
   './',
   './index.html',
   './css/app.css',
-  './assets/main.js', // src/ をビルドしたもの（Vite が作る。リポジトリにはない。D17）
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
-// 手元（npm run dev）には assets/ がない（ビルドで作る）ので、先読みしない。ないファイルがあると先読みが全部失敗する
+// 手元の開発サーバーではこの静的ファイルだけを先読みする。公開時には指紋付きのビルド成果物を加える
 const PRECACHE = DEV ? ASSETS.filter(url => !url.startsWith('./assets/')) : ASSETS;
-// キャッシュから取り出すときは、サーバーの Vary を見ない（D17）。モジュールの <script>（assets/main.js）は Origin 付きで読まれるが、
+// キャッシュから取り出すときは、サーバーの Vary を見ない（D17）。指紋付きモジュールの <script> は Origin 付きで読まれるが、
 // 先読みしたときは Origin がない。サーバーが Vary: Origin を返すと、別のものと見なされてオフラインで読めなくなる。
 // キャッシュには1つの URL に1つしか入れないので、見なくてよい
 const MATCH = { ignoreVary: true };
