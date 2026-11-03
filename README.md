@@ -1,7 +1,9 @@
 # maney-app
 
-予定・お金・（これから）タスクを1つにまとめた、自分用の生活管理アプリ（PWA）。
+予定・お金・タスクを1つにまとめた、自分用の生活管理アプリ（PWA）。
 iPhoneのホーム画面から毎日使っている。
+
+**開発の現在地と引き継ぎ**: [docs/STATUS.md](docs/STATUS.md)（2026-11-03 更新）。完了した作業、残作業、次に着手する手順をまとめている。
 
 **公開URL**: https://keitaro0510.github.io/maney-app/
 
@@ -14,11 +16,12 @@ iPhoneのホーム画面から毎日使っている。
 - **家計簿**: 収支の記録、カテゴリ、月送り、月・年のグラフ
 - **シフト**: アルバイトのシフトと給与の見込み（深夜割増・休憩・交通費）
 - **設定**: カード（締め日・引き落とし日）、予算。毎月のお金は家計簿のタブから管理
+- **タスク**: 追加・編集・完了・削除、期限とメモ、ホームの期限一覧、カレンダーへの表示
 - Googleログイン（Supabase）で、データをクラウドに保存
 
-## これからやること: タスク管理を足す
+## これからやること: 予定・お金・タスクの連携
 
-- 「やること」を期限つきで登録し、カレンダーとホームに表示する
+基本のタスク管理は実装済み。今後は次の連携を検討する（[ROADMAP](docs/ROADMAP.md) の Phase 6）。
 - 予定にひもづく準備のタスク（例: 旅行の予定 →「宿の予約」「交通の予約」）
 - 毎月くり返すタスク（例: 家賃の振り込み）
 - お金との連携（例: カードの引き落とし前に残高が足りなそうなら、「入金する」タスクを自動で出す）
@@ -29,7 +32,7 @@ iPhoneのホーム画面から毎日使っている。
 
 ## 方針: 動いているアプリを壊さずに改修する
 
-今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（`src/` の TypeScript）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。毎日使いながら、次の順で少しずつ直す。
+今は画面の HTML（`index.html`）・見た目（`css/app.css`）・動き（`src/` の TypeScript）と、Supabase の12のテーブルでできている（データの構造は [docs/db/SCHEMA.md](docs/db/SCHEMA.md)。2026-10-29 に、全データを JSON 1行に入れていた形から切り替えた）。これまで次の順で進めてきた。1〜5 は実装済みで、6 が今後の機能開発にあたる。
 
 1. **ブランチとPRで変更する流れを身につける**（main がそのまま本番なので、main で直接作業しない）
 2. **安全網を張る**（データのエクスポート、計算ロジックのテスト、CI）
@@ -52,7 +55,7 @@ flowchart LR
 | Git のブランチ・PR・コンフリクトの解決・タグ・revert | すべての改修 | 本番を壊さずに変更を届けられる |
 | ESモジュール / Vite | 1ファイルを機能ごとのファイルに分ける（2026-11-01 に Vite を入れた。D4） | 既存のコードを安全に分割できる |
 | TypeScript（段階的に導入） | 計算ロジックから型を付ける | 既存のJSを少しずつTypeScriptに移せる |
-| Vitest | 残高・締め日・給与の計算のテスト | テストで守りながら改修できる |
+| Node.js のテストランナー（`node --test`） | 残高・締め日・給与の計算のテスト | テストで守りながら改修できる |
 | Supabase（PostgreSQL・RLS・マイグレーション） | JSONB からテーブルへの移行（済み）、タスクのテーブル | 使いながらデータの構造を移せる |
 | GitHub Actions | PRごとのテスト、Pagesへのデプロイ、キャッシュ名の自動更新 | 手作業による更新ミスをなくす |
 | Web Push（任意） | 期限の通知 | iOSのホーム画面アプリに通知を送れる |
@@ -77,17 +80,13 @@ npm install
 - Vite を使っている（[D4](docs/DECISIONS.md)）。計算・データ・画面・起動を `src/` の TypeScript（ES モジュール）に移した（D20 の 0〜10。2026-11-03）。`js/` に実行ファイルは残っていない。HTML のイベント属性と、そのための `window` への関数公開も D18 の手順5で削除した
 - 型の検査は `npm run typecheck`（CI でも動く）。`main` を取り込んで `package.json` が変わっていたら、もう一度 `npm install` する
 - Windows の PC で `npm run typecheck` を初めて動かすときは、TypeScript 7 の実行ファイル（`tsc.exe`）がアプリケーション制御で止まらないかを確かめる（`supabase.exe` が止まった PC もある。止まっても `npm test` と CI の型の検査は動く）
-- **ほかの PC で続きを始めるとき**（2026-11-03 時点。Phase 4 の途中）:
-  1. `git pull` → `npm install`（`package.json` が変わっている）。Node.js 24 が要る
-  2. 次の作業は [docs/ROADMAP.md](docs/ROADMAP.md) の Phase 4 の、チェックの付いていない最初の項目（今は練習8「長く続くブランチで main の変更を取り込む」）。D20 の画面移行、D18 のイベント登録、Service Worker の先読み一覧と版の自動生成は完了した
-  3. 画面を `src/` に移す PR は、**`npm run test:screens` で表示が変わっていないこと**を確かめる。ローカルの Supabase が要る: Docker Desktop を起動 → `npx supabase start`（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。初めての PC は `npx playwright install chromium` も。Mac では、画面の写真の基準（`*-darwin.png`）をまず手元で作る
-  4. 保存の流れをブラウザで確かめるときは、本番ではなく `npm run preview:local`（ローカルの Supabase）。操作の確かめは、`tests/screens/` に一時の `zz-*.spec.mjs` を置いて `node scripts/local-supabase.mjs npx playwright test zz-…` で流し、終わったら消す
-  5. PR は CI（Node のテスト・結合テスト＋画面の比較）が通るとマージできる。マージは Claude がしてよい（CLAUDE.md）
+- **ほかの PC で続きを始めるとき**: [docs/STATUS.md](docs/STATUS.md) で GitHub と残作業の確認手順を読む。最新の `main` から作業ブランチを切り、Node.js 24 で `npm install` する。画面や保存の変更では、ローカルの Supabase を起動して `npm run test:screens`・`npm run test:integration` も確かめる（[docs/db/LOCAL.md](docs/db/LOCAL.md)）。
 - 公開は自動: main に入ると GitHub Actions がビルドして GitHub Pages に出す（[D15](docs/DECISIONS.md)、`.github/workflows/deploy.yml`）
 - 祝日を読む Google のキーは 127.0.0.1:8765 だけを許しているので、手元ではこの場所で開く
 
 ## 資料
 
+- 現在地・残作業・引き継ぎ: [docs/STATUS.md](docs/STATUS.md)
 - ブランチとPRの流れ・練習メニュー: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
 - やること: [docs/ROADMAP.md](docs/ROADMAP.md)
 - 自分で決める設計判断: [docs/DECISIONS.md](docs/DECISIONS.md)

@@ -1,5 +1,10 @@
 # CLAUDE.md
 
+## 引き継ぎ
+
+- 作業を始める前に [docs/STATUS.md](docs/STATUS.md) を読む。完了した実装、残作業、GitHub の確認手順をまとめている。記載の SHA と Issue 状態は確認時点のものなので、`git fetch origin main` と `gh pr list --state open` で更新を確かめる
+- [docs/ROADMAP.md](docs/ROADMAP.md) のチェックボックスが作業の進捗、[docs/DECISIONS.md](docs/DECISIONS.md) が設計判断の履歴。古い作業ツリーや `js/` の歴史的な記載を、現行の未完了作業とみなさない
+
 ## 言葉
 
 - 応答はすべて日本語で書く。作業の途中の報告だけでなく、**最後のまとめ（完了の報告）も日本語で書く**。英語で書かない
