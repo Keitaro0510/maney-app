@@ -62,7 +62,7 @@
     <div class="home-main-note">現金の支出は、ATM で引き出したときに口座から引いています</div>
   </div>
   <!-- タスクの1行（D10）。今日・期限切れがあるときだけ出す。押すと、開いたときと同じ一覧を開く -->
-  <button type="button" class="home-tasks" id="home-tasks" hidden onclick="openStartupTasks(this)"></button>
+  <button type="button" class="home-tasks" id="home-tasks" hidden></button>
   <div class="home-actions">
     <button class="btn primary quick-ledger" onclick="openLedgerModal(null)"><span aria-hidden="true">＋</span> 支出を記録</button>
     <button class="btn quick-plan" onclick="openPlanModal(null)">予定を追加</button>
@@ -205,16 +205,16 @@
 <!-- TASKS（D10。動きは src/screens/tasks.ts） -->
 <div id="sec-task" class="sec">
   <div class="page-title">タスク</div>
-  <form class="task-add" onsubmit="event.preventDefault();addTaskQuick()">
+  <form class="task-add">
     <input id="task-add-title" class="task-add-input" placeholder="やることを入れる" aria-label="新しいタスクの名前" enterkeyhint="done" autocomplete="off"/>
     <button type="submit" class="ui-btn primary">追加</button>
   </form>
   <div class="task-due-chips" id="task-add-due" role="group" aria-label="新しいタスクの期限">
     <span class="task-due-label">期限</span>
-    <button type="button" class="task-chip" data-due="none" onclick="setTaskAddDue('none')">なし</button>
-    <button type="button" class="task-chip" data-due="today" onclick="setTaskAddDue('today')">今日</button>
-    <button type="button" class="task-chip" data-due="tomorrow" onclick="setTaskAddDue('tomorrow')">明日</button>
-    <label class="task-chip" data-due="pick"><span class="task-chip-text">日付…</span><input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)"/></label>
+    <button type="button" class="task-chip" data-due="none">なし</button>
+    <button type="button" class="task-chip" data-due="today">今日</button>
+    <button type="button" class="task-chip" data-due="tomorrow">明日</button>
+    <label class="task-chip" data-due="pick"><span class="task-chip-text">日付…</span><input type="date" aria-label="期限の日付を選ぶ"/></label>
   </div>
   <div id="task-list"></div>
 </div>
@@ -331,22 +331,22 @@
 <dialog class="sheet" id="task-sheet" aria-labelledby="task-sheet-title">
   <div class="sheet-head">
     <h2 id="task-sheet-title">タスクを編集</h2>
-    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeTaskSheet()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button type="button" class="icon-btn" aria-label="閉じる" data-task-action="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="fg"><label for="task-title">やること</label><input id="task-title" autocomplete="off" aria-describedby="task-title-err" style="font-size:16px"/>
     <div class="task-field-err" id="task-title-err" role="alert" hidden>やることを入れてください</div></div>
   <div class="fg"><label for="task-due">期限（なくてもよい）</label><input id="task-due" type="date" style="font-size:16px"/>
     <div class="task-sheet-due">
-      <button type="button" class="task-chip" onclick="setTaskSheetDue('none')">期限なし</button>
-      <button type="button" class="task-chip" onclick="setTaskSheetDue('today')">今日</button>
-      <button type="button" class="task-chip" onclick="setTaskSheetDue('tomorrow')">明日</button>
+      <button type="button" class="task-chip" data-due="none">期限なし</button>
+      <button type="button" class="task-chip" data-due="today">今日</button>
+      <button type="button" class="task-chip" data-due="tomorrow">明日</button>
     </div></div>
   <div class="fg"><label for="task-memo">メモ</label><textarea id="task-memo" rows="3" style="height:auto;font-size:16px"></textarea></div>
   <div class="task-sheet-actions">
-    <button type="button" class="ui-btn danger" onclick="deleteTaskFromSheet()">削除</button>
+    <button type="button" class="ui-btn danger" data-task-action="delete">削除</button>
     <span class="spacer"></span>
-    <button type="button" class="ui-btn" onclick="closeTaskSheet()">キャンセル</button>
-    <button type="button" class="ui-btn primary" onclick="saveTaskSheet()">保存</button>
+    <button type="button" class="ui-btn" data-task-action="close">キャンセル</button>
+    <button type="button" class="ui-btn primary" data-task-action="save">保存</button>
   </div>
 </dialog>
 
@@ -401,10 +401,10 @@
 <dialog class="sheet" id="task-startup" aria-labelledby="task-startup-title">
   <div class="sheet-head">
     <div><h2 id="task-startup-title">今日のタスク</h2><div class="task-startup-date" id="task-startup-date"></div></div>
-    <button type="button" class="icon-btn" aria-label="閉じる" onclick="closeStartupTasks()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button type="button" class="icon-btn" aria-label="閉じる" data-task-action="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div id="task-startup-list"></div>
-  <button type="button" class="ui-btn task-startup-all" onclick="openTaskTabFromStartup()">すべてのタスクを見る</button>
+  <button type="button" class="ui-btn task-startup-all" data-task-action="all">すべてのタスクを見る</button>
   <label class="task-startup-hide" hidden><input type="checkbox" id="task-startup-hide"/><span>今日は表示しない</span></label>
 </dialog>
 

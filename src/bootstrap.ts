@@ -9,7 +9,7 @@ import { bindNavigation, renderCurrentSection } from './navigation.ts';
 import { bindCalendarControls, onCalendarDayChanged } from './screens/calendar.ts';
 import { onShiftDayChanged } from './screens/shift.ts';
 import { bindLedgerControls, onLedgerDayChanged } from './screens/ledger.ts';
-import { maybeShowStartupTasks } from './screens/tasks.ts';
+import { bindTaskControls, maybeShowStartupTasks } from './screens/tasks.ts';
 
 function onDayChange(now: Date, prevKey: string): void {
   const prev = getNow();
@@ -39,6 +39,7 @@ export function startBootstrap(): void {
   bindNavigation();
   bindCalendarControls();
   bindLedgerControls();
+  bindTaskControls();
   if ('serviceWorker' in navigator && ENV.target === 'prod') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(() => console.log('SW registered'))

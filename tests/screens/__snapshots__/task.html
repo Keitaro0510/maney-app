@@ -1,17 +1,17 @@
 <div id="sec-task" class="sec active">
 <div class="page-title">タスク</div>
-<form class="task-add" onsubmit="event.preventDefault();addTaskQuick()">
+<form class="task-add">
 <input id="task-add-title" class="task-add-input" placeholder="やることを入れる" aria-label="新しいタスクの名前" enterkeyhint="done" autocomplete="off">
 <button type="submit" class="ui-btn primary">追加</button>
 </form>
 <div class="task-due-chips" id="task-add-due" role="group" aria-label="新しいタスクの期限">
 <span class="task-due-label">期限</span>
-<button type="button" class="task-chip" data-due="none" onclick="setTaskAddDue('none')" aria-pressed="true">なし</button>
-<button type="button" class="task-chip" data-due="today" onclick="setTaskAddDue('today')" aria-pressed="false">今日</button>
-<button type="button" class="task-chip" data-due="tomorrow" onclick="setTaskAddDue('tomorrow')" aria-pressed="false">明日</button>
+<button type="button" class="task-chip" data-due="none" aria-pressed="true">なし</button>
+<button type="button" class="task-chip" data-due="today" aria-pressed="false">今日</button>
+<button type="button" class="task-chip" data-due="tomorrow" aria-pressed="false">明日</button>
 <label class="task-chip" data-due="pick">
 <span class="task-chip-text">日付…</span>
-<input type="date" aria-label="期限の日付を選ぶ" onchange="pickTaskAddDue(this.value)">
+<input type="date" aria-label="期限の日付を選ぶ">
 </label>
 </div>
 <div id="task-list">
