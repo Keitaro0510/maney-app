@@ -15,8 +15,11 @@ async function open(page) {
   await form.locator('input[name=password]').fill(PASSWORD);
   await form.locator('button[value=signin]').click();
   // ログインできたら読み込み直して起動する。サーバーから読み終えるまで待つ
-  await page.waitForFunction(() => getComputedStyle(document.getElementById('login-screen')).display === 'none'
-    && document.getElementById('home-spendable').textContent !== '¥0');
+  await page.waitForFunction(() => {
+    const login = document.getElementById('login-screen');
+    const spendable = document.getElementById('home-spendable');
+    return !!login && !!spendable && getComputedStyle(login).display === 'none' && spendable.textContent !== '¥0';
+  });
   await settle(page);
 }
 
@@ -123,7 +126,7 @@ test('入力画面', async ({ page }) => {
     ['shift-add', () => openShiftModal('2026-11-12'), '#shift-mbg', false],
     ['job-edit', () => openJobEdit(0), '#job-edit-mbg', false],
     ['card-edit', () => openCardEdit(0), '#card-edit-mbg', false],
-    ['atm', () => openWd(), '#wd-mbg', false],
+    ['atm', () => document.getElementById('home-open-atm').click(), '#wd-mbg', false],
     ['task-add', () => openTaskSheet(null, document.body), '#task-sheet', true],
     ['monthly-add', () => openMonthlySheet(null, document.body), '#monthly-sheet', false],
   ];
@@ -285,4 +288,27 @@ test('カレンダーの描画後に作るボタンとキーボード操作', as
   await expect(page.locator('#ldg-date')).toHaveValue('2026-11-12');
   await closeAll(page);
   expect(await page.evaluate(() => 'dayCellClick' in window || 'sameRecord' in window)).toBe(false);
+});
+
+test('ATM の数字キーと引き出し履歴の削除', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#home-open-atm').click();
+  await page.locator('#wd-mbg [data-atm-key="1"]').click();
+  await page.locator('#wd-mbg [data-atm-action="close"]').click();
+  await expect(page.locator('#wd-mbg')).not.toHaveClass(/open/);
+  await page.locator('#home-open-atm').click();
+  await expect(page.locator('#wd-display')).toHaveText('¥0');
+  for (const key of ['1', '2', '3', 'backspace', '000']) {
+    await page.locator(`#wd-mbg [data-atm-key="${key}"]`).click();
+  }
+  await expect(page.locator('#wd-display')).toHaveText('¥12,000');
+  await page.locator('#wd-mbg [data-atm-action="withdraw"]').click();
+  await expect(page.locator('#wd-mbg')).not.toHaveClass(/open/);
+  await page.locator('#settings-btn').click();
+  const first = page.locator('#wd-hist .wd-hist-item').first();
+  await expect(first).toContainText('-¥12,000');
+  await first.locator('[data-atm-index]').click();
+  await expect(page.locator('#wd-hist .wd-hist-item').first()).not.toContainText('-¥12,000');
+  expect(await page.evaluate(() => 'nk' in window || 'delWd' in window)).toBe(false);
 });

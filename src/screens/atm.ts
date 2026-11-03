@@ -16,7 +16,29 @@ export function renderWdHist(): void {
   const el = document.getElementById('wd-hist'); if (!el) return;
   const list = [...state.st.wds].reverse().slice(0, 10);
   if (!list.length) { el.innerHTML = '<div class="empty">引き出し履歴なし</div>'; return; }
-  el.innerHTML = list.map((w, ri) => `<div class="wd-hist-item"><span style="color:var(--color-text-secondary)">${w.date}</span><div style="display:flex;align-items:center;gap:8px"><span style="color:#3C3489;font-weight:600">-¥${parseInt(String(w.amount)).toLocaleString()}</span><button class="btn sm del" onclick="delWd(${state.st.wds.length - 1 - ri})">削除</button></div></div>`).join('');
+  el.innerHTML = list.map((w, ri) => `<div class="wd-hist-item"><span style="color:var(--color-text-secondary)">${w.date}</span><div style="display:flex;align-items:center;gap:8px"><span style="color:#3C3489;font-weight:600">-¥${parseInt(String(w.amount)).toLocaleString()}</span><button class="btn sm del" data-atm-index="${state.st.wds.length - 1 - ri}">削除</button></div></div>`).join('');
 }
 export function delWd(i: number): void { state.st.wds.splice(i, 1); save(); renderHome(); renderWdHist(); }
-export const LEGACY_ATM = { openWd, closeWd, nk, nd, updWd, doWd, renderWdHist, delWd };
+
+/** 入力画面と描き直される履歴のボタンを登録する。 */
+export function bindAtmControls(): void {
+  elementById('wd-mbg').addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const key = event.target.closest<HTMLElement>('[data-atm-key]');
+    if (key) {
+      if (key.dataset.atmKey === 'backspace') nd();
+      else if (key.dataset.atmKey) nk(key.dataset.atmKey);
+      return;
+    }
+    const action = event.target.closest<HTMLElement>('[data-atm-action]')?.dataset.atmAction;
+    if (action === 'close') closeWd();
+    else if (action === 'withdraw') doWd();
+  });
+  elementById('wd-hist').addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const button = event.target.closest<HTMLElement>('[data-atm-index]');
+    if (!button) return;
+    const index = Number(button.dataset.atmIndex);
+    if (Number.isInteger(index) && index >= 0 && index < state.st.wds.length) delWd(index);
+  });
+}

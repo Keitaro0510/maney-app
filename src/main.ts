@@ -10,7 +10,6 @@ import { LEGACY_TASKS } from './screens/tasks.ts';
 import { LEGACY_CARDS } from './cards.ts';
 import { LEGACY_SETTINGS } from './screens/settings.ts';
 import { LEGACY_CARD_SCREEN } from './screens/cards.ts';
-import { LEGACY_ATM } from './screens/atm.ts';
 import { LEGACY_SHIFTS } from './shifts.ts';
 import { LEGACY_SHIFT_SCREEN } from './screens/shift.ts';
 import { LEGACY_PLANS } from './plans.ts';
@@ -26,7 +25,7 @@ initAuth({ supa: supaClient, storagePrefix: ENV.storagePrefix, fixDefaults, ui: 
 
 // HTML の onclick がある間は、関数名を window に出す（D18 の手順5まで）。
 Object.assign(window, LEGACY_SYNC, LEGACY_TASKS, LEGACY_CARDS,
-  LEGACY_SETTINGS, LEGACY_CARD_SCREEN, LEGACY_ATM, LEGACY_SHIFTS, LEGACY_SHIFT_SCREEN,
+  LEGACY_SETTINGS, LEGACY_CARD_SCREEN, LEGACY_SHIFTS, LEGACY_SHIFT_SCREEN,
   LEGACY_PLANS, LEGACY_PLAN_SCREEN, LEGACY_LEDGER, LEGACY_MONTHLY_SCREEN, LEGACY_LEDGER_SCREEN);
 
 if (__MANEY_TARGET__ === 'local') mountLocalLogin(ENV);
