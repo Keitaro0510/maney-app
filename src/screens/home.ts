@@ -4,7 +4,7 @@ import { currentRows } from '../sync.ts';
 import { getToday, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates.ts';
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
-import { estimateAcct, buildBalanceSeries, upcomingIncome, upcomingFixed, thisMonthPlanBudget } from '../home.ts';
+import { estimateAcct, buildBalanceSeries } from '../home.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
 import { monthlyRowsIn, monthlyPayLabel } from './monthly.ts';
@@ -21,14 +21,26 @@ let balChart: { destroy(): void } | null = null;
 
 // お金を「-¥1,200」「¥3,400」の形にする（マイナスはそのまま出す。D11）
 const yenSigned=(v: number): string=>(v<0?'-':'')+'¥'+Math.abs(v).toLocaleString();
-function renderForecast(): void{const y=gY(),m=gM(),acct=estimateAcct(),incInfo=upcomingIncome(),fixed=upcomingFixed();const planBudget=thisMonthPlanBudget(),pendingCards=state.st.cards.reduce((a,card)=>a+cycle(card,1).amount,0);const forecast=acct+incInfo.total-fixed-planBudget-pendingCards;const planCount=state.st.plans.filter(p=>{if(p.done||!p.budget||p.planCardIdx!=null)return false;const ms=toDS(y,m,1),me=toDS(y,m,new Date(y,m+1,0).getDate());const s=p.dateStart||p.date,e=p.dateEnd||p.date;return s<=me&&e>=ms;}).length;let html=`<div class="forecast-row"><span style="color:var(--color-text-secondary)">現在の口座残高（推定）</span><span style="font-weight:600">${yenSigned(acct)}</span></div><div class="forecast-row"><span style="color:#3B6D11">＋ 予定収入</span><span style="color:#3B6D11;font-weight:600">+¥${incInfo.total.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#A32D2D">− 確定引き落とし・毎月のお金</span><span style="color:#A32D2D;font-weight:600">-¥${fixed.toLocaleString()}</span></div><div class="forecast-row"><span style="color:#BA7517">− 集計中カード（見込み）</span><span style="color:#BA7517;font-weight:600">-¥${pendingCards.toLocaleString()}</span></div>`;if(planBudget>0)html+=`<div class="forecast-row"><span style="color:#993556">− 予定支出（${planCount}件）</span><span style="color:#993556;font-weight:600">-¥${planBudget.toLocaleString()}</span></div>`;html+=`<div class="forecast-sep"></div><div class="forecast-row"><span style="font-weight:600">収支見通し</span><span class="forecast-total" style="color:${forecast>=0?'#3B6D11':'#A32D2D'}">${forecast>0?'+':''}${yenSigned(forecast)}</span></div>`;if(forecast<0)html+=`<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:8px">⚠ ¥${Math.abs(forecast).toLocaleString()} 不足する見込みです</div>`;MoneyUI.elementById('forecast-content').innerHTML=html;}
+// これから90日のお金の動き（D22）。日付順に、その日の終わりの残高を添える。残高の最低点に印を付ける
+function renderTimeline(): void{
+  const{start,rows}=MoneyCalc.timeline(currentRows(),getToday());
+  let html=`<div class="up-row"><span class="up-date">今日</span><span class="up-label">口座の残高（推定）</span><span class="up-bal">${yenSigned(start)}</span></div>`;
+  html+=rows.map(e=>{
+    const dt=ds2d(e.date),[kind,cls]=UPCOMING_KIND[e.kind]||['',''];
+    const label=e.kind==='salary'?`${e.label}の給料`:e.kind==='card_bill'?`${e.label}の引き落とし`:e.label;
+    const bal=`<span class="up-bal${e.balance!==null&&e.balance<0?' neg':''}">${e.balance===null?'':yenSigned(e.balance)}</span>`;
+    return `<div class="up-row${e.lowest?' up-low':''}"><span class="up-date">${dt.getMonth()+1}/${dt.getDate()}(${DAYS[dt.getDay()]})</span><span class="badge ${cls}">${kind}</span><span class="up-label">${MoneyUI.escapeHtml(label)}</span><span class="up-amount ${e.amount<0?'out':'in'}">${e.amount<0?'-':'+'}¥${Math.abs(e.amount).toLocaleString()}</span>${bal}${e.lowest?'<span class="badge bpending">最低</span>':''}</div>`;
+  }).join('');
+  if(!rows.length)html+='<div class="empty">この先90日、口座のお金の動きはありません</div>';
+  MoneyUI.elementById('forecast-content').innerHTML=html;
+}
 
 // ホーム（D11: いちばん大事な数字・タスクの1行・記録のボタン・今日のお知らせ・これからのお金の動き・くわしく）。数えるのは src/money.ts
 export function renderHome(): void{const y=gY(),m=gM(),d=gD();
-  const rows=currentRows(),sp=MoneyCalc.spendable(rows,getToday()),bal=estimateAcct(),pd=ds2d(sp.payday);
+  const rows=currentRows(),sp=MoneyCalc.spendable(rows,getToday()),bal=estimateAcct(),pd=ds2d(sp.minDate);
   const spEl=MoneyUI.elementById('home-spendable');
   spEl.textContent=yenSigned(sp.amount);spEl.closest('.home-main')!.classList.toggle('short',sp.amount<0);
-  MoneyUI.elementById('home-spendable-sub').textContent=`1日あたり ${yenSigned(sp.perDay)}・給料まで ${sp.days}日（${pd.getMonth()+1}/${pd.getDate()}）`;
+  MoneyUI.elementById('home-spendable-sub').textContent=sp.minDays===0?`この先${sp.days}日で、今日がいちばん低い残高です`:`いちばん低くなるのは ${pd.getMonth()+1}/${pd.getDate()}（${sp.minDays}日後）・${sp.days}日先まで`;
   const balEl=MoneyUI.elementById('home-balance');
   balEl.textContent=yenSigned(bal);balEl.classList.toggle('negative',bal<0);
   renderHomeTasks();
@@ -52,7 +64,7 @@ function renderHomeUpcoming(rows: Rows): void{
 }
 
 // くわしく（画面を開いているときだけ描く。グラフは見えていないと大きさが決まらないため）
-function renderHomeMore(): void{renderBalanceChart();renderForecast();renderHomeBudget();}
+function renderHomeMore(): void{renderBalanceChart();renderTimeline();renderHomeBudget();}
 // 「くわしく」の画面（下から出る）を開く。グラフは、画面が見えてから描く
 let closeHomeMoreFn: (() => void) | null=null;
 export function openHomeMore(opener: HTMLElement): void{closeHomeMoreFn=MoneyUI.openSheet(MoneyUI.dialogById('home-more'),opener);renderHomeMore();}
@@ -67,7 +79,7 @@ function renderHomeBudget(): void{
 }
 
 
-function renderBalanceChart(): void{const{labels,balances}=buildBalanceSeries();const ctx=(MoneyUI.elementById('balance-chart') as HTMLCanvasElement).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===0)return 4;if(i>0&&Math.abs(balances[i]-balances[i-1])>3000)return 3;return 0;}),pointBackgroundColor:balances.map(b=>b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:(ctx2: { p0DataIndex: number })=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:(ctx2: { dataIndex: number }[])=>labels[ctx2[0].dataIndex],label:(ctx2: { datasetIndex: number; raw: number })=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;}},filter:(item: { datasetIndex: number })=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(_v: unknown,i: number)=>labels[i]},grid:{display:false}},y:{ticks:{callback:(v: number)=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});MoneyUI.elementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
+function renderBalanceChart(): void{const{labels,balances,marks,lowIndex}=buildBalanceSeries();const ctx=(MoneyUI.elementById('balance-chart') as HTMLCanvasElement).getContext('2d');if(balChart)balChart.destroy();balChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'口座残高',data:balances,borderWidth:2.5,pointRadius:balances.map((b,i)=>{if(i===lowIndex&&i>0)return 6;if(i===0)return 4;return marks[i].length?3:0;}),pointBackgroundColor:balances.map((b,i)=>i===lowIndex&&i>0?'#BA7517':b<0?'#A32D2D':'#185FA5'),fill:{target:'origin',above:'rgba(24,95,165,0.07)',below:'rgba(163,45,45,0.09)'},tension:0.1,segment:{borderColor:(ctx2: { p0DataIndex: number })=>{const i=ctx2.p0DataIndex;return(balances[i]<0||balances[i+1]<0)?'#A32D2D':'#185FA5';}}},{data:new Array(balances.length).fill(0),borderColor:'rgba(163,45,45,0.3)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{title:(ctx2: { dataIndex: number }[])=>labels[ctx2[0].dataIndex],label:(ctx2: { datasetIndex: number; raw: number })=>{if(ctx2.datasetIndex===1)return null;return`口座残高: ¥${ctx2.raw.toLocaleString()}`;},afterBody:(ctx2: { dataIndex: number }[])=>{const i=ctx2[0].dataIndex;return i===lowIndex&&i>0?['▼ ここがいちばん低い',...marks[i]]:marks[i];}},filter:(item: { datasetIndex: number })=>item.datasetIndex===0}},scales:{x:{ticks:{font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:10,callback:(_v: unknown,i: number)=>labels[i]},grid:{display:false}},y:{ticks:{callback:(v: number)=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=10000?'¥'+Math.round(a/1000)+'k':'¥'+a.toLocaleString());},font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});MoneyUI.elementById('balance-warn').innerHTML=balances.some(b=>b<0)?'<div style="background:#FAEEDA;color:#BA7517;border-radius:8px;padding:8px 10px;font-size:12px;margin-top:4px">⚠ この期間に残高がマイナスになる日があります</div>':'';}
 
 /** ホームの固定ボタンを登録する。 */
 export function bindHomeControls(): void {

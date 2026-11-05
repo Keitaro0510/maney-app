@@ -143,7 +143,7 @@ test('残高推移: 今日の次の日から、予定（カード払い以外・
   assert.equal(s[0].date, '2026-11-01');
 });
 
-// ---------- 給料日までに使えるお金 ----------
+// ---------- 次の給料日・使えるお金 ----------
 test('次の給料日: 今日が給料日なら、その次。月にない日は月末', () => {
   const rows = baseRows();
   assert.deepEqual(M.nextPayday(rows, '2026-10-24'), { date: '2026-10-25', days: 1 });
@@ -157,33 +157,70 @@ test('次の給料日: 削除したバイト先は数えない。バイト先が
   assert.equal(M.nextPayday(rows, '2026-11-01').date, '2026-11-10');
 });
 
-test('給料日までに使えるお金: 給料日の前の日までの引き落とし・予定を引く。カード払いの予定は二重に引かない', () => {
-  const rows = baseRows({
-    fixed_costs: [fixed({ name: '家賃', amount: 30000, day: 20, payment_method: 'bank' }), fixed({ name: '25日以降', amount: 7000, day: 26 })],
-    ledger_entries: [ledger('2026-10-10', 'expense', 6000, 'card', 'card1')], // 11/27 に引き落とし（給料日のあと）
-    plans: [
-      plan({ budget: 4000, start_date: '2026-11-12', end_date: '2026-11-12' }),
-      plan({ budget: 2000, start_date: '2026-11-08', end_date: '2026-11-11' }),             // 今日より前に始まって、続いている
-      plan({ budget: 5000, start_date: '2026-11-13', end_date: '2026-11-13', card_id: 'card1' }), // カードの集計に入る（12/27）
-      plan({ budget: 3000, start_date: '2026-11-25', end_date: '2026-11-25' }),             // 給料日のあと
-    ],
-  });
-  const today = '2026-11-10';
-  const balance = M.balanceAt(rows, today); // 100,000 − 家賃（10/20）− 25日以降（10/26）
-  assert.equal(balance, 100000 - 30000 - 7000);
-  const s = M.spendable(rows, today);
-  assert.equal(s.payday, '2026-11-25');
-  assert.equal(s.until, '2026-11-24');
-  assert.equal(s.days, 15);
-  assert.equal(s.amount, balance - 30000 - 4000 - 2000); // 11/20 の家賃と、給料日の前の予定
-  assert.equal(s.perDay, Math.floor(s.amount / 15));
+// 家賃 毎月20日 −30,000、収入 毎月25日 +50,000（今日 11/10 の残高は 100,000 − 10/20 の家賃 + 10/25 の収入 = 120,000）
+const dipRows = extra => baseRows({
+  fixed_costs: [
+    fixed({ name: '家賃', amount: 30000, day: 20 }),
+    fixed({ name: '仕送り', amount: 50000, day: 25, kind: 'income' }),
+  ],
+  ...extra,
 });
 
-test('給料日までに使えるお金は、足りないときマイナスのまま（D11）', () => {
+test('使えるお金: この先の残高の最低点。入金の前に落ち込むなら、その落ち込みの底（D22）', () => {
+  const rows = dipRows();
+  const s = M.spendable(rows, '2026-11-10', 40);
+  assert.equal(M.balanceAt(rows, '2026-11-10'), 120000);
+  assert.equal(s.amount, 90000); // 11/20 の家賃のあと、11/25 の入金の前
+  assert.equal(s.minDate, '2026-11-20');
+  assert.equal(s.minDays, 10);
+  assert.equal(s.days, 40);
+});
+
+test('使えるお金: 出ていくお金だけなら、いちばん先が最低点。入金だけなら今日', () => {
+  const out = baseRows({ fixed_costs: [fixed({ amount: 30000, day: 20 })] });
+  const a = M.spendable(out, '2026-11-10', 40);
+  assert.equal(a.minDate, '2026-12-20');
+  assert.equal(a.amount, 100000 - 30000 * 3); // 10/20・11/20・12/20
+  const inc = baseRows({ fixed_costs: [fixed({ amount: 5000, day: 20, kind: 'income' })] });
+  const b = M.spendable(inc, '2026-11-10', 40);
+  assert.equal(b.minDays, 0);
+  assert.equal(b.amount, M.balanceAt(inc, '2026-11-10'));
+});
+
+test('使えるお金: 続いている予定の予算は引く。カード払いの予定は引かない（引き落としに入る）', () => {
+  const base = M.spendable(dipRows(), '2026-11-10', 40).amount;
+  const rows = dipRows({
+    plans: [
+      plan({ budget: 2000, start_date: '2026-11-08', end_date: '2026-11-11' }), // 続いている
+      plan({ budget: 5000, start_date: '2026-11-09', end_date: '2026-11-12', card_id: 'card1' }),
+    ],
+  });
+  assert.equal(M.spendable(rows, '2026-11-10', 40).amount, base - 2000);
+});
+
+test('使えるお金: 足りないときは 0 で止めずマイナスのまま（D11・D22）', () => {
   const rows = baseRows({ fixed_costs: [fixed({ amount: 150000, day: 20 })] });
-  const s = M.spendable(rows, '2026-11-10');
-  assert.ok(s.amount < 0);
-  assert.ok(s.perDay < 0);
+  assert.ok(M.spendable(rows, '2026-11-10').amount < 0);
+});
+
+test('90日のお金の動き: 日付順に、その日の終わりの残高を添える。最低点の日に印を付ける（D22）', () => {
+  const t = M.timeline(dipRows(), '2026-11-10', 40);
+  assert.equal(t.start, 120000);
+  assert.deepEqual(t.rows.map(e => [e.date, e.amount, e.balance, e.lowest]), [
+    ['2026-11-20', -30000, 90000, true],
+    ['2026-11-25', 50000, 140000, false],
+    ['2026-12-20', -30000, 110000, false],
+  ]);
+});
+
+test('90日のお金の動き: 同じ日の動きは、最後の1つだけが残高を持つ', () => {
+  const rows = dipRows({ ledger_entries: [ledger('2026-11-20', 'expense', 1000, 'bank')] });
+  const t = M.timeline(rows, '2026-11-10', 40);
+  const day = t.rows.filter(e => e.date === '2026-11-20');
+  assert.equal(day.length, 2);
+  assert.equal(day[0].balance, null);
+  assert.equal(day[1].balance, 89000);
+  assert.equal(day[1].lowest, true);
 });
 
 test('これから先のお金の動き: 日付の順。0円のものは出さない', () => {
