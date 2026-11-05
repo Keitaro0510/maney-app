@@ -1,4 +1,4 @@
-// 型の検査（D17）: src/ の .ts。strict で検査する。js/ は ../tsconfig.json
+// 型の検査（D17）: src/ の .ts。strict で検査する
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
@@ -7,7 +7,5 @@
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["./**/*.ts", "../types/**/*.d.ts"],
-  // types/legacy/ は js/ から見た型（js/ の関数を使う）。src/ では読まない
-  "exclude": ["../types/legacy/**"]
+  "include": ["./**/*.ts", "../types/**/*.d.ts"]
 }
