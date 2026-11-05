@@ -144,7 +144,7 @@ DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10
 
 進め方と順番は [gymapp の PLAN](https://github.com/Keitaro0510/gymapp/blob/main/docs/PLAN.md)。ここでの作業は、DB と、maney-app 側の連携。
 
-- [x] gym のテーブル（`gym_exercises`・`gym_workouts`・`gym_sets`）のマイグレーションと RLS のテスト。ローカルで通した（2026-11-05）。本番への適用は、これから
+- [x] gym のテーブル（`gym_exercises`・`gym_workouts`・`gym_sets`）のマイグレーションと RLS のテスト。ローカルで通し、本番に適用した（2026-11-05。バージョン 20261105140000。Advisors に新しい指摘なし）
 - [x] `docs/db/SCHEMA.md` に gym のテーブルを追記する（2026-11-05）
 - [ ] （gymapp が DB につながったあと）カレンダーにトレーニングの日、ホームに今週の回数、ジム代の1回あたりを出す
 
