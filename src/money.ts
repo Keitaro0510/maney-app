@@ -1,4 +1,4 @@
-// お金の計算（D11。手順8の段2）。推定残高・残高推移・カードの集計・給料・「給料日までに使えるお金」を、ここ1か所で数える。
+// お金の計算（D11。手順8の段2）。推定残高・残高推移・カードの集計・給料・「使えるお金」を、ここ1か所で数える。
 // 互換の st ではなく、DB の行（currentRows() の形: { settings: [...], cards: [...], ... }）を読む（D9）。画面を使わないので Node でテストできる。
 // js/ の画面からは window.MoneyCalc で使う（src/main.ts。D17）
 //
@@ -302,20 +302,44 @@ export function nextPayday(rows: Rows | Model, todayKey: string): Payday {
   return best!; // payDays は空にならない（バイト先がなければ設定の給料日の1つ）
 }
 
-/** 給料日までに使えるお金（spendable） */
-export interface Spendable { amount: number; perDay: number; days: number; payday: string; until: string }
+/** 使えるお金（spendable）: この先 days 日の残高の最低点（D22） */
+export interface Spendable { amount: number; minDate: string; minDays: number; days: number }
 
-// 給料日までに使えるお金（D11）: 次の給料日の前の日に口座に残る見込みから、それまでの予定（カード払い以外）を引いた額。
-// 0 で止めない（足りないときはマイナス）。perDay は給料日までの1日あたり
-export function spendable(rows: Rows | Model, todayKey: string): Spendable {
+/** 使えるお金を見る日数（D22） */
+export const SPENDABLE_DAYS = 90;
+
+// 残高の見込み（balanceSeries）の最低点。同じ額が続くときは、いちばん早い日を最低点にする
+function lowestPoint(series: { date: string; balance: number }[]): { date: string; balance: number; index: number } {
+  let low = 0;
+  for (let i = 1; i < series.length; i++) if (series[i].balance < series[low].balance) low = i;
+  return { ...series[low], index: low };
+}
+
+// 使えるお金（D22）: 今日からこの先 days 日の残高の最低点。今使っても、この先で口座が 0 を割らない上限。
+// 0 で止めない（足りないときはマイナス）。続いている予定（今日までに始まって、まだ終わっていないもの）の予算は、これから払うので引く
+export function spendable(rows: Rows | Model, todayKey: string, days = SPENDABLE_DAYS): Spendable {
   const mdl = asModel(rows);
-  const pay = nextPayday(mdl, todayKey);
-  const until = addDays(pay.date, -1);
-  let amount = balanceAt(mdl, todayKey) + sum(accountEvents(mdl, addDays(todayKey, 1), until));
-  // 予定: 今日より前に始まって、まだ終わっていないものも入れる（済みにしていなければ、これから払う）
-  const plans = mdl.plans.filter(p => !p.done && (p.budget ?? 0) > 0 && !p.card_id && p.end_date >= todayKey && p.start_date <= until);
-  amount -= plans.reduce((a, p) => a + (p.budget ?? 0), 0);
-  return { amount, perDay: pay.days > 0 ? Math.floor(amount / pay.days) : amount, days: pay.days, payday: pay.date, until };
+  const low = lowestPoint(balanceSeries(mdl, todayKey, days));
+  const ongoing = mdl.plans.filter(p => !p.done && (p.budget ?? 0) > 0 && !p.card_id && p.start_date <= todayKey && p.end_date >= todayKey);
+  return { amount: low.balance - ongoing.reduce((a, p) => a + (p.budget ?? 0), 0), minDate: low.date, minDays: low.index, days };
+}
+
+/** 日付順の入出金に、その日の終わりの残高を添えたもの。balance はその日の最後の動きだけが持つ。lowest は最低点の日の最後の動き */
+export interface TimelineRow extends AccountEvent { balance: number | null; lowest: boolean }
+
+// これから days 日の入出金を日付順に並べ、日ごとの終わりの残高を添える（D22）。残高は balanceSeries と同じ数え方（予定の予算も入れる）
+export function timeline(rows: Rows | Model, todayKey: string, days = SPENDABLE_DAYS): { start: number; rows: TimelineRow[] } {
+  const mdl = asModel(rows);
+  const series = balanceSeries(mdl, todayKey, days);
+  const low = lowestPoint(series);
+  const base = mdl.settings.base_date || todayKey;
+  const events = accountEvents(mdl, addDays(todayKey, 1), addDays(todayKey, days), { plans: true }).filter(e => e.date > base);
+  const endOfDay = new Map(series.map(p => [p.date, p.balance]));
+  const list: TimelineRow[] = events.map((e, i) => {
+    const last = i === events.length - 1 || events[i + 1].date !== e.date;
+    return { ...e, balance: last ? endOfDay.get(e.date) ?? null : null, lowest: last && low.index > 0 && e.date === low.date };
+  });
+  return { start: series[0].balance, rows: list };
 }
 
 // これから先のお金の動き（今日の次の日から days 日。予定も入れる）
