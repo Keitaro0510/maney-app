@@ -17,7 +17,7 @@ insert into public.fixed_costs (id, user_id, name, amount, day, kind, payment_me
 select hasnt_table('public', 'fixed_incomes', '固定収入の表はない');
 select hasnt_function('private', 'merge_fixed_incomes_to_costs', array['uuid'], '移し替えの関数はない');
 select ok(not ('fixed_incomes' = any (private.snapshot_tables())), '写しのテーブルに固定収入は入らない');
-select is(private.import_tables(), private.snapshot_tables(), '読み込むテーブルは、写しのテーブルと同じ');
+select is(private.import_tables(), (select array_agg(t order by o) from unnest(private.snapshot_tables()) with ordinality as u(t, o) where left(t, 4) <> 'gym_'), '読み込むテーブルは、写しのテーブルからジム（gym_）を除いたもの（D23）');
 
 -- ============================================================
 -- 保存の関数（2）
