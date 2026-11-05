@@ -4,6 +4,8 @@ Supabase（PostgreSQL）のリレーショナルデータベース。2026-10-29 
 
 古い `fixed_incomes` 表は、空になったのを確かめて 2026-11-01 に消した（`20261101013510_drop_fixed_incomes.sql`。行の履歴にも写しにも、固定収入の行は残っていなかった）。1行だけ戻す操作（`put_row`）は、`fixed_incomes` の行を渡されたら `fixed_costs` の収入に変える部分を残している。
 
+2026-11-05 に、姉妹アプリ [gymapp](https://github.com/Keitaro0510/gymapp)（筋トレの記録）のためのテーブル `gym_exercises`・`gym_workouts`・`gym_sets` を、同じ Supabase プロジェクトに足した（D23。`20261105140000_gym_tables.sql`）。名前は `gym_` で始める。maney-app の画面はまだ読まない（あとで連携する）。
+
 - 定義はすべて [`supabase/migrations/`](../../supabase/migrations/) にある。テストは [`supabase/tests/`](../../supabase/tests/)
 - どのテーブルにも `id`（uuid）・`user_id`（`auth.users` を指す）・`created_at`・`updated_at`（サーバーの時刻）がある。一覧のテーブルには並び順の `position` もある（下の図では省いた）
 - 本人の行だけを読み書きできる（RLS）。アカウントを消すと、そのユーザーの行も一緒に消える
@@ -21,6 +23,8 @@ erDiagram
   cards ||--o{ card_bill_actuals : "card_id"
   jobs ||--o{ shifts : "job_id"
   jobs ||--o{ salary_actuals : "job_id"
+  gym_exercises ||--o{ gym_sets : "exercise_id"
+  gym_workouts ||--o{ gym_sets : "workout_id"
 
   cards {
     uuid id PK
@@ -131,9 +135,31 @@ erDiagram
     text memo
     text[] tags "用途タグ（複数可。空ならタグなし）"
   }
+  gym_exercises {
+    uuid id PK
+    text name "消していないものの中で一意"
+    timestamptz deleted_at "削除済み"
+  }
+  gym_workouts {
+    uuid id PK
+    timestamptz performed_at "記録した日時"
+    date date "端末の日付の日"
+    text note
+  }
+  gym_sets {
+    uuid id PK
+    uuid workout_id FK
+    uuid exercise_id FK
+    numeric kg "0以上。小数（62.5 など）"
+    smallint reps "1以上"
+    numeric rpe "1〜10。空でもよい"
+    text note
+  }
 ```
 
 `settings`（1人1行）・`withdrawals`（ATM の引き出し）・`tasks`（タスク）は、ほかのテーブルとつながらない。タスクと予定のひもづけ（`plan_id`）は Phase 6 で足す（D2）。
+
+ジムの3つ（D23）は、お金・予定・タスクのテーブルとはつながらず、3つの間だけでつながる。トレーニングを消すときは、先にそのセットを消す（`apply_op` の同じ操作の中で、セット → トレーニングの順）。`gym_` のテーブルは、毎日の写しと戻す処理には入るが、JSON の読み込み（`import_backup`。`private.import_tables()`）には入らない（maney-app の読み込みで、ジムの記録を消さないため）。
 
 ## DB が見張っていること
 

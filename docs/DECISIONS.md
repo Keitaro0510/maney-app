@@ -898,3 +898,10 @@ D11 の「ホームでいちばん大事な数字」の決定 4 と、ホーム�
 - 別の技術構成（Cloud Run・別の DB）は、学ぶ範囲も運用する場所も増える
 
 進め方: gymapp の `docs/PLAN.md`。この決定にかかわる maney-app 側の作業は、gym のテーブルのマイグレーション・RLS のテスト・`docs/db/SCHEMA.md` への追記（新しいテーブルを足すだけで、既存のテーブルには触れない）と、あとで maney-app の画面から gym の記録を読む連携。
+
+実装（2026-11-05。`20261105140000_gym_tables.sql`・`supabase/tests/database/10_gym.test.sql`）:
+- テーブル: `gym_exercises`（種目。消していないものの中で名前が一意、削除は `deleted_at`）・`gym_workouts`（`performed_at` と、日本時間の日 `date`）・`gym_sets`（`kg` は小数、`reps` は1以上、`rpe` は1〜10で空でもよい）。作法は ほかのテーブルと同じ（`user_id`・RLS・履歴・`position`）。トレーニングを消すときは、先にセットを消す（`on delete cascade` にはしない。`apply_op` の競合の検出を通すため）
+- **毎日の写しと復元には入れる**（ジムの記録もバックアップされる）。ただし、**写しから戻すと、ジムの記録も写しの時点に戻る**。お金だけを戻したいときの手順は `docs/db/RESTORE.md`
+- **JSON の読み込み（`import_backup`）には入れない**。`private.import_tables()` は、写しのテーブルから `gym_` で始まるものを除く。入れると、maney-app の読み込みのたびにジムの記録が消えるため
+- `apply_op` で保存できるテーブルに3つを足し、同じ名前の種目（消していないもの）を競合（`duplicate`）として返すようにした
+- 本番への適用は別の手順（`docs/db/LOCAL.md`）。ローカルでは、全マイグレーションと全 DB テストが通った（gym は42件）
