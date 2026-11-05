@@ -1,10 +1,10 @@
 <div id="sec-home" class="sec active">
 <div class="page-title">ホーム</div>
-<!-- いちばん大事な数字（D11）: 給料日までに使えるお金。足りないときはマイナスのまま。数えるのは src/money.ts -->
+<!-- いちばん大事な数字（D11・D22）: この先90日の残高の最低点（使えるお金）。足りないときはマイナスのまま。数えるのは src/money.ts -->
 <div class="acct-box home-main">
-<div class="acct-lbl">給料日までに使えるお金</div>
-<div class="acct-val" id="home-spendable">¥181,700</div>
-<div class="home-main-sub" id="home-spendable-sub">1日あたり ¥13,976・給料まで 13日（11/25）</div>
+<div class="acct-lbl">使えるお金</div>
+<div class="acct-val" id="home-spendable">¥142,511</div>
+<div class="home-main-sub" id="home-spendable-sub">いちばん低くなるのは 1/10（59日後）・90日先まで</div>
 <div class="home-main-balance">
 <span>口座の残高（推定）</span>
 <span id="home-balance">¥185,700</span>
@@ -56,7 +56,7 @@
 <button type="button" class="home-tasks home-more-btn" id="home-more-btn" aria-haspopup="dialog">
 <span class="home-more-copy">
 <span class="home-more-title">くわしく見る</span>
-<span class="home-more-hint">残高の推移・今月の収支・予算</span>
+<span class="home-more-hint">残高の推移・90日のお金の動き・予算</span>
 </span>
 <span class="home-tasks-more" aria-hidden="true">›</span>
 </button>
