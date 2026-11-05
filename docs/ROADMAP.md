@@ -140,6 +140,14 @@ DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10
 - [x] 差がないことを確かめてから切り替える（両方に書き込む代わりに、試験版 `next.html` と全項目の照らし合わせで確かめた。2026-10-29 に切り替え、#29）
 - [ ] 問題が出たら `git revert` で戻す（練習7）
 
+## gymapp との連携（D23。2026-11-05）
+
+進め方と順番は [gymapp の PLAN](https://github.com/Keitaro0510/gymapp/blob/main/docs/PLAN.md)。ここでの作業は、DB と、maney-app 側の連携。
+
+- [ ] gym のテーブル（`gym_exercises`・`gym_workouts`・`gym_sets`）のマイグレーションと RLS のテスト。ローカルで通してから本番へ
+- [ ] `docs/db/SCHEMA.md` に gym のテーブルを追記する
+- [ ] （gymapp が DB につながったあと）カレンダーにトレーニングの日、ホームに今週の回数、ジム代の1回あたりを出す
+
 ## 使って見つかった改善（2026-11-03）
 
 - [x] [#140 カレンダーの日・週表示をなくして月表示に絞る](https://github.com/Keitaro0510/maney-app/issues/140)。月表示と、日付を押したときの詳細は残す（2026-11-03）
