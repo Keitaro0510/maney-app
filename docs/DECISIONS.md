@@ -874,3 +874,27 @@ D18 の手順5・作り（11。互換の層の終了。2026-11-03）:
 - 最低点は、給料日と引き落とし日の前後関係に左右されない
 
 D11 の「ホームでいちばん大事な数字」の決定 4 と、ホームの構成 6（今月の収支）はこの決定で置き換える。
+
+## D23: ジムの記録（gymapp）を同じ DB に置く
+
+背景: 姉妹アプリ [gymapp](https://github.com/Keitaro0510/gymapp)（筋トレの記録。1ファイルの PWA）は、記録が端末の `localStorage` にしかない。端末が変わる・消えると失われ、複数の端末では使えない。maney-app は DB をテーブルに分け終えたので、gymapp も関係データベースに載せ、あとで予定・お金・タスクとつなぎたい。
+
+選択肢:
+- **DB の置き場所**: (a) maney-app と同じ Supabase プロジェクト、(b) gymapp 用に別のプロジェクト
+- **マイグレーションの置き場所**: (a) maney-app の `supabase/migrations/`、(b) gymapp のリポジトリ
+- **gymapp の作り**: (a) 1 ファイルのまま DB をつなぐ、(b) maney-app と同じ土台（Vite・TypeScript・テスト・CI）に移す
+- **作り直し構想（training-log。Next.js・FastAPI・Cloud Run の別構成）**: 進める／やめる
+
+決定（2026-11-05）:
+1. **DB は同じ Supabase プロジェクト。テーブル名は `gym_` で始める**（`gym_exercises`・`gym_workouts`・`gym_sets`。形は gymapp の `docs/PLAN.md` のたたき台から、実装のときに決める）
+2. **マイグレーションは、この maney-app の `supabase/migrations/` に置く**。履歴とテストを1か所に揃える（gymapp 側には置かない）
+3. **gymapp は maney-app と同じ土台に移す**。今の1ファイル版は、新しい版が確かめられるまで公開し続ける
+4. **training-log は削除した**。部位・推定 1RM・停滞の検知・AI コーチの構想は、gymapp の `docs/PLAN.md` に引き継いだ
+
+理由:
+- ログインが1つで済み、あとで予定・お金・タスクと結合できる（カレンダーにトレーニングの日を出す、ジム代を1回あたりにする、など）
+- 同じプロジェクトを触る入口が2か所だと、履歴が食い違いやすい
+- 1ファイルの864行に DB をつなぐと、保守しにくくなる
+- 別の技術構成（Cloud Run・別の DB）は、学ぶ範囲も運用する場所も増える
+
+進め方: gymapp の `docs/PLAN.md`。この決定にかかわる maney-app 側の作業は、gym のテーブルのマイグレーション・RLS のテスト・`docs/db/SCHEMA.md` への追記（新しいテーブルを足すだけで、既存のテーブルには触れない）と、あとで maney-app の画面から gym の記録を読む連携。
