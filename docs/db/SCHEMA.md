@@ -140,6 +140,8 @@ erDiagram
     text name "消していないものの中で一意"
     text primary_muscle "主に使う部位（D24。空は未設定）"
     text[] secondary_muscles "補助の部位（D24。複数）"
+    text notes "やり方・フォーム・意識することのメモ（D25）"
+    text video_url "解説動画の URL（D25。http か https のみ）"
     timestamptz deleted_at "削除済み"
   }
   gym_workouts {
@@ -162,6 +164,8 @@ erDiagram
 `settings`（1人1行）・`withdrawals`（ATM の引き出し）・`tasks`（タスク）は、ほかのテーブルとつながらない。タスクと予定のひもづけ（`plan_id`）は Phase 6 で足す（D2）。
 
 種目の部位（D24）は、`gym_exercises` の2つの列（`primary_muscle`・`secondary_muscles`）。部位は14（`chest` 胸 / `delt_front`・`delt_side`・`delt_rear` 肩の前・中・後 / `lats` 広背筋 / `upper_back` 僧帽筋・菱形筋 / `biceps` / `triceps` / `forearm` / `abs` / `glutes` / `quads` / `hamstrings` / `calves`）。DB は、一覧にない部位と、主の部位を補助にも入れることを見張る。
+
+種目のメモと動画のリンク（D25）は、`gym_exercises` の2つの列（`notes`・`video_url`）。`video_url` は `http://` か `https://` で始まるものだけ（DB が見張っている）。
 
 ジムの3つ（D23）は、お金・予定・タスクのテーブルとはつながらず、3つの間だけでつながる。トレーニングを消すときは、先にそのセットを消す（`apply_op` の同じ操作の中で、セット → トレーニングの順）。`gym_` のテーブルは、毎日の写しと戻す処理には入るが、JSON の読み込み（`import_backup`。`private.import_tables()`）には入らない（maney-app の読み込みで、ジムの記録を消さないため）。
 
