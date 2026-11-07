@@ -136,10 +136,10 @@
   </div>
   <div id="ldg-graph-sec" style="display:none">
     <div class="tab2" id="ldg-graph-mode-tabs" role="group" aria-label="グラフの期間"><button type="button" class="tb2 active" aria-pressed="true">月</button><button type="button" class="tb2" aria-pressed="false">年</button></div>
+    <!-- 分析（D28）：React で作るグラフ。新しいものを上に置く。動きは src/screens/analysis.tsx -->
+    <div id="analysis-root"></div>
     <div class="card"><div class="st" id="cat-chart-title">カテゴリ別支出</div><div class="chart-wrap"><canvas id="cat-chart"></canvas></div></div>
     <div class="card"><div class="st" id="day-chart-title">日別支出推移</div><div class="chart-wrap"><canvas id="day-chart"></canvas></div></div>
-    <!-- 分析（D28）：React で作るグラフを足す場所。動きは src/screens/analysis.tsx -->
-    <div id="analysis-root"></div>
   </div>
   <!-- 毎月のお金（D14。動きは src/screens/monthly.ts） -->
   <div id="ldg-monthly-sec" style="display:none">

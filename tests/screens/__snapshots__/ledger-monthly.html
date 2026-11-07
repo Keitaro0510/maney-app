@@ -163,21 +163,7 @@
 <button type="button" class="tb2 active" aria-pressed="true">月</button>
 <button type="button" class="tb2" aria-pressed="false">年</button>
 </div>
-<div class="card">
-<div class="st" id="cat-chart-title">カテゴリ別支出</div>
-<div class="chart-wrap">
-<canvas id="cat-chart">
-</canvas>
-</div>
-</div>
-<div class="card">
-<div class="st" id="day-chart-title">日別支出推移</div>
-<div class="chart-wrap">
-<canvas id="day-chart">
-</canvas>
-</div>
-</div>
-<!-- 分析（D28）：React で作るグラフを足す場所。動きは src/screens/analysis.tsx -->
+<!-- 分析（D28）：React で作るグラフ。新しいものを上に置く。動きは src/screens/analysis.tsx -->
 <div id="analysis-root">
 <div class="card">
 <div class="st">月ごとの収支の推移（直近12か月）</div>
@@ -292,6 +278,20 @@
 </div>
 <div style="font-size: 12px; margin-top: 4px; color: var(--color-text-secondary);">予想でも ¥1,274,829 の余裕があります</div>
 </div>
+</div>
+</div>
+<div class="card">
+<div class="st" id="cat-chart-title">カテゴリ別支出</div>
+<div class="chart-wrap">
+<canvas id="cat-chart">
+</canvas>
+</div>
+</div>
+<div class="card">
+<div class="st" id="day-chart-title">日別支出推移</div>
+<div class="chart-wrap">
+<canvas id="day-chart">
+</canvas>
 </div>
 </div>
 </div>
