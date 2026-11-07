@@ -1,6 +1,6 @@
 // 分析の計算（D28）。画面を使わない関数だけ置く（テストできるように）。
 import { addM } from './dates.ts';
-import type { StLedger } from './compat.ts';
+import type { StLedger, StJob } from './compat.ts';
 
 export type MonthTotal = { y: number; m: number; label: string; income: number; expense: number; net: number };
 
@@ -77,4 +77,35 @@ export function dailyExpenseHeat(ledger: StLedger[], y: number, m: number): Mont
   }
   const maxCell = max ? cells.find(c => c.amount === max) : undefined;
   return { y, m, offset: new Date(y, m, 1).getDay(), cells, total: cells.reduce((a, c) => a + c.amount, 0), maxDay: maxCell ? maxCell.day : null };
+}
+
+/** バイト先の時給の平均（削除済み・時給のないものは除く）。登録がなければ null */
+export function averageWage(jobs: StJob[]): number | null {
+  const wages = jobs.filter(j => !j._deleted).map(j => Number(j.wage) || 0).filter(w => w > 0);
+  return wages.length ? Math.round(wages.reduce((a, w) => a + w, 0) / wages.length) : null;
+}
+
+/** 金額 amount が、時給 wage で何時間分か（小数のまま） */
+export const workHours = (amount: number, wage: number): number => (wage > 0 ? amount / wage : 0);
+
+/** 時間の見せ方。10時間未満は小数1桁（2.5）、それ以上は整数（70） */
+export const fmtHours = (h: number): string => (h < 10 ? String(Math.round(h * 10) / 10) : String(Math.round(h)));
+
+export type CatSpend = { cat: string; amount: number; hours: number };
+export type SpendPeriod = { total: number; hours: number; top: CatSpend[] };
+
+/** 期間の支出の合計・時間・支出の多いカテゴリ上位 n 個。m が null なら y 年ぜんぶ、数字ならその月（m は 0 から）。wage が null なら時間は 0 */
+export function spendInWork(ledger: StLedger[], y: number, m: number | null, wage: number | null, n = 3): SpendPeriod {
+  const prefix = m === null ? `${y}-` : `${y}-${String(m + 1).padStart(2, '0')}-`;
+  const byCat = new Map<string, number>();
+  let total = 0;
+  for (const l of ledger) {
+    if (l.type !== 'expense' || !l.date.startsWith(prefix)) continue;
+    const amount = Number(l.amount) || 0;
+    total += amount;
+    byCat.set(l.cat, (byCat.get(l.cat) || 0) + amount);
+  }
+  const top = [...byCat.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, n)
+    .map(([cat, amount]) => ({ cat, amount, hours: wage ? workHours(amount, wage) : 0 }));
+  return { total, hours: wage ? workHours(total, wage) : 0, top };
 }

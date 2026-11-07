@@ -712,3 +712,8 @@ button.color-swatch.sel{transform:none}
 .heat-legend{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:var(--color-text-secondary);margin-top:8px}
 .heat-legend .heat-cell{min-height:0;width:14px;height:14px;border-radius:4px;animation:none;cursor:default}
 @media (prefers-reduced-motion:reduce){.heat-cell{animation:none}}
+
+/* 分析の「支出を労働時間に」（D28）。棒が左から伸びる */
+.wh-bar{height:100%;background:#185FA5;border-radius:4px;transform-origin:left;transition:width .5s ease;animation:wh-in .6s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 80ms)}
+@keyframes wh-in{from{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.wh-bar{transition:none;animation:none}}
