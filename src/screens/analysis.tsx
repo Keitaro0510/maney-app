@@ -5,7 +5,7 @@ import * as ui from '../ui.ts';
 import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
 import { getNow, DAYS } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 
 const yen = (n: number): string => (n < 0 ? '-' : '') + '¥' + Math.abs(n).toLocaleString();
@@ -122,14 +122,60 @@ function SpendHeatmap({ heat }: { heat: MonthHeat }) {
   );
 }
 
+
+/** 支出を労働時間に換算（D28 の 4）。「この期間の支出は、バイト何時間分か」。時給はバイト先の平均 */
+function WorkHoursCard({ period, wage, label }: { period: SpendPeriod; wage: number | null; label: string }) {
+  if (wage === null) {
+    return (
+      <div className="card">
+        <div className="st">支出をバイトの時間にすると</div>
+        <div className="empty">シフトのタブでバイト先（時給）を登録すると、支出がバイト何時間分か分かります</div>
+      </div>
+    );
+  }
+  const topAmount = period.top[0]?.amount || 1;
+  return (
+    <div className="card">
+      <div className="st">支出をバイトの時間にすると（{label}）</div>
+      {period.total === 0 ? <div className="empty">この期間の支出はありません</div> : (
+        <>
+          <div style={{ textAlign: 'center', margin: '4px 0 2px' }}>
+            <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>バイト約 </span>
+            <span style={{ fontSize: 34, fontWeight: 700 }}>{fmtHours(period.hours)}</span>
+            <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}> 時間分</span>
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            支出 {yen(period.total)} ÷ 平均時給 {yen(wage)}（8時間働くとして約 {fmtHours(period.hours / 8)} 日分）
+          </div>
+          <div style={{ marginTop: 12 }}>
+            {period.top.map((t, i) => (
+              <div key={t.cat} style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <span>{t.cat}</span>
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{yen(t.amount)} ≒ <b style={{ color: 'var(--color-text-primary)' }}>{fmtHours(t.hours)}時間</b></span>
+                </div>
+                <div style={{ height: 8, background: 'var(--color-background-secondary)', borderRadius: 4, marginTop: 3, overflow: 'hidden' }}>
+                  <div className="wh-bar" style={{ width: `${Math.max(2, (t.amount / topAmount) * 100)}%`, '--i': i } as CSSProperties} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** 分析の画面。ここに、グラフの部品を1つずつ足す（D28 の 1〜4） */
 function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolean }) {
   const now = getNow();
   const totals = monthlyTotals(state.st.ledger, now.getFullYear(), now.getMonth(), 12);
+  const wage = averageWage(state.st.jobs);
   return (
     <>
       <MonthlyTrend totals={totals} />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
+      <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
       <FuyouCard />
     </>
   );

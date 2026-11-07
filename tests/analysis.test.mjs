@@ -79,3 +79,36 @@ test('dailyExpenseHeat: 記録がない月は maxDay が null、うるう年の2
   assert.equal(h.cells.length, 29);
   assert.ok(h.cells.every(c => c.level === 0));
 });
+
+import { averageWage, workHours, fmtHours, spendInWork } from '../src/analysis.ts';
+
+test('averageWage: 削除済み・時給なしを除いた平均。なければ null', () => {
+  assert.equal(averageWage([]), null);
+  assert.equal(averageWage([{ name: 'a', wage: 1100 }, { name: 'b', wage: 1300 }]), 1200);
+  assert.equal(averageWage([{ name: 'a', wage: 1100 }, { name: 'b', wage: 1300, _deleted: true }, { name: 'c' }, { name: 'd', wage: 0 }]), 1100);
+  assert.equal(averageWage([{ name: 'a', wage: 1000 }, { name: 'b', wage: 1001 }]), 1001); // 四捨五入
+});
+
+test('workHours・fmtHours: 時間の計算と見せ方', () => {
+  assert.equal(workHours(3000, 1200), 2.5);
+  assert.equal(workHours(3000, 0), 0); // 時給がなければ0
+  assert.equal(fmtHours(2.5), '2.5');
+  assert.equal(fmtHours(2.04), '2');
+  assert.equal(fmtHours(9.96), '10'); // 10時間未満は小数1桁（9.96は10.0に丸まる）
+  assert.equal(fmtHours(70.4), '70');
+  assert.equal(fmtHours(0), '0');
+});
+
+test('spendInWork: 期間の支出・時間・カテゴリの上位（支出だけ）', () => {
+  const c = (date, type, amount, cat) => ({ date, type, amount, name: '', cat, pay: '' });
+  const led = [c('2026-11-01', 'expense', 3000, '食費'), c('2026-11-09', 'expense', 6000, '娯楽'), c('2026-11-20', 'expense', 1000, '食費'),
+    c('2026-11-21', 'income', 99999, '給料'), c('2026-10-01', 'expense', 500, '食費'), c('2026-11-22', 'expense', 200, '交通'), c('2026-11-23', 'expense', 100, '日用品')];
+  const m = spendInWork(led, 2026, 10, 1000);
+  assert.equal(m.total, 10300);
+  assert.equal(m.hours, 10.3);
+  assert.deepEqual(m.top.map(t => [t.cat, t.amount, t.hours]), [['娯楽', 6000, 6], ['食費', 4000, 4], ['交通', 200, 0.2]]); // 上位3つ
+  assert.equal(spendInWork(led, 2026, null, 1000).total, 10800); // 年ぜんぶ
+  const none = spendInWork(led, 2026, 10, null);
+  assert.equal(none.hours, 0); // 時給がなければ時間は0（合計は出る）
+  assert.equal(none.total, 10300);
+});
