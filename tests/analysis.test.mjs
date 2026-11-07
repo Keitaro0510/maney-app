@@ -50,3 +50,32 @@ test('fuyouLimits: 設定どおりの限度額を出す', () => {
   assert.deepEqual(fuyouLimits('both').map(l => l.amount), [1030000, 1300000]);
   assert.deepEqual(fuyouLimits('').map(l => l.amount), []);
 });
+
+import { dailyExpenseHeat } from '../src/analysis.ts';
+
+test('dailyExpenseHeat: 月の日数・1日の曜日・支出だけを日ごとに足す', () => {
+  const h = dailyExpenseHeat([
+    e('2026-11-05', 'expense', 1000), e('2026-11-05', 'expense', 500), e('2026-11-05', 'income', 99999),
+    e('2026-11-30', 'expense', 3000), e('2026-10-31', 'expense', 7777), e('2026-12-01', 'expense', 8888),
+  ], 2026, 10);
+  assert.equal(h.cells.length, 30);
+  assert.equal(h.offset, 0); // 2026-11-01 は日曜日
+  assert.deepEqual([h.cells[4].amount, h.cells[4].count], [1500, 2]);
+  assert.equal(h.cells[29].amount, 3000);
+  assert.equal(h.total, 4500); // 前後の月と収入は数えない
+  assert.equal(h.maxDay, 30);
+});
+
+test('dailyExpenseHeat: 濃さは最多の日を基準にする（使っていない日は0）', () => {
+  const h = dailyExpenseHeat([e('2026-02-01', 'expense', 100), e('2026-02-02', 'expense', 200), e('2026-02-03', 'expense', 300), e('2026-02-04', 'expense', 400)], 2026, 1);
+  assert.deepEqual(h.cells.slice(0, 5).map(c => c.level), [1, 2, 3, 4, 0]); // 25%・50%・75%・100%
+  assert.equal(h.cells.length, 28);
+});
+
+test('dailyExpenseHeat: 記録がない月は maxDay が null、うるう年の2月は29日', () => {
+  const h = dailyExpenseHeat([], 2028, 1);
+  assert.equal(h.maxDay, null);
+  assert.equal(h.total, 0);
+  assert.equal(h.cells.length, 29);
+  assert.ok(h.cells.every(c => c.level === 0));
+});
