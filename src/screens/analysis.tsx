@@ -7,6 +7,7 @@ import { state } from '../state.ts';
 import { getNow, DAYS } from '../dates.ts';
 import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
+import { BadgesCard } from './badges.tsx';
 
 const yen = (n: number): string => (n < 0 ? '-' : '') + '¥' + Math.abs(n).toLocaleString();
 
@@ -173,6 +174,7 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
   const wage = averageWage(state.st.jobs);
   return (
     <>
+      <BadgesCard />
       <MonthlyTrend totals={totals} />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
       <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
