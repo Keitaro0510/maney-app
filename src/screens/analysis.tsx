@@ -5,7 +5,8 @@ import * as ui from '../ui.ts';
 import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
 import { getNow } from '../dates.ts';
-import { monthlyTotals, type MonthTotal } from '../analysis.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, type MonthTotal, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 
 const yen = (n: number): string => (n < 0 ? '-' : '') + '¥' + Math.abs(n).toLocaleString();
 
@@ -51,11 +52,52 @@ function MonthlyTrend({ totals }: { totals: MonthTotal[] }) {
   );
 }
 
+
+const LEVEL_COLOR: Record<FuyouLevel, string | null> = { ok: null, warn: '#BA7517', danger: '#A32D2D', over: '#A32D2D' };
+
+/** 扶養の限度額までの残り（D28 の 3）。半円のゲージ。濃い弧＝確定した収入、薄い弧＝シフトの予想 */
+function FuyouGaugeView({ label, g, baseColor }: { label: string; g: FuyouGauge; baseColor: string }) {
+  const color = LEVEL_COLOR[g.level] ?? baseColor;
+  const arc = 'M20 100 A80 80 0 0 1 180 100'; // 長さを100として扱う（pathLength）
+  const over = g.level === 'over';
+  const forecast = over ? '' : g.margin < 0 ? `予想では ¥${(-g.margin).toLocaleString()} 超えます` : `予想でも ¥${g.margin.toLocaleString()} の余裕があります`;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 13, fontWeight: 600 }}>{label}</div>
+      <svg viewBox="0 0 200 112" style={{ width: '100%', maxWidth: 280, display: 'block', margin: '0 auto' }} role="img"
+        aria-label={`${label}。確定 ${Math.round(g.confirmedPct)}%、予想 ${Math.round(g.estimatedPct)}%`}>
+        <path d={arc} pathLength={100} fill="none" stroke="var(--color-background-secondary)" strokeWidth={14} strokeLinecap="round" />
+        {g.estimatedPct > 0 && <path className="gauge-arc" d={arc} pathLength={100} fill="none" stroke={color} strokeOpacity={0.3} strokeWidth={14} strokeLinecap="round" strokeDasharray="100 100" strokeDashoffset={100 - g.estimatedPct} />}
+        {g.confirmedPct > 0 && <path className="gauge-arc" d={arc} pathLength={100} fill="none" stroke={color} strokeWidth={14} strokeLinecap="round" strokeDasharray="100 100" strokeDashoffset={100 - g.confirmedPct} />}
+        <text x={100} y={74} textAnchor="middle" fontSize={11} style={{ fill: 'var(--color-text-secondary)' }}>{over ? '超えています' : '残り'}</text>
+        <text x={100} y={98} textAnchor="middle" fontSize={22} fontWeight={700} style={{ fill: over ? '#A32D2D' : 'var(--color-text-primary)' }}>¥{Math.abs(g.remaining).toLocaleString()}</text>
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+        <span>確定 {Math.round(g.confirmedPct)}% ¥{g.confirmed.toLocaleString()}</span>
+        <span>予想 {Math.round(g.estimatedPct)}% ¥{g.estimated.toLocaleString()}</span>
+      </div>
+      {forecast && <div style={{ fontSize: 12, marginTop: 4, color: g.margin < 0 ? '#BA7517' : 'var(--color-text-secondary)' }}>{forecast}</div>}
+    </div>
+  );
+}
+
+function FuyouCard() {
+  const limits = fuyouLimits(state.st.fuyouLimit);
+  if (!limits.length) return null;
+  const confirmed = yearConfirmedIncome(), estimated = yearEstimatedIncome();
+  return (
+    <div className="card">
+      <div className="st">扶養の壁までの残り（{getNow().getFullYear()}年）</div>
+      {limits.map(l => <FuyouGaugeView key={l.amount} label={l.label} g={fuyouGauge(l.amount, confirmed, estimated)} baseColor={l.amount === 1030000 ? '#185FA5' : '#993556'} />)}
+    </div>
+  );
+}
+
 /** 分析の画面。ここに、グラフの部品を1つずつ足す（D28 の 1〜4） */
 function Analysis() {
   const now = getNow();
   const totals = monthlyTotals(state.st.ledger, now.getFullYear(), now.getMonth(), 12);
-  return <MonthlyTrend totals={totals} />;
+  return <><MonthlyTrend totals={totals} /><FuyouCard /></>;
 }
 
 /** 分析の画面を描く（最新の記録で）。「分析」を開くときと、記録が変わったとき、ledger.ts の renderCharts から呼ばれる */

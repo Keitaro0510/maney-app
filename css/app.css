@@ -693,3 +693,8 @@ button.color-swatch.sel{transform:none}
   z-index:200;
 }
 .sync-pill[hidden]{display:none}
+
+/* 分析のゲージ（D28）。弧が0から伸びる。動きを減らす設定の人には、止めて見せる */
+.gauge-arc{transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .3s;animation:gauge-in .9s cubic-bezier(.2,.8,.2,1) backwards}
+@keyframes gauge-in{from{stroke-dashoffset:100}}
+@media (prefers-reduced-motion:reduce){.gauge-arc{transition:none;animation:none}}

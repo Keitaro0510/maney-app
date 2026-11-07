@@ -22,3 +22,28 @@ export function monthlyTotals(ledger: StLedger[], endY: number, endM: number, mo
   for (const t of list) t.net = t.income - t.expense;
   return list;
 }
+
+export type FuyouLevel = 'ok' | 'warn' | 'danger' | 'over';
+export type FuyouGauge = {
+  limit: number; confirmed: number; estimated: number;
+  /** 確定・予想が限度額の何%か（0〜100。それ以上は100で止める。描くため） */
+  confirmedPct: number; estimatedPct: number;
+  /** 限度額から確定を引いた残り（超えたらマイナス）。予想で引いた余裕も */
+  remaining: number; margin: number;
+  /** 確定の進み具合: ok（70%未満）・warn（70%以上）・danger（90%以上）・over（超えた） */
+  level: FuyouLevel;
+};
+
+/** 扶養の限度額 limit に対して、今年の確定した収入 confirmed と、シフトの予想 estimated がどこまで来ているか */
+export function fuyouGauge(limit: number, confirmed: number, estimated: number): FuyouGauge {
+  const pct = (v: number): number => Math.max(0, Math.min(100, (v / limit) * 100));
+  const raw = (confirmed / limit) * 100;
+  const level: FuyouLevel = confirmed >= limit ? 'over' : raw >= 90 ? 'danger' : raw >= 70 ? 'warn' : 'ok';
+  return { limit, confirmed, estimated, confirmedPct: pct(confirmed), estimatedPct: pct(estimated), remaining: limit - confirmed, margin: limit - estimated, level };
+}
+
+/** 設定（fuyouLimit: '1030000'・'1300000'・'both'）で出す限度額 */
+export function fuyouLimits(setting: string): { label: string; amount: number }[] {
+  const all = [{ label: '103万円の壁', amount: 1030000 }, { label: '130万円の壁', amount: 1300000 }];
+  return all.filter(l => setting === 'both' || String(l.amount) === setting);
+}
