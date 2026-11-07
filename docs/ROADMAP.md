@@ -142,7 +142,7 @@ DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10
 
 新しい画面から入れ、既存画面は触らない。詳しい手順は [D27](DECISIONS.md) の「実装」。
 
-- [ ] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、型の検査・ビルド・`sw.js` の先読み一覧が通ることを確かめる
+- [x] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、型の検査・ビルド・`sw.js` の先読み一覧が通ることを確かめる（2026-11-07。`src/react/mount.tsx` が差し込みの入口。まだ使っていないので、ビルドの成果物は導入前と同じ）
 - [ ] `state.ts` の変更を React に伝える橋渡しと、`navigation.ts` での呼び分けを作る
 
 ## 分析（D28。2026-11-07）
