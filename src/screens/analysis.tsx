@@ -1,11 +1,11 @@
 // 分析（D28）。家計簿タブの「分析」の中に、React で作るグラフを足していく場所。
 // 今あるグラフ（カテゴリのドーナツ・日別の棒）は、移すまで ledger.ts がそのまま描く。
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import * as ui from '../ui.ts';
 import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
-import { getNow } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, type MonthTotal, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { getNow, DAYS } from '../dates.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 
 const yen = (n: number): string => (n < 0 ? '-' : '') + '¥' + Math.abs(n).toLocaleString();
@@ -93,14 +93,50 @@ function FuyouCard() {
   );
 }
 
-/** 分析の画面。ここに、グラフの部品を1つずつ足す（D28 の 1〜4） */
-function Analysis() {
-  const now = getNow();
-  const totals = monthlyTotals(state.st.ledger, now.getFullYear(), now.getMonth(), 12);
-  return <><MonthlyTrend totals={totals} /><FuyouCard /></>;
+
+/** 支出カレンダー（D28 の 2）。日ごとの支出を色の濃さで見せる。日付を押すと、その日の金額が出る */
+function SpendHeatmap({ heat }: { heat: MonthHeat }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const day = picked ?? heat.maxDay; // 何も押していないときは、いちばん使った日
+  const cell = day ? heat.cells[day - 1] : null;
+  const weekday = (d: number): string => DAYS[(heat.offset + d - 1) % 7];
+  return (
+    <div className="card">
+      <div className="st">支出カレンダー（{heat.y}年{heat.m + 1}月）</div>
+      <div className="heat-grid" role="group" aria-label="日ごとの支出">
+        {DAYS.map(d => <div key={d} className="heat-dow">{d}</div>)}
+        {Array.from({ length: heat.offset }, (_, i) => <div key={`b${i}`} />)}
+        {heat.cells.map((c, i) => (
+          <button key={c.day} type="button" className={`heat-cell heat-${c.level}${c.day === day ? ' sel' : ''}`} style={{ '--i': i } as CSSProperties}
+            aria-pressed={c.day === day} aria-label={`${c.day}日 ${c.amount ? yen(c.amount) : '支出なし'}`} onClick={() => setPicked(c.day)}>{c.day}</button>
+        ))}
+      </div>
+      <div className="heat-legend" aria-hidden="true">少<span className="heat-cell heat-1" /><span className="heat-cell heat-2" /><span className="heat-cell heat-3" /><span className="heat-cell heat-4" />多</div>
+      <div style={{ fontSize: 13, marginTop: 8 }} aria-live="polite">
+        {cell && day
+          ? <>{heat.m + 1}月{day}日（{weekday(day)}）<b>{cell.amount ? yen(cell.amount) : '支出なし'}</b>{cell.count ? `（${cell.count}件）` : ''}</>
+          : 'この月の支出はありません'}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>この月の支出 {yen(heat.total)}（日付を押すと、その日の金額が出ます）</div>
+    </div>
+  );
 }
 
-/** 分析の画面を描く（最新の記録で）。「分析」を開くときと、記録が変わったとき、ledger.ts の renderCharts から呼ばれる */
-export function renderAnalysis(): void {
-  mountReact(ui.elementById('analysis-root'), <Analysis />);
+/** 分析の画面。ここに、グラフの部品を1つずつ足す（D28 の 1〜4） */
+function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolean }) {
+  const now = getNow();
+  const totals = monthlyTotals(state.st.ledger, now.getFullYear(), now.getMonth(), 12);
+  return (
+    <>
+      <MonthlyTrend totals={totals} />
+      {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
+      <FuyouCard />
+    </>
+  );
+}
+
+/** 分析の画面を描く（最新の記録で）。「分析」を開くときと、記録・月が変わったとき、ledger.ts の renderCharts から呼ばれる。
+ *  y・m は家計簿で見ている月（m は 0 から）。monthMode は「月」の表示か（「年」のときは月のカレンダーを出さない） */
+export function renderAnalysis(y: number, m: number, monthMode: boolean): void {
+  mountReact(ui.elementById('analysis-root'), <Analysis y={y} m={m} monthMode={monthMode} />);
 }

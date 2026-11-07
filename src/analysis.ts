@@ -47,3 +47,34 @@ export function fuyouLimits(setting: string): { label: string; amount: number }[
   const all = [{ label: '103万円の壁', amount: 1030000 }, { label: '130万円の壁', amount: 1300000 }];
   return all.filter(l => setting === 'both' || String(l.amount) === setting);
 }
+
+export type DayCell = { day: number; amount: number; count: number; level: 0 | 1 | 2 | 3 | 4 };
+export type MonthHeat = {
+  y: number; m: number;
+  /** その月の1日の曜日（日曜が0）。カレンダーの最初の空きマスの数 */
+  offset: number;
+  cells: DayCell[]; total: number;
+  /** いちばん支出の多い日（支出がなければ null。同じ金額なら早い日） */
+  maxDay: number | null;
+};
+
+/** y 年 m 月（m は 0 から）の、日ごとの支出。level は、その月でいちばん多い日を基準にした濃さ（0＝使っていない、4＝最多に近い） */
+export function dailyExpenseHeat(ledger: StLedger[], y: number, m: number): MonthHeat {
+  const dim = new Date(y, m + 1, 0).getDate();
+  const cells: DayCell[] = Array.from({ length: dim }, (_, i) => ({ day: i + 1, amount: 0, count: 0, level: 0 }));
+  const prefix = `${y}-${String(m + 1).padStart(2, '0')}-`;
+  for (const l of ledger) {
+    if (l.type !== 'expense' || !l.date.startsWith(prefix)) continue;
+    const cell = cells[Number(l.date.slice(8, 10)) - 1];
+    if (!cell) continue;
+    cell.amount += Number(l.amount) || 0;
+    cell.count += 1;
+  }
+  const max = Math.max(0, ...cells.map(c => c.amount));
+  for (const c of cells) {
+    const r = max ? c.amount / max : 0;
+    c.level = c.amount <= 0 ? 0 : r <= 0.25 ? 1 : r <= 0.5 ? 2 : r <= 0.75 ? 3 : 4;
+  }
+  const maxCell = max ? cells.find(c => c.amount === max) : undefined;
+  return { y, m, offset: new Date(y, m, 1).getDay(), cells, total: cells.reduce((a, c) => a + c.amount, 0), maxDay: maxCell ? maxCell.day : null };
+}

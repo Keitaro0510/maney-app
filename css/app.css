@@ -698,3 +698,17 @@ button.color-swatch.sel{transform:none}
 .gauge-arc{transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .3s;animation:gauge-in .9s cubic-bezier(.2,.8,.2,1) backwards}
 @keyframes gauge-in{from{stroke-dashoffset:100}}
 @media (prefers-reduced-motion:reduce){.gauge-arc{transition:none;animation:none}}
+
+/* 分析の支出カレンダー（D28）。使った額が多い日ほど濃い赤。出るときに、日付が順にふわっと現れる */
+.heat-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.heat-dow{text-align:center;font-size:11px;color:var(--color-text-secondary);padding-bottom:2px}
+.heat-cell{min-height:44px;border:0;border-radius:8px;font:inherit;font-size:12px;color:var(--color-text-primary);background:var(--color-background-secondary);cursor:pointer;animation:heat-in .35s ease backwards;animation-delay:calc(var(--i,0) * 12ms)}
+.heat-cell.heat-1{background:rgba(163,45,45,.18)}
+.heat-cell.heat-2{background:rgba(163,45,45,.38)}
+.heat-cell.heat-3{background:rgba(163,45,45,.65);color:#fff}
+.heat-cell.heat-4{background:rgba(163,45,45,.9);color:#fff}
+.heat-cell.sel{outline:2px solid #185FA5;outline-offset:1px}
+@keyframes heat-in{from{opacity:0;transform:scale(.6)}}
+.heat-legend{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:var(--color-text-secondary);margin-top:8px}
+.heat-legend .heat-cell{min-height:0;width:14px;height:14px;border-radius:4px;animation:none;cursor:default}
+@media (prefers-reduced-motion:reduce){.heat-cell{animation:none}}

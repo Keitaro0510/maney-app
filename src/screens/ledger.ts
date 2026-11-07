@@ -254,7 +254,7 @@ export function renderChartsYear_(): void{
   if(dayChart)dayChart.destroy();
   dayChart=new Chart((ui.elementById('day-chart') as HTMLCanvasElement).getContext('2d'),{type:'bar',data:{labels:Object.keys(monthMap).map(m=>(parseInt(m)+1)+'月'),datasets:[{data:Object.values(monthMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:(v: number)=>'¥'+v.toLocaleString(),font:{size:10}}}}}});
 }
-export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();renderAnalysis();}
+export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();renderAnalysis(ldgListY,ldgListM,ldgGraphMode==='month');}
 
 
 /** 家計簿上部の固定タブと期間ボタンを登録する。 */
