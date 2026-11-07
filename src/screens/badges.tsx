@@ -69,15 +69,15 @@ function BadgeCard({ item, index }: { item: Item; index: number }) {
   const tier: Tier = p ? p.tier : 0;
   const ratio = p && p.next ? Math.min(100, (p.value / p.next) * 100) : 100;
   return (
-    <div className={`badge${tier ? ' got' : ''}`} style={{ '--i': index } as CSSProperties}
+    <div className={`ach${tier ? ' got' : ''}`} style={{ '--i': index } as CSSProperties}
       aria-label={`${meta.title}。${p ? `${TIER_NAME[tier]}。${p.value}${meta.unit}` : '予算が未設定'}`}>
-      <div className="badge-medal"><Medal kind={item.kind} tier={tier} /></div>
+      <div className="ach-medal"><Medal kind={item.kind} tier={tier} /></div>
       <div style={{ fontSize: 13, fontWeight: 600 }}>{meta.title}</div>
       <div style={{ fontSize: 12, color: tier ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}>
         {p ? <><b>{TIER_NAME[tier]}</b>　最高 {p.value}{meta.unit}</> : 'まだ'}
       </div>
       {p && (
-        <div className="badge-track" aria-hidden="true"><div className="badge-bar" style={{ width: `${ratio}%`, background: TIER_COLOR[tier || 1].ribbon }} /></div>
+        <div className="ach-track" aria-hidden="true"><div className="ach-bar" style={{ width: `${ratio}%`, background: TIER_COLOR[tier || 1].ribbon }} /></div>
       )}
       <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', minHeight: 28 }}>
         {p ? (p.next ? `あと ${p.next - p.value}${meta.unit}で ${TIER_NAME[tier + 1]}（${p.next}${meta.unit}）` : '最高の段階です') : item.extra}
@@ -94,7 +94,7 @@ export function BadgesCard() {
   return (
     <div className="card">
       <div className="st">実績バッジ（{got}/{items.length} 獲得）</div>
-      <div className="badge-grid">{items.map((it, i) => <BadgeCard key={it.kind} item={it} index={i} />)}</div>
+      <div className="ach-grid">{items.map((it, i) => <BadgeCard key={it.kind} item={it} index={i} />)}</div>
       <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 8 }}>
         予算内の月と黒字の月は、終わった月だけを数えます（家計簿の記録だけ。毎月のお金は含みません）。バッジは記録から数えるので、記録を消すと減ることがあります。
       </div>

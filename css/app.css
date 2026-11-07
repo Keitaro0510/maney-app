@@ -719,12 +719,12 @@ button.color-swatch.sel{transform:none}
 @media (prefers-reduced-motion:reduce){.wh-bar{transition:none;animation:none}}
 
 /* 分析の実績バッジ（D30）。取ったバッジは、順にぽんと現れる。棒は左から伸びる */
-.badge-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.badge{text-align:center;padding:10px 6px;border-radius:12px;background:var(--color-background-secondary)}
-.badge-medal{display:flex;justify-content:center}
-.badge.got .badge-medal{animation:badge-pop .5s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--i,0) * 90ms)}
-.badge:not(.got) .badge-medal{filter:grayscale(1);opacity:.75}
-.badge-track{height:6px;background:rgba(0,0,0,.08);border-radius:3px;margin:6px 8px 4px;overflow:hidden}
-.badge-bar{height:100%;border-radius:3px;transform-origin:left;transition:width .5s ease;animation:wh-in .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 90ms)}
-@keyframes badge-pop{from{transform:scale(.4) rotate(-14deg);opacity:0}}
-@media (prefers-reduced-motion:reduce){.badge.got .badge-medal,.badge-bar{animation:none;transition:none}}
+.ach-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ach{text-align:center;padding:10px 6px;border-radius:12px;background:var(--color-background-secondary)}
+.ach-medal{display:flex;justify-content:center}
+.ach.got .ach-medal{animation:ach-pop .5s cubic-bezier(.2,1.4,.4,1) backwards;animation-delay:calc(var(--i,0) * 90ms)}
+.ach:not(.got) .ach-medal{filter:grayscale(1);opacity:.75}
+.ach-track{height:6px;background:rgba(0,0,0,.08);border-radius:3px;margin:6px 8px 4px;overflow:hidden}
+.ach-bar{height:100%;border-radius:3px;transform-origin:left;transition:width .5s ease;animation:wh-in .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 90ms)}
+@keyframes ach-pop{from{transform:scale(.4) rotate(-14deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ach.got .ach-medal,.ach-bar{animation:none;transition:none}}
