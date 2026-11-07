@@ -2,7 +2,7 @@
 <div class="page-title">家計簿</div>
 <div class="tab2" id="ldg-main-tabs" role="group" aria-label="家計簿の表示">
 <button type="button" class="tb2" aria-pressed="false">記録一覧</button>
-<button type="button" class="tb2" aria-pressed="false">グラフ</button>
+<button type="button" class="tb2" aria-pressed="false">分析</button>
 <button type="button" class="tb2 active" aria-pressed="true">毎月のお金</button>
 </div>
 <div class="month-nav" id="ldg-month-nav" style="display: none;">
@@ -175,6 +175,11 @@
 <div class="chart-wrap">
 <canvas id="day-chart">
 </canvas>
+</div>
+</div>
+<!-- 分析（D28）：React で作るグラフを足す場所。動きは src/screens/analysis.tsx -->
+<div id="analysis-root">
+<div data-analysis="ready" hidden="">
 </div>
 </div>
 </div>

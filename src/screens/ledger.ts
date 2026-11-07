@@ -10,6 +10,7 @@ import { renderCurrentSection } from '../navigation.ts';
 import { renderCal, refreshDayViews } from './calendar.ts';
 import { monthLedger, ledgerPayLabel } from '../ledger.ts';
 import { renderCardList } from './cards.ts';
+import { bindAnalysis } from './analysis.tsx';
 import { renderMonthlyTab, saveMonthlyFromLedger } from './monthly.ts';
 import type { StLedger } from '../compat.ts';
 
@@ -258,6 +259,7 @@ export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():r
 
 /** 家計簿上部の固定タブと期間ボタンを登録する。 */
 export function bindLedgerControls(): void {
+  bindAnalysis(); // 分析の中の React の画面（D28）
   document.querySelectorAll<HTMLButtonElement>('#ldg-main-tabs button').forEach((button, i) => {
     button.addEventListener('click', () => ldgTab(['list', 'graph', 'monthly'][i]));
   });
