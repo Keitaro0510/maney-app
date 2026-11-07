@@ -999,7 +999,7 @@ D11 の「ホームでいちばん大事な数字」の決定 4 と、ホーム�
 - 画面は D20 で `src/screens/` に分かれているので、画面ごとに差し替えられる。本番を一気に壊さずに済む
 
 実装（未着手）:
-- [ ] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、`npm run typecheck`・ビルド・`sw.js` の先読み一覧（`scripts/finalize-sw.mjs`）が通ることを確かめる
+- [x] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、`npm run typecheck`・ビルド・`sw.js` の先読み一覧（`scripts/finalize-sw.mjs`）が通ることを確かめる（2026-11-07。PR #164）
 - [ ] `state.ts` の変更を React に伝える橋渡しを 1 回だけ作る
 - [ ] `navigation.ts` から、React の画面と既存の画面を呼び分けられるようにする
 - [ ] グラフ・分析のタブを React で作る（最初の画面）
