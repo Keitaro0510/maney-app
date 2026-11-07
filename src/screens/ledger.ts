@@ -10,7 +10,7 @@ import { renderCurrentSection } from '../navigation.ts';
 import { renderCal, refreshDayViews } from './calendar.ts';
 import { monthLedger, ledgerPayLabel } from '../ledger.ts';
 import { renderCardList } from './cards.ts';
-import { bindAnalysis } from './analysis.tsx';
+import { renderAnalysis } from './analysis.tsx';
 import { renderMonthlyTab, saveMonthlyFromLedger } from './monthly.ts';
 import type { StLedger } from '../compat.ts';
 
@@ -254,12 +254,11 @@ export function renderChartsYear_(): void{
   if(dayChart)dayChart.destroy();
   dayChart=new Chart((ui.elementById('day-chart') as HTMLCanvasElement).getContext('2d'),{type:'bar',data:{labels:Object.keys(monthMap).map(m=>(parseInt(m)+1)+'月'),datasets:[{data:Object.values(monthMap),backgroundColor:'#185FA590',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{callback:(v: number)=>'¥'+v.toLocaleString(),font:{size:10}}}}}});
 }
-export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();}
+export function renderCharts(): void{ldgGraphMode==='year'?renderChartsYear_():renderChartsMonth_();renderAnalysis();}
 
 
 /** 家計簿上部の固定タブと期間ボタンを登録する。 */
 export function bindLedgerControls(): void {
-  bindAnalysis(); // 分析の中の React の画面（D28）
   document.querySelectorAll<HTMLButtonElement>('#ldg-main-tabs button').forEach((button, i) => {
     button.addEventListener('click', () => ldgTab(['list', 'graph', 'monthly'][i]));
   });
