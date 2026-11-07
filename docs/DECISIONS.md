@@ -1000,6 +1000,7 @@ D11 の「ホームでいちばん大事な数字」の決定 4 と、ホーム�
 
 実装（未着手）:
 - [x] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、`npm run typecheck`・ビルド・`sw.js` の先読み一覧（`scripts/finalize-sw.mjs`）が通ることを確かめる（2026-11-07。PR #164）
+- [x] 公開する本番（`MANEY_TARGET=prod`）のビルドだけ JavaScript を縮めてソースマップを付ける。local は縮めない（2026-11-07。React を使うと縮めないままでは gzip で約107KB 増えるため。画面比較は local のビルドを使うので結果は変わらない。ソースマップ `.map` は Service Worker の先読みに入れない）
 - [ ] `state.ts` の変更を React に伝える橋渡しを 1 回だけ作る
 - [ ] `navigation.ts` から、React の画面と既存の画面を呼び分けられるようにする
 - [ ] グラフ・分析のタブを React で作る（最初の画面）

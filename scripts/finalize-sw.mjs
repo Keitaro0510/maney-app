@@ -26,7 +26,8 @@ export async function finalizeServiceWorker(outDir) {
   const assetBlocks = [...template.matchAll(ASSETS_PATTERN)];
   if (assetBlocks.length !== 1) throw new Error('sw.js の ASSETS が1つではありません');
 
-  const files = (await filesUnder(root)).filter(path => path !== 'sw.js');
+  // ソースマップ（.map）は開発者ツールが必要なときだけ読む。先読みはしない
+  const files = (await filesUnder(root)).filter(path => path !== 'sw.js' && !path.endsWith('.map'));
   const available = new Set(files);
   if (!available.has('index.html')) throw new Error('公開する index.html がありません');
   const html = await readFile(join(root, 'index.html'), 'utf8');

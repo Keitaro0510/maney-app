@@ -2,7 +2,7 @@
 // - src/main.ts（入口）と分割したモジュールには指紋付きの名前を付ける。公開する一覧はビルド後に作る（D4 の手順6）
 // - index.html の css/・manifest・アイコンには vite-ignore を付け、Vite に触らせない。ビルドのあとで、そのまま出力にコピーする
 // - React（D27）: @vitejs/plugin-react で .tsx を変換する。新しい画面から使い、既存の画面は触らない
-// - CSS・JavaScript を縮めない（画面比較の差分を追いやすくする）
+// - JavaScript は、公開する本番（prod）だけ縮めてソースマップを付ける。local は縮めない（画面比較の差分を追いやすくする）。CSS は縮めない
 // - 公開するときは scripts/build-pages.sh がこのビルドを使い、sw.js の CACHE_NAME を中身の指紋にする（D15）
 // - 接続先（D19）: 環境変数 MANEY_TARGET が prod（本番）か local（ローカルの Supabase）。ビルドは、指定しないと止める（つなぎ間違えて公開しないように）。
 //   npm run dev は、指定しなければ今までどおり本番につなぐ。local のときは MANEY_LOCAL_API_URL・MANEY_LOCAL_PUBLISHABLE_KEY が要る（scripts/local-supabase.mjs が入れる）
@@ -56,7 +56,9 @@ export default defineConfig(({ command }) => {
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    minify: false,
+    // 公開する本番（prod）だけ縮める。ローカル（local）は公開しないので縮めない。ソースマップも本番だけ（エラーの場所を元のコードに戻せる）。画面比較は local のビルドなので影響しない
+    minify: supa.target === 'prod',
+    sourcemap: supa.target === 'prod',
     cssMinify: false,
     // トップレベルの await（ES2022）を使えない対象にする。使うと、待っている間に js/ の <script> が先に動いてしまう（D17）
     target: 'es2021',
