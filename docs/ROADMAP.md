@@ -27,16 +27,14 @@ Phase 4 の実装（ファイルの分割・TypeScript・イベント登録・Se
 
 ## Phase 0: 今の状態の地図を作る
 
-- [ ] `st`（保存しているデータ全体）の構造を図にする（`cards`、`jobs`、`ledger`、`plans`、`shifts`、`fixedCosts` など）
+- [x] データの構造を図にする（`st` は Phase 5 でテーブルに移ったので、今は [db/SCHEMA.md](db/SCHEMA.md) が正）
 - [x] 5つのタブ（ホーム・カレンダー・家計簿・シフト・設定）と、主な関数の対応表を作る（2026-10-29、[SCREENS.md](SCREENS.md)。どこを押すとどの画面に行くかの図も）
 - [x] 動かなくなった機能を洗い出す（楽天カードの明細の取り込みは 2026-10-24 に削除。AIアドバイス・LINE通知は 2026-10-29 に使わないと決めて消し、GAS のコードは [`archive/sync/`](../archive/sync/) にしまった）
 - [x] 外部設計・内部設計・UI を監査する（2026-10-29、Claude と Codex。[design-review/](design-review/README.md)）
 
 ## Phase 1: ブランチとPRに慣れる
 
-- [ ] 練習1: 最初のPR（`docs/add-plan`）をレビューしてマージする
-- [ ] 練習2: 小さな変更を自分で ブランチ → PR → マージ
-- [ ] 練習3: コンフリクトを起こして解決する
+- [x] 練習1・2: PR をレビューしてマージする、小さな変更を ブランチ → PR → マージ（もう150本以上の PR で日常的にやっている）
 - [x] 練習4: main を保護する（直接の push を禁止）（2026-11-01。ルールセット「main を守る」。テストが通らないとマージできない設定も一緒に。[GIT_WORKFLOW.md](GIT_WORKFLOW.md) の練習4・5）
 
 ## Phase 2: 安全網を張る
@@ -138,7 +136,15 @@ DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10
 - [x] 新しいテーブルを設計する（[db/TABLE_SPLIT.md](db/TABLE_SPLIT.md)、#21）
 - [x] 移行スクリプト（JSONB → テーブル）と、元に戻す手順を用意する（#23・#24、[db/RESTORE.md](db/RESTORE.md)）
 - [x] 差がないことを確かめてから切り替える（両方に書き込む代わりに、試験版 `next.html` と全項目の照らし合わせで確かめた。2026-10-29 に切り替え、#29）
-- [ ] 問題が出たら `git revert` で戻す（練習7）
+- [x] 問題が出たら戻せるようにする（戻す手順は [db/RESTORE.md](db/RESTORE.md)。`git revert` の練習は、必要になったときにやる）
+
+## 画面の描画層を React にする（D27。2026-11-07）
+
+新しい画面から入れ、既存画面は触らない。詳しい手順は [D27](DECISIONS.md) の「実装」。
+
+- [ ] `react`・`react-dom`・`@vitejs/plugin-react` を入れ、型の検査・ビルド・`sw.js` の先読み一覧が通ることを確かめる
+- [ ] `state.ts` の変更を React に伝える橋渡しと、`navigation.ts` での呼び分けを作る
+- [ ] グラフ・分析のタブを React で作る（最初の画面。動きは Motion）
 
 ## gymapp との連携（D23。2026-11-05）
 
