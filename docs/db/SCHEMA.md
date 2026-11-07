@@ -149,6 +149,7 @@ erDiagram
     timestamptz performed_at "記録した日時"
     date date "端末の日付の日"
     text note
+    int duration_sec "所要時間（秒）（D26。0〜86400。空は未計測）"
   }
   gym_sets {
     uuid id PK
@@ -166,6 +167,8 @@ erDiagram
 種目の部位（D24）は、`gym_exercises` の2つの列（`primary_muscle`・`secondary_muscles`）。部位は14（`chest` 胸 / `delt_front`・`delt_side`・`delt_rear` 肩の前・中・後 / `lats` 広背筋 / `upper_back` 僧帽筋・菱形筋 / `biceps` / `triceps` / `forearm` / `abs` / `glutes` / `quads` / `hamstrings` / `calves`）。DB は、一覧にない部位と、主の部位を補助にも入れることを見張る。
 
 種目のメモと動画のリンク（D25）は、`gym_exercises` の2つの列（`notes`・`video_url`）。`video_url` は `http://` か `https://` で始まるものだけ（DB が見張っている）。
+
+トレーニングの所要時間（D26）は、`gym_workouts.duration_sec`（秒。0〜86400。空は未計測）。
 
 ジムの3つ（D23）は、お金・予定・タスクのテーブルとはつながらず、3つの間だけでつながる。トレーニングを消すときは、先にそのセットを消す（`apply_op` の同じ操作の中で、セット → トレーニングの順）。`gym_` のテーブルは、毎日の写しと戻す処理には入るが、JSON の読み込み（`import_backup`。`private.import_tables()`）には入らない（maney-app の読み込みで、ジムの記録を消さないため）。
 
