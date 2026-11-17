@@ -73,3 +73,13 @@ test('mascotView: おかえりは応援の顔。責めたり、あきれたり�
     assert.doesNotMatch(v.text, /忘れ|サボ|さぼ|全然|ぜんぜん|なんで|どうして|やっと|ずっと/);
   }
 });
+
+test('charDelayMs: 短い文は40ms、長い文は全体が1.6秒に収まるよう速く。下限15ms。空でも0で割らない', async () => {
+  const { charDelayMs } = await import('../src/mascot.ts');
+  assert.equal(charDelayMs(10), 40);
+  assert.equal(charDelayMs(40), 40);
+  assert.equal(charDelayMs(50), 32);
+  assert.equal(charDelayMs(80), 20);
+  assert.equal(charDelayMs(500), 15);
+  assert.equal(charDelayMs(0), 40);
+});

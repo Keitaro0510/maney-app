@@ -5,7 +5,7 @@ import { getToday, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
-import { mascotView, daysSinceRecord, MASCOT_IMAGE } from '../mascot.ts';
+import { mascotView, daysSinceRecord, charDelayMs, MASCOT_IMAGE } from '../mascot.ts';
 import { recordStreak } from '../badges.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
@@ -60,8 +60,21 @@ function renderMascot(spendable: number): void{
   const img=MoneyUI.imageById('home-mascot-img');
   if(img.getAttribute('src')!==MASCOT_IMAGE[v.mood])img.setAttribute('src',MASCOT_IMAGE[v.mood]);
   img.dataset.mood=v.mood;
-  MoneyUI.elementById('home-mascot-text').textContent=v.text;
+  setMascotLine(MoneyUI.elementById('home-mascot-text'),v.text);
   MoneyUI.elementById('home-mascot').hidden=false;
+}
+
+// セリフを1文字ずつ出す（動きは CSS。文字ごとに --i を付け、順に出す）。同じセリフのままの再描画では、触らない（何度も動かさない）。
+// 読み上げには全文を1つだけ渡し、1文字ずつの span は読み上げから外す。動きを減らす設定のときは CSS 側で最初から全部出す
+function setMascotLine(box: HTMLElement,text: string): void{
+  if(box.dataset.text===text)return;
+  box.dataset.text=text;
+  const chars=Array.from(text);
+  const full=document.createElement('span');full.className='sr-only';full.textContent=text;
+  const line=document.createElement('span');line.className='mascot-line';line.setAttribute('aria-hidden','true');
+  line.style.setProperty('--step',`${charDelayMs(chars.length)}ms`);
+  chars.forEach((c,i)=>{const s=document.createElement('span');s.className='mascot-ch';s.style.setProperty('--i',String(i));s.textContent=c;line.appendChild(s);});
+  box.replaceChildren(full,line);
 }
 
 // これからのお金の動き（2週間）。給料・引き落とし・予定など、口座のお金が動くものを日付の順に（src/money.ts の upcoming）

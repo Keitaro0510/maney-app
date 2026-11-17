@@ -82,6 +82,11 @@ export function mascotView(i: MascotInput): MascotView {
   return { mood: MOOD_OF[situation], situation, text };
 }
 
+/** セリフを1文字ずつ出すときの、1文字あたりの間隔（ミリ秒）。短い文はゆっくり、長い文は全体が 1.6 秒に収まるように速くする。上限 40、下限 15 */
+export function charDelayMs(length: number): number {
+  return Math.max(15, Math.min(40, Math.floor(1600 / Math.max(length, 1))));
+}
+
 /** 表情ごとの絵（public ではなく、公開するときにそのままコピーする img/ の中）。ビルドの対象にしないよう、文字として持つ */
 export const MASCOT_IMAGE: Record<Mood, string> = {
   normal: 'img/giraffe-normal.webp',
