@@ -23,7 +23,7 @@ export function captureAuthorizationId(): void {
 function ask({ clientName, host }: ConsentAsk): Promise<'approve' | 'deny'> {
   const box = dialogById('oauth-consent');
   elementById('oauth-consent-text').textContent =
-    `「${clientName}」（${host}）が、あなたのアカウントでこのアプリにつなぎます。つなぐと、Claude の会話から、予定とタスク（と、カードの名前）を読んだり、追加・変更・削除したりできます。家計簿の記録・残高・金額の設定は、読めません・書けません。`;
+    `「${clientName}」（${host}）が、あなたのアカウントでこのアプリにつなぎます。つなぐと、Claude の会話から、予定とタスクを、読んだり、追加・変更・削除したりできます（カードの名前と、バイトのシフトは、読むだけです）。家計簿の記録・残高・金額の設定は、読めません・書けません。`;
   // showModal なので、今日のタスクなど、先に開いているダイアログより前に出る。Esc で黙って閉じないようにする（押したのは「つなぐ／つながない」だけにする）
   const keepOpen = (event: Event): void => event.preventDefault();
   box.addEventListener('cancel', keepOpen);

@@ -55,7 +55,7 @@ async function call(name, args = {}) {
 const idOf = text => (text.match(/"id": "([0-9a-f-]{36})"/) || [])[1];
 const step = (title, r) => console.log(`■ ${title}\n  ${r.error ? '【エラー】' : ''}${r.text.replace(/\n/g, '\n  ')}\n`);
 
-const created = { plans: [], tasks: [] };
+const created = { plans: [], tasks: [], shifts: [], jobs: [] };
 try {
   const tools = await rpc('tools/list', {});
   console.log('ツール:', tools.json.result.tools.map(t => t.name).join('、'), '\n');
@@ -70,6 +70,21 @@ try {
     created.card = data.rows[0].id;
   }
   step('list_cards', await call('list_cards'));
+
+  // ---- シフト（読むだけ）。アプリと同じ apply_op で、バイト先とシフトを作ってから、読めるか確かめる ----
+  const jobId = crypto.randomUUID(), shiftId = crypto.randomUUID(), nightId = crypto.randomUUID();
+  const mk = await supa.rpc('apply_op', { op: { id: crypto.randomUUID(), epoch: 1, changes: [
+    { table: 'jobs', action: 'insert', id: jobId, row: { name: `検証カフェ${Date.now() % 10000}`, color: 'blue', wage: 1200, position: 0 } },
+    { table: 'shifts', action: 'insert', id: shiftId, row: { date: '2026-12-15', job_id: jobId, start_time: '17:00', end_time: '22:00', wage: 1200, rest_minutes: 30, position: 0 } },
+    { table: 'shifts', action: 'insert', id: nightId, row: { date: '2026-12-16', job_id: jobId, start_time: '22:00', end_time: '05:00', wage: 1200, rest_minutes: 0, position: 1 } },
+  ] } });
+  assert.equal(mk.data?.status, 'applied', JSON.stringify(mk));
+  created.jobs.push(jobId); created.shifts.push(shiftId, nightId);
+  const shifts = await call('list_shifts', { from: '2026-12-15', to: '2026-12-16' });
+  step('list_shifts（日をまたぐシフトも・時給は出ない）', shifts);
+  assert.match(shifts.text, /実働4.5時間/);
+  assert.match(shifts.text, /"overnight": true/);
+  assert.doesNotMatch(shifts.text, /1200|wage/);
 
   // ---- 予定 ----
   const title = `検証の飲み会 ${Date.now() % 100000}`;
@@ -143,5 +158,7 @@ try {
   // 片付け（途中で止まったときも）
   for (const id of created.plans) await supa.from('plans').delete().eq('id', id);
   for (const id of created.tasks) await supa.from('tasks').delete().eq('id', id);
+  for (const id of created.shifts) await supa.from('shifts').delete().eq('id', id);
+  for (const id of created.jobs) await supa.from('jobs').delete().eq('id', id);
   if (created.card) await supa.from('cards').delete().eq('id', created.card);
 }

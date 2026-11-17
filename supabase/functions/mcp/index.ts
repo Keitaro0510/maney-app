@@ -1,6 +1,6 @@
 // Claude から予定・タスクを入れる・変える MCP サーバー（Issue #190・D37）。
 // 認証は、Supabase Auth を OAuth 2.1 の認可サーバーにする。この関数は、トークンを確かめて、その人として動く（RLS が効く）。
-// 触れるのは、予定（plans）・タスク（tasks）・カードの名前（cards）だけ。家計簿の記録・残高・設定は、読めない・書けない。
+// 触れるのは、予定（plans）・タスク（tasks）・カードの名前（cards）と、シフト（shifts。読むだけ。時給は出さない）。家計簿の記録・残高・設定は、読めない・書けない。
 // 書き込みは、アプリと同じ apply_op（履歴・競合の検知・二重保存の防止つき）を通す。削除も履歴に残り、戻せる（docs/db/RESTORE.md）。
 // DB や MCP に触れない部分は logic.ts（Node のテストあり）。
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
@@ -12,8 +12,8 @@ import { z } from 'npm:zod@^4.3.6'
 
 import {
   addDays, applyOpProblem, buildNewPlan, buildNewTask, buildPlanUpdate, buildTaskUpdate, describePlan, describeTask,
-  findDuplicatePlan, findDuplicateTask, formatPlan, formatTask, norm, todayJst, MAX_BUDGET,
-  type CardRef, type Row,
+  findDuplicatePlan, findDuplicateTask, formatPlan, formatTask, formatShift, describeShift, norm, todayJst, MAX_BUDGET,
+  type CardRef, type JobRef, type Row,
 } from './logic.ts'
 
 // deno-lint-ignore no-explicit-any
@@ -116,6 +116,26 @@ function registerTools(server: McpServer, db: Db): void {
     const w = query ? norm(query) : ''
     const rows = (data as Row[]).filter(t => !w || norm(`${t.title} ${t.memo}`).includes(w)).slice(0, limit).map(formatTask)
     return text(`タスクは ${rows.length} 件です。`, rows)
+  })
+
+  server.registerTool('list_shifts', {
+    description: 'バイトのシフトの一覧（バイト先の名前・日付・曜日・開始と終了・休憩・実働時間）。読むだけで、追加・変更はできない（アプリで行う）。「バイト」「シフト」の予定は、list_plans ではなく、こちら。期間は、その期間のシフト。省くと、今日から30日先まで。',
+    inputSchema: z.object({
+      from: date.optional().describe('この日から（省くと今日）'),
+      to: date.optional().describe('この日まで（省くと from の30日後）'),
+      limit: z.number().int().min(1).max(100).default(60),
+    }),
+    annotations: { readOnlyHint: true },
+  }, async ({ from, to, limit }) => {
+    const start = from ?? todayJst()
+    const end = to ?? addDays(start, 30)
+    const { data, error } = await db.from('shifts').select('id, date, job_id, start_time, end_time, rest_minutes')
+      .gte('date', start).lte('date', end).order('date').order('start_time').limit(limit)
+    if (error) return problem(`シフトを読めませんでした: ${error.message}`)
+    // 削除済みのバイト先も、名前を引く（過去のシフトの表示のため）
+    const { data: jobData } = await db.from('jobs').select('id, name')
+    const rows = (data as Row[]).map(s => formatShift(s, (jobData as JobRef[]) ?? []))
+    return text(`${start}〜${end} のシフトは ${rows.length} 件です。`, rows.map(r => ({ ...r, summary: describeShift(r) })))
   })
 
   // ---------- 予定 ----------
