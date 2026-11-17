@@ -10,7 +10,7 @@ export function getPlansForDay(ds: string): StPlan[] {
 export const hm2min = (t: string): number => { if (!t) return -1; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 
 // 期間予定は初日が開始時刻、最終日が終了時刻、中日は終日。
-export function planTimeOnDay(p: StPlan, ds: string): { start: string; end: string; min: number } {
+export function planTimeOnDay(p: Pick<StPlan, 'date' | 'dateStart' | 'dateEnd' | 'timeStart' | 'timeEnd'>, ds: string): { start: string; end: string; min: number } {
   const s = p.dateStart || p.date, e = p.dateEnd || p.date;
   if (!p.timeStart) return { start: '', end: '', min: -1 };
   if (s === e) return { start: p.timeStart, end: p.timeEnd || '', min: hm2min(p.timeStart) };

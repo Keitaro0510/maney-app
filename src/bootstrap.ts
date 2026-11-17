@@ -15,6 +15,7 @@ import { bindHomeControls } from './screens/home.ts';
 import { bindAtmControls } from './screens/atm.ts';
 import { bindMonthlyControls } from './screens/monthly.ts';
 import { bindSettingsControls } from './screens/settings.ts';
+import { bindShareControls } from './screens/share-settings.ts';
 import { bindCardControls } from './screens/cards.ts';
 import { bindPlanControls } from './screens/plans.ts';
 import { elementById } from './ui.ts';
@@ -54,6 +55,7 @@ export function startBootstrap(): void {
   bindAtmControls();
   bindMonthlyControls();
   bindSettingsControls();
+  bindShareControls();
   bindCardControls();
   bindPlanControls();
   bindShiftControls();

@@ -1,5 +1,10 @@
 <div id="sec-cal" class="sec active">
 <div class="page-title">カレンダー</div>
+<!-- 相手のカレンダーに切り替える（D39。つながった相手がいるときだけ出る。見るだけ） -->
+<div id="cal-who" class="cal-who" role="group" aria-label="見るカレンダー" hidden="">
+</div>
+<p id="cal-who-note" class="cal-who-note" role="status" hidden="">
+</p>
 <div class="card" style="padding: 0.75rem 0.875rem;">
 <div class="cal-nav">
 <button class="btn sm">←</button>
@@ -223,13 +228,13 @@
 <div class="card" id="day-detail" style="display: none;">
 <div id="day-detail-content">
 </div>
-<div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
+<div id="cal-day-add" style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
 <button class="btn plan-btn" style="flex: 1 1 0%;" data-cal-action="add-plan">＋ 予定</button>
 <button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" data-cal-action="add-shift">＋ シフト</button>
 <button class="btn" style="flex: 1 1 0%; background: var(--color-background-secondary);" data-cal-action="add-ledger">＋ 支出</button>
 </div>
 </div>
-<div style="display: flex; gap: 8px; margin-top: 4px;">
+<div id="cal-add-row" style="display: flex; gap: 8px; margin-top: 4px;">
 <button class="btn primary full" data-cal-action="add-shift" data-cal-date="none" style="margin-top: 0px;">＋ シフトを追加</button>
 <button class="btn plan-btn full" data-cal-action="add-plan" data-cal-date="none" style="margin-top: 0px;">＋ 予定を追加</button>
 </div>

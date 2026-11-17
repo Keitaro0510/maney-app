@@ -322,6 +322,33 @@
 <div class="backup-err" id="backup-err" role="alert" hidden="">
 </div>
 </div>
+<!-- カレンダーの共有（D39。src/screens/share-settings.ts）。相手には予定とシフトだけ見える。予算・カード・メモは見えない -->
+<div class="card">
+<div class="st">カレンダーの共有</div>
+<div class="share-note">コードを渡した相手が申請し、あなたが承認すると、相手があなたの予定とシフトを見られます（見るだけ。予算・カード・メモは見えません）。お互いに見るには、両方で申請と承認をします。</div>
+<div class="fg">
+<label>あなたのコード</label>
+<div class="share-code-row">
+<code id="share-code" class="share-code">読み込み中…</code>
+<button type="button" class="ui-btn sm" id="share-copy">コピー</button>
+<button type="button" class="ui-btn sm danger" id="share-reset">作り直す</button>
+</div>
+</div>
+<div class="fg">
+<label for="share-code-input">相手のコードで申請する</label>
+<input id="share-code-input" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx-xxxx">
+</div>
+<div class="fg">
+<label for="share-nick">相手の呼び名（切り替えに出ます）</label>
+<input id="share-nick" type="text" maxlength="20" placeholder="彼女">
+</div>
+<button type="button" class="ui-btn primary" id="share-request">申請する</button>
+<div class="form-err" id="share-msg" role="alert" hidden="">
+</div>
+<div id="share-list" class="share-list">
+<div class="share-empty">まだ誰ともつながっていません</div>
+</div>
+</div>
 <!-- アカウント（いちばん下。D10） -->
 <div class="card">
 <div class="st">アカウント</div>

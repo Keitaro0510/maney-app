@@ -737,3 +737,23 @@ button.color-swatch.sel{transform:none}
 #oauth-consent::backdrop{background:transparent}
 #oauth-consent .login-sub{margin-bottom:1.5rem}
 .oauth-consent-btn{display:block;width:100%;margin-top:8px;min-height:44px}
+
+/* カレンダーの共有（D39）。相手のカレンダーへの切り替えと、設定の共有カード */
+.cal-who{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.cal-who[hidden]{display:none}
+.cal-who-btn{min-height:44px;padding:0 16px;border:0.5px solid var(--color-border-secondary);border-radius:100px;background:transparent;color:var(--color-text-primary);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.cal-who-btn.on{background:var(--color-brand);color:#fff;border-color:transparent}
+.cal-who-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
+.cal-who-note{font-size:12px;color:var(--color-text-secondary);margin:0 0 8px}
+.cal-who-note[hidden]{display:none}
+.cal-who-note.err{color:var(--color-danger)}
+.share-note{font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:12px}
+.share-code-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.share-code{flex:1;min-width:0;font-size:15px;letter-spacing:.04em;overflow-wrap:anywhere;user-select:all}
+.ui-btn.sm{min-height:44px;padding:0 12px;font-size:13px}
+.share-list{margin-top:12px}
+.share-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:0.5px solid var(--color-border-tertiary)}
+.share-who{min-width:0;font-size:14px;overflow-wrap:anywhere}
+.share-sub{font-size:12px;color:var(--color-text-secondary)}
+.share-btns{display:flex;gap:6px;flex-shrink:0}
+.share-empty{font-size:13px;color:var(--color-text-secondary)}

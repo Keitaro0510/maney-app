@@ -236,5 +236,9 @@ flowchart LR
 | `private.snapshots` | 全テーブルの写し（毎日・切り替えのとき・全体を戻す直前・ファイルを読み込む直前） | ある時点に全体を戻す |
 | `public.user_data` | 切り替える前の JSON（1行）。書き込みは止めている | 旧版のアプリに戻すとき用。片付けの2回目で消す |
 | `private.archive_user_data` | 切り替える前の JSON の複製と履歴 | 経緯の記録 |
+| `private.share_codes` | 共有コード（1人1つ。16桁） | 相手に渡して、カレンダーの共有を申請してもらう（D39） |
+| `private.calendar_shares` | 見せる人・見る人・承認済みか・見る人が付けた呼び名 | 承認された相手にだけ、予定とシフトを返す（D39） |
+
+カレンダーの共有（D39）の2つの表は、アプリが直接は読み書きできず、関数（`get_my_share_code`・`request_calendar_share`・`list_calendar_shares`・`respond_calendar_share`・`revoke_calendar_share`・`shared_calendar` など）だけを通す。`shared_calendar` が返すのは、承認済みの相手の予定（id・タイトル・日付・時刻・色）とシフト（id・日付・時刻・バイト先の名前）だけで、予算・カード・メモ・時給などは返さない。
 
 90日より古い履歴・操作の記録・毎日の写しは、pg_cron が毎日消す。戻し方は [RESTORE.md](RESTORE.md)。

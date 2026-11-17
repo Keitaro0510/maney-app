@@ -101,6 +101,9 @@
 <!-- CALENDAR -->
 <div id="sec-cal" class="sec">
   <div class="page-title">カレンダー</div>
+  <!-- 相手のカレンダーに切り替える（D39。つながった相手がいるときだけ出る。見るだけ） -->
+  <div id="cal-who" class="cal-who" role="group" aria-label="見るカレンダー" hidden></div>
+  <p id="cal-who-note" class="cal-who-note" role="status" hidden></p>
   <div class="card" style="padding:.75rem .875rem">
     <div class="cal-nav"><button class="btn sm">&#8592;</button><h2 id="cal-title"></h2><button class="btn sm">&#8594;</button></div>
     <div id="cal-month-wrap">
@@ -111,13 +114,13 @@
   </div>
   <div class="card" id="day-detail" style="display:none">
     <div id="day-detail-content"></div>
-    <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+    <div id="cal-day-add" style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
       <button class="btn plan-btn" style="flex:1" data-cal-action="add-plan">＋ 予定</button>
       <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-shift">＋ シフト</button>
       <button class="btn" style="flex:1;background:var(--color-background-secondary)" data-cal-action="add-ledger">＋ 支出</button>
     </div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:4px">
+  <div id="cal-add-row" style="display:flex;gap:8px;margin-top:4px">
     <button class="btn primary full" data-cal-action="add-shift" data-cal-date="none" style="margin-top:0">＋ シフトを追加</button>
     <button class="btn plan-btn full" data-cal-action="add-plan" data-cal-date="none" style="margin-top:0">＋ 予定を追加</button>
   </div>
@@ -278,6 +281,22 @@
     </div>
     <input type="file" id="backup-file" accept=".json,application/json" hidden/>
     <div class="backup-err" id="backup-err" role="alert" hidden></div>
+  </div>
+  <!-- カレンダーの共有（D39。src/screens/share-settings.ts）。相手には予定とシフトだけ見える。予算・カード・メモは見えない -->
+  <div class="card"><div class="st">カレンダーの共有</div>
+    <div class="share-note">コードを渡した相手が申請し、あなたが承認すると、相手があなたの予定とシフトを見られます（見るだけ。予算・カード・メモは見えません）。お互いに見るには、両方で申請と承認をします。</div>
+    <div class="fg"><label>あなたのコード</label>
+      <div class="share-code-row"><code id="share-code" class="share-code"></code>
+        <button type="button" class="ui-btn sm" id="share-copy">コピー</button>
+        <button type="button" class="ui-btn sm danger" id="share-reset">作り直す</button></div>
+    </div>
+    <div class="fg"><label for="share-code-input">相手のコードで申請する</label>
+      <input id="share-code-input" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx-xxxx"/></div>
+    <div class="fg"><label for="share-nick">相手の呼び名（切り替えに出ます）</label>
+      <input id="share-nick" type="text" maxlength="20" placeholder="彼女"/></div>
+    <button type="button" class="ui-btn primary" id="share-request">申請する</button>
+    <div class="form-err" id="share-msg" role="alert" hidden></div>
+    <div id="share-list" class="share-list"></div>
   </div>
   <!-- アカウント（いちばん下。D10） -->
   <div class="card"><div class="st">アカウント</div>
