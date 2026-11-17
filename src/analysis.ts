@@ -151,3 +151,42 @@ export function topWeekday(list: WeekdayAvg[]): WeekdayAvg | null {
   for (const w of list) if (w.avg > 0 && (top === null || w.avg > top.avg)) top = w;
   return top;
 }
+
+export type CatSeries = { cat: string; amounts: number[]; total: number };
+export type CategoryTrend = { labels: string[]; series: CatSeries[]; monthTotals: number[] };
+export const OTHER_CAT = 'その他';
+
+/** 支出のカテゴリ別の月推移。endY・endM（m は 0 から）で終わる直近 months か月。
+ *  期間の合計が多い上位 topN 個のカテゴリを別々に、残りは「その他」にまとめる（積み上げ棒にして見やすいように）。
+ *  並びは、合計の多い順（同額ならカテゴリ名順）で、「その他」は最後。記録のない月は 0 */
+export function categoryTrend(ledger: StLedger[], endY: number, endM: number, months = 6, topN = 5): CategoryTrend {
+  const keys: string[] = [], labels: string[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const { y, m } = addM(endY, endM, -i);
+    keys.push(`${y}-${String(m + 1).padStart(2, '0')}`);
+    labels.push(`${m + 1}月`);
+  }
+  const index = new Map(keys.map((k, i) => [k, i]));
+  const byCat = new Map<string, number[]>();
+  for (const l of ledger) {
+    if (l.type !== 'expense') continue;
+    const i = index.get(l.date.slice(0, 7));
+    if (i === undefined) continue;
+    const row = byCat.get(l.cat) ?? new Array<number>(months).fill(0);
+    row[i] += Number(l.amount) || 0;
+    byCat.set(l.cat, row);
+  }
+  const all: CatSeries[] = [...byCat.entries()]
+    .map(([cat, amounts]) => ({ cat, amounts, total: amounts.reduce((a, v) => a + v, 0) }))
+    .filter(s => s.total > 0)
+    .sort((a, b) => b.total - a.total || (a.cat < b.cat ? -1 : 1));
+  const series = all.slice(0, topN);
+  const rest = all.slice(topN);
+  if (rest.length) {
+    const amounts = new Array<number>(months).fill(0);
+    for (const s of rest) s.amounts.forEach((v, i) => { amounts[i] += v; });
+    series.push({ cat: OTHER_CAT, amounts, total: amounts.reduce((a, v) => a + v, 0) });
+  }
+  const monthTotals = keys.map((_, i) => all.reduce((a, s) => a + s.amounts[i], 0));
+  return { labels, series, monthTotals };
+}

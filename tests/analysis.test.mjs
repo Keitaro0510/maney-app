@@ -155,3 +155,35 @@ test('topWeekday: 平均が最大の曜日。支出がなければ null', () => 
   assert.equal(topWeekday(w).label, '金');
   assert.equal(topWeekday(weekdayAverages([], '2026-11-02', '2026-11-08')), null);
 });
+
+// ---- カテゴリ別の月推移（D32） ----
+import { categoryTrend } from '../src/analysis.ts';
+const ec = (date, cat, amount) => ({ date, type: 'expense', amount, name: '', cat, pay: '' });
+
+test('categoryTrend: 月の並び（古い順・年またぎ）とカテゴリごとの月別の合計', () => {
+  const t = categoryTrend([ec('2025-12-05', '食費', 1000), ec('2026-01-10', '食費', 500), ec('2026-01-20', '交通', 300), ec('2026-01-21', '食費', '200')], 2026, 0, 3);
+  assert.deepEqual(t.labels, ['11月', '12月', '1月']);
+  assert.deepEqual(t.series.map(s => [s.cat, s.amounts]), [['食費', [0, 1000, 700]], ['交通', [0, 0, 300]]]);
+  assert.deepEqual(t.monthTotals, [0, 1000, 1000]);
+});
+
+test('categoryTrend: 上位 n 個のほかは「その他」にまとめて最後に置く', () => {
+  const led = [ec('2026-01-01', 'A', 500), ec('2026-01-01', 'B', 400), ec('2026-01-01', 'C', 300), ec('2026-02-01', 'D', 100), ec('2026-01-01', 'E', 50)];
+  const t = categoryTrend(led, 2026, 1, 2, 2);
+  assert.deepEqual(t.series.map(s => s.cat), ['A', 'B', 'その他']);
+  assert.deepEqual(t.series[2].amounts, [350, 100]); // C+E と D
+  assert.deepEqual(t.monthTotals, [1250, 100]);
+});
+
+test('categoryTrend: 同額はカテゴリ名順・範囲の外と収入と0円は数えない・支出なしは空', () => {
+  const t = categoryTrend([ec('2026-01-01', 'B', 100), ec('2026-01-02', 'A', 100), ec('2024-01-01', 'Z', 999), { ...ec('2026-01-03', 'X', 999), type: 'income' }, ec('2026-01-04', 'Y', 0)], 2026, 0, 1);
+  assert.deepEqual(t.series.map(s => s.cat), ['A', 'B']);
+  const none = categoryTrend([], 2026, 0, 3);
+  assert.deepEqual(none.series, []);
+  assert.deepEqual(none.monthTotals, [0, 0, 0]);
+});
+
+test('categoryTrend: 上位 n 個ちょうどなら「その他」は作らない', () => {
+  const t = categoryTrend([ec('2026-01-01', 'A', 1), ec('2026-01-01', 'B', 2)], 2026, 0, 1, 2);
+  assert.deepEqual(t.series.map(s => s.cat), ['B', 'A']);
+});
