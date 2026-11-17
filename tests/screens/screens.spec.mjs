@@ -664,3 +664,18 @@ test('通知から開いたとき: 知らない画面の名前は無視して、
   await open(page, '/?tab=set');
   await expect(page.locator('#sec-home')).toHaveClass(/active/);
 });
+
+// シフトタブの「今年の収入」は、上のカード（確定申告用）に1か所だけ。下のサマリーには、同じ数字を出さない（D38）
+test('シフトタブ: 今年の収入の数字が重ならない', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-shift').click();
+  await settle(page);
+  await expect(page.locator('#income-content')).toContainText('今までに受け取った額');
+  await expect(page.locator('#income-content')).toContainText('今年の合計（シフト通りなら）');
+  await expect(page.locator('#sec-shift')).not.toContainText('今年の確定収入');
+  await expect(page.locator('#sec-shift')).not.toContainText('今年のシフト予想');
+  await expect(page.locator('#sec-shift')).toContainText('今月と月別の収入');
+  await expect(page.locator('#year-this-month')).toBeVisible();
+  await expect(page.locator('#year-transport')).toBeVisible();
+});
