@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import {
   b64urlToBytes, bytesToB64url, encryptPayload, vapidAuthorization, sendWebPush,
-} from '../supabase/functions/_shared/webpush.ts'; // Node が型を消して読む（D17）
+} from '../supabase/functions/push/webpush.ts'; // Node が型を消して読む（D17）
 
 const subtle = globalThis.crypto.subtle;
 const dec = new TextDecoder();

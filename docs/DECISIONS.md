@@ -1265,8 +1265,8 @@ D33 の4つの表情は、ここまでで出そろった。
 6. **複数端末に登録したら、すべての端末に送る**
 
 作り（段階で進める。Issue の進め方どおり、先に小さな検証）:
-- 段階1（検証。2026-11-17）: 購読情報のテーブル `push_subscriptions`（`20261117150000_push_subscriptions.sql`。端末ごと・本人の行だけ・**写し・履歴・読み込みには入れない**）と、登録の関数 `register_push_subscription`（同じ端末を別の人が登録したら付け替える）。送る処理は依存を増やさず WebCrypto で書いた（`supabase/functions/_shared/webpush.ts`。RFC 8291 の暗号化・RFC 8292 の VAPID。**RFC の付録の例と同じ暗号文になることをテストで確かめた**）。Edge Function `push`（テスト通知）、設定の「通知」（受け取る・やめる・テスト通知）、`sw.js` の push・クリックの処理
-- 鍵: VAPID の公開鍵は `src/push.ts`、秘密鍵は Supabase の secret（`VAPID_PRIVATE_KEY`。リポジトリには入れない。`scripts/gen-vapid.mjs` で作る）。連絡先（`VAPID_SUBJECT`）はアプリの URL
+- 段階1（検証。2026-11-17）: 購読情報のテーブル `push_subscriptions`（`20261117150000_push_subscriptions.sql`。端末ごと・本人の行だけ・**写し・履歴・読み込みには入れない**）と、登録の関数 `register_push_subscription`（同じ端末を別の人が登録したら付け替える）。送る処理は依存を増やさず WebCrypto で書いた（`supabase/functions/push/webpush.ts`。RFC 8291 の暗号化・RFC 8292 の VAPID。**RFC の付録の例と同じ暗号文になることをテストで確かめた**）。Edge Function `push`（テスト通知）、設定の「通知」（受け取る・やめる・テスト通知）、`sw.js` の push・クリックの処理
+- 鍵: VAPID の公開鍵は `src/push.ts` と `push` 関数の既定値、秘密鍵は Supabase の secret（`VAPID_PRIVATE_KEY`だけ。リポジトリには入れない。`scripts/gen-vapid.mjs` で作る。MCP 経由の入力は Supabase が止めているので、ダッシュボードで入れる）。連絡先はアプリの URL（関数の既定値）
 - 段階2（本実装）: 朝の通知を作る関数と `pg_cron`。通知を押したときに該当の画面を開く。文面のテスト（金額が入らないこと）
 
 検証の結果（実機の iPhone で確かめる。まだ）:

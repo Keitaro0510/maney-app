@@ -1,11 +1,11 @@
 // 通知（Web Push）を送る（Issue #189・D36）。
 // - action=test: ログインした本人の、登録した端末すべてに、テスト通知を送る（アプリの設定の「テスト通知を送る」）
 // 暗号化と送信は _shared/webpush.ts（Node のテストあり）。送り先が「切れた」（404・410）と返したら、その購読を消す。
-// 鍵は secret: VAPID_PRIVATE_KEY（秘密鍵）・VAPID_PUBLIC_KEY（公開鍵）・VAPID_SUBJECT（連絡先の https の URL）
+// 鍵: secret は VAPID_PRIVATE_KEY（秘密鍵）だけ。公開鍵・連絡先（アプリの URL）は既定値を持つ（VAPID_PUBLIC_KEY・VAPID_SUBJECT で上書きもできる）
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-import { sendWebPush, type Subscription, type Vapid } from '../_shared/webpush.ts'
+import { sendWebPush, type Subscription, type Vapid } from './webpush.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -15,9 +15,14 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
+// 公開鍵と連絡先は秘密ではないので、既定値を持つ（公開鍵は、アプリの src/push.ts の VAPID_PUBLIC_KEY と同じ）。秘密鍵だけが secret
+const DEFAULT_PUBLIC_KEY = 'BMRZljhF3U1xZHWrTvG2p4H5EGF8QrZ-wpSMETgAwTLZeiQHeHZuyLsML4iauIUG_ZxwlEJPh9QLlk85cUFgIqM'
+const DEFAULT_SUBJECT = 'https://keitaro0510.github.io/maney-app/'
+
 function vapidFromEnv(): Vapid | null {
-  const publicKey = Deno.env.get('VAPID_PUBLIC_KEY'), privateKey = Deno.env.get('VAPID_PRIVATE_KEY'), subject = Deno.env.get('VAPID_SUBJECT')
-  return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null
+  const privateKey = Deno.env.get('VAPID_PRIVATE_KEY')
+  if (!privateKey) return null
+  return { publicKey: Deno.env.get('VAPID_PUBLIC_KEY') || DEFAULT_PUBLIC_KEY, privateKey, subject: Deno.env.get('VAPID_SUBJECT') || DEFAULT_SUBJECT }
 }
 
 type Row = Subscription & { id: string }
