@@ -6,7 +6,7 @@ import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
 import { CAT_COL, DOTC } from '../palette.ts';
 import { getNow, getToday, DAYS } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, dayOfMonthAverages, averageOnDays, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, dayOfMonthAverages, averageOnDays, eventDaySet, compareEventDays, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { jobPayDay } from '../shifts.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 import { BadgesCard } from './badges.tsx';
@@ -204,6 +204,63 @@ function MonthCycleCard() {
   );
 }
 
+/** 予定・シフトの日とない日（D32 の 4）。「予定かシフトのある日」と「ない日」の、1日あたりの平均支出を比べる */
+function EventDaysCard() {
+  const [range, setRange] = useState<WeekdayRange>('6m');
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const today = getToday();
+  const start = weekdayRangeStart(state.st.ledger, range, today);
+  const cmp = start ? compareEventDays(state.st.ledger, eventDaySet(state.st.plans, state.st.shifts), start, today) : null;
+  const empty = !cmp || (cmp.withEvent.total === 0 && cmp.without.total === 0);
+  const key = JSON.stringify(cmp);
+  useEffect(() => {
+    if (!canvas.current || !cmp || empty) return;
+    const chart = new Chart(canvas.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: [`予定・シフトのある日（${cmp.withEvent.days}日）`, `ない日（${cmp.without.days}日）`],
+        datasets: [{ label: '1日あたりの平均支出', data: [cmp.withEvent.avg, cmp.without.avg], backgroundColor: ['#185FA5', '#A32D2D70'], borderRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: { parsed: { y: number } }) => `平均 ${yen(c.parsed.y)}` } } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: (v: number) => (v >= 10000 ? v / 10000 + '万' : v) } }, x: { ticks: { font: { size: 11 } } } },
+      },
+    });
+    return () => chart.destroy();
+  }, [key, empty]);
+
+  let summary = '';
+  if (cmp && !empty) {
+    const { withEvent: w, without: o } = cmp;
+    if (!w.days) summary = 'この期間に、予定やシフトのある日はありません';
+    else if (!o.days) summary = 'この期間は、毎日に予定かシフトがあります';
+    else if (w.avg === 0 && o.avg === 0) summary = '';
+    else if (o.avg === 0) summary = '予定・シフトのない日は、支出がありませんでした';
+    else {
+      const r = w.avg / o.avg;
+      summary = r >= 1.1 ? `予定・シフトのある日は、ない日の約 ${(Math.round(r * 10) / 10).toString()} 倍使っています` : r <= 0.9 ? `予定・シフトのある日は、ない日より少なめ（約 ${(Math.round(r * 10) / 10).toString()} 倍）です` : '予定・シフトのある日とない日で、ほとんど変わりません';
+    }
+  }
+  return (
+    <div className="card">
+      <div className="st">予定・シフトのある日とない日</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }} role="group" aria-label="期間">
+        {CYCLE_RANGES.map(r => <button key={r.id} type="button" className={`chip${r.id === range ? ' sel' : ''}`} aria-pressed={r.id === range} onClick={() => setRange(r.id)}>{r.label}</button>)}
+      </div>
+      {empty || !cmp ? <div className="empty">この期間の支出の記録なし</div> : (
+        <>
+          <div className="chart-wrap"><canvas ref={canvas} aria-label="予定・シフトのある日とない日の平均支出のグラフ" /></div>
+          <div style={{ fontSize: 13, marginTop: 8 }}>ある日 平均 <b>{yen(cmp.withEvent.avg)}</b>／ない日 平均 <b>{yen(cmp.without.avg)}</b></div>
+          {summary && <div style={{ fontSize: 13, marginTop: 2 }}>{summary}</div>}
+          {cmp.withEvent.days > 0 && cmp.withEvent.days < 10 && <div style={{ fontSize: 12, color: '#BA7517', marginTop: 2 }}>予定・シフトのある日が {cmp.withEvent.days} 日だけなので、参考程度に見てください</div>}
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>予定は、はじめの日から終わりの日までの全日と、シフトの日を数えます。支出のなかった日も 0 円として平均します。家計簿の記録だけで、毎月のお金は含みません</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const LEVEL_COLOR: Record<FuyouLevel, string | null> = { ok: null, warn: '#BA7517', danger: '#A32D2D', over: '#A32D2D' };
 
 /** 扶養の限度額までの残り（D28 の 3）。半円のゲージ。濃い弧＝確定した収入、薄い弧＝シフトの予想 */
@@ -329,6 +386,7 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
       <WeekdayCard />
       <CategoryTrendCard />
       <MonthCycleCard />
+      <EventDaysCard />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
       <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
       <FuyouCard />
