@@ -1,8 +1,8 @@
 // マスコット（キリン）の表情とセリフ（D33）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
-// 表情は「ふつう」「うれしい」「心配」の3つ（「応援」はまだ）。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
+// 表情は「ふつう」「うれしい」「心配」「応援」の4つ。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
 
-export type Mood = 'normal' | 'happy' | 'worried';
-export type Situation = 'short' | 'streak' | 'recorded' | 'greeting';
+export type Mood = 'normal' | 'happy' | 'worried' | 'cheer';
+export type Situation = 'short' | 'streak' | 'recorded' | 'away' | 'greeting';
 export type MascotInput = {
   /** 使えるお金（この先の残高の最低点。マイナスなら足りなくなりそう） */
   spendable: number;
@@ -10,6 +10,8 @@ export type MascotInput = {
   streak: number;
   /** 今日、家計簿に記録したか */
   recordedToday: boolean;
+  /** 最後に記録した日から、何日たったか（今日記録していれば 0。記録が1件もなければ null。今日より先の日付は数えない） */
+  daysSinceRecord: number | null;
   /** 今日（'YYYY-MM-DD'）。セリフを日替わりにするために使う */
   today: string;
 };
@@ -17,6 +19,8 @@ export type MascotView = { mood: Mood; situation: Situation; text: string };
 
 /** 連続記録を「すごい」と言いはじめる日数 */
 export const STREAK_CHEER = 3;
+/** 記録のない日が何日あいたら「おかえり」と迎えるか */
+export const AWAY_DAYS = 3;
 
 const LINES: Record<Situation, string[]> = {
   short: [
@@ -34,6 +38,11 @@ const LINES: Record<Situation, string[]> = {
     '記録できたね。ばっちり！',
     '今日も付けられたね。いいぞ！',
   ],
+  away: [
+    'おかえり！また一緒に記録していこうね',
+    '久しぶり！ゆっくりで大丈夫、少しずつ付けよう',
+    'また会えてうれしいな。思い出せる分だけで大丈夫',
+  ],
   greeting: [
     'こんにちは！今日の支出を記録しようね',
     '今日もおつかれさま。使ったお金はあるかな？',
@@ -44,17 +53,26 @@ const LINES: Record<Situation, string[]> = {
 /** 'YYYY-MM-DD' を、1970-01-01 からの通し日にする（日替わりの番号に使う） */
 const dayNo = (ds: string): number => { const [y, m, d] = ds.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
 
-/** 状況（足りない → 連続記録 → 今日記録した → ふだん の順に強い）。
+/** 今日までの日数 */
+export function daysSinceRecord(dates: string[], today: string): number | null {
+  const t = dayNo(today);
+  let last: number | null = null;
+  for (const d of dates) { const n = dayNo(d); if (n <= t && (last === null || n > last)) last = n; }
+  return last === null ? null : t - last;
+}
+
+/** 状況（足りない → 連続記録 → 今日記録した → 久しぶり → ふだん の順に強い）。
  *  足りないときは、連続記録を喜ぶより先に、やさしく知らせる */
 export function situationOf(i: MascotInput): Situation {
   if (i.spendable < 0) return 'short';
   if (i.streak >= STREAK_CHEER) return 'streak';
   if (i.recordedToday) return 'recorded';
+  if (i.daysSinceRecord !== null && i.daysSinceRecord >= AWAY_DAYS) return 'away';
   return 'greeting';
 }
 
 /** 状況ごとの表情。足りないときは泣き顔（心配）、記録できた・連続のときはうれしい顔 */
-const MOOD_OF: Record<Situation, Mood> = { short: 'worried', streak: 'happy', recorded: 'happy', greeting: 'normal' };
+const MOOD_OF: Record<Situation, Mood> = { short: 'worried', streak: 'happy', recorded: 'happy', away: 'cheer', greeting: 'normal' };
 
 /** 表情とセリフ。セリフは状況ごとに数種類あり、日替わりで選ぶ（同じ日は同じ文） */
 export function mascotView(i: MascotInput): MascotView {
@@ -69,4 +87,5 @@ export const MASCOT_IMAGE: Record<Mood, string> = {
   normal: 'img/giraffe-normal.webp',
   happy: 'img/giraffe-happy.webp',
   worried: 'img/giraffe-worried.webp',
+  cheer: 'img/giraffe-cheer.webp',
 };

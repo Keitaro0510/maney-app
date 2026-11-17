@@ -5,7 +5,7 @@ import { getToday, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
-import { mascotView, MASCOT_IMAGE } from '../mascot.ts';
+import { mascotView, daysSinceRecord, MASCOT_IMAGE } from '../mascot.ts';
 import { recordStreak } from '../badges.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
@@ -56,7 +56,7 @@ export function renderHome(): void{const y=gY(),m=gM(),d=gD();
 // マスコットのキリン（D33）。表情とセリフは src/mascot.ts が決める。絵の src は、変わったときだけ入れ直す
 function renderMascot(spendable: number): void{
   const today=getToday(),dates=state.st.ledger.map(l=>l.date);
-  const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),today});
+  const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),daysSinceRecord:daysSinceRecord(dates,today),today});
   const img=MoneyUI.imageById('home-mascot-img');
   if(img.getAttribute('src')!==MASCOT_IMAGE[v.mood])img.setAttribute('src',MASCOT_IMAGE[v.mood]);
   img.dataset.mood=v.mood;
