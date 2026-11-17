@@ -287,7 +287,9 @@ test('ホームの操作ボタンとログアウト', async ({ page }) => {
   await page.locator('#settings-btn').click();
   await page.locator('#logout-btn').click();
   await expect(page.locator('#login-screen')).toBeVisible();
-  expect(await page.evaluate(() => 'loginWithGoogle' in window || 'logout' in window)).toBe(false);
+  // ログアウトは signOut のあとに画面を読み込み直す。ログイン画面が見えた直後は、まだ読み込み直しの途中のことがあり、
+  // evaluate が「実行の場所が消えた」で落ちる。読み込み直しが終わるまで、値を取り直して待つ
+  await expect.poll(() => page.evaluate(() => 'loginWithGoogle' in window || 'logout' in window).catch(() => null)).toBe(false);
 });
 
 test('カレンダーの描画後に作るボタンとキーボード操作', async ({ page }) => {
