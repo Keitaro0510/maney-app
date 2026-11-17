@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# ローカルの署名鍵（コミットしない）
+signing_keys.json

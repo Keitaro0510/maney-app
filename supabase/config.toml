@@ -367,6 +367,7 @@ enabled = false
 # OAuth server configuration
 [auth.oauth_server]
 # Enable OAuth server functionality
+# （Claude から予定・タスクを入れる MCP の検証のときだけ true にする。docs/MCP.md）
 enabled = false
 # Path for OAuth consent flow UI
 authorization_url_path = "/oauth/consent"
@@ -374,6 +375,7 @@ authorization_url_path = "/oauth/consent"
 allow_dynamic_registration = false
 
 [edge_runtime]
+# （MCP の検証のときだけ true にする。docs/MCP.md）
 enabled = false
 # Supported request policies: `oneshot`, `per_worker`.
 # `per_worker` (default) — enables hot reload during local development.
@@ -386,6 +388,11 @@ deno_version = 2
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
+
+# Claude から予定・タスクを入れる MCP サーバー（Issue #190）。関数が自分でトークンを検証するので、ゲートウェイの検証は切る
+# （ゲートウェイに任せると、認証の前の「どこで認証するか」の問い合わせが弾かれる）
+[functions.mcp]
+verify_jwt = false
 
 [analytics]
 enabled = false
