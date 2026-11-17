@@ -1,8 +1,7 @@
 // マスコット（キリン）の表情とセリフ（D33）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
-// 表情は今は「ふつう」と「うれしい」の2つ。「心配」「応援」の絵ができるまでは、足りないときも「ふつう」の顔で、やさしい言い方にする。
-// お金の状況で責めない（D33）。
+// 表情は「ふつう」「うれしい」「心配」の3つ（「応援」はまだ）。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
 
-export type Mood = 'normal' | 'happy';
+export type Mood = 'normal' | 'happy' | 'worried';
 export type Situation = 'short' | 'streak' | 'recorded' | 'greeting';
 export type MascotInput = {
   /** 使えるお金（この先の残高の最低点。マイナスなら足りなくなりそう） */
@@ -54,16 +53,20 @@ export function situationOf(i: MascotInput): Situation {
   return 'greeting';
 }
 
+/** 状況ごとの表情。足りないときは泣き顔（心配）、記録できた・連続のときはうれしい顔 */
+const MOOD_OF: Record<Situation, Mood> = { short: 'worried', streak: 'happy', recorded: 'happy', greeting: 'normal' };
+
 /** 表情とセリフ。セリフは状況ごとに数種類あり、日替わりで選ぶ（同じ日は同じ文） */
 export function mascotView(i: MascotInput): MascotView {
   const situation = situationOf(i);
   const lines = LINES[situation];
   const text = lines[dayNo(i.today) % lines.length].replace('{n}', String(i.streak));
-  return { mood: situation === 'streak' || situation === 'recorded' ? 'happy' : 'normal', situation, text };
+  return { mood: MOOD_OF[situation], situation, text };
 }
 
 /** 表情ごとの絵（public ではなく、公開するときにそのままコピーする img/ の中）。ビルドの対象にしないよう、文字として持つ */
 export const MASCOT_IMAGE: Record<Mood, string> = {
   normal: 'img/giraffe-normal.webp',
   happy: 'img/giraffe-happy.webp',
+  worried: 'img/giraffe-worried.webp',
 };

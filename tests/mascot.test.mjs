@@ -18,11 +18,13 @@ test('situationOf: 足りないときは、連続記録や今日の記録より�
   assert.equal(situationOf({ ...base, spendable: 0 }), 'greeting');
 });
 
-test('mascotView: うれしい顔は、連続記録か今日の記録のときだけ。足りないときはふつうの顔', () => {
+test('mascotView: うれしい顔は、連続記録か今日の記録のときだけ。足りないときは泣き顔（心配）で、連続記録や今日の記録より優先', () => {
   assert.equal(mascotView(base).mood, 'normal');
   assert.equal(mascotView({ ...base, recordedToday: true }).mood, 'happy');
   assert.equal(mascotView({ ...base, streak: 5 }).mood, 'happy');
-  assert.equal(mascotView({ ...base, spendable: -100, streak: 5, recordedToday: true }).mood, 'normal');
+  assert.equal(mascotView({ ...base, spendable: -100, streak: 5, recordedToday: true }).mood, 'worried');
+  assert.equal(mascotView({ ...base, spendable: -1 }).mood, 'worried');
+  assert.equal(mascotView({ ...base, spendable: 0 }).mood, 'normal'); // ちょうど0円は足りている
 });
 
 test('mascotView: セリフは日替わり（同じ日は同じ文、3日で一巡する）。連続日数が入る', () => {
