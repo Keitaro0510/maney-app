@@ -111,13 +111,13 @@ export function spendInWork(ledger: StLedger[], y: number, m: number | null, wag
 }
 
 export type WeekdayAvg = { dow: number; label: string; total: number; days: number; avg: number };
-export type WeekdayRange = 'all' | '3m' | '6m';
+export type WeekdayRange = 'all' | '3m' | '6m' | '12m';
 
-/** 期間の最初の日（'YYYY-MM-DD'）。3m・6m は today から 3・6 か月さかのぼった日の翌日（今日を含めて 3・6 か月分）。
+/** 期間の最初の日（'YYYY-MM-DD'）。3m・6m・12m は today から 3・6・12 か月さかのぼった日の翌日（今日を含めて 3・6 か月分）。
  *  all は支出の記録でいちばん古い日。支出が1件もなければ null */
 export function weekdayRangeStart(ledger: StLedger[], range: WeekdayRange, today: string): string | null {
   if (range !== 'all') {
-    const months = range === '3m' ? 3 : 6;
+    const months = Number.parseInt(range, 10); // '3m'・'6m'・'12m'
     const [y, m, d] = today.split('-').map(Number);
     const dim = new Date(y, m - months, 0).getDate(); // さかのぼった月の日数。同じ日が無ければ月末に寄せる（5/31 の3か月前 → 2/28）
     const s = new Date(y, m - 1 - months, Math.min(d, dim) + 1);
@@ -189,4 +189,30 @@ export function categoryTrend(ledger: StLedger[], endY: number, endM: number, mo
   }
   const monthTotals = keys.map((_, i) => all.reduce((a, s) => a + s.amounts[i], 0));
   return { labels, series, monthTotals };
+}
+
+export type DayOfMonthAvg = { day: number; total: number; days: number; avg: number };
+
+/** 月の中の日にち（1〜31日）ごとの支出の平均（1日あたり）。start〜end（両端を含む）で、その日にちが何回あったかで割る
+ *  （記録のない日は 0 円。29〜31日は、その日がある月だけ数える）。給料日・締め日の前後の傾向を見るため */
+export function dayOfMonthAverages(ledger: StLedger[], start: string, end: string): DayOfMonthAvg[] {
+  const list: DayOfMonthAvg[] = Array.from({ length: 31 }, (_, i) => ({ day: i + 1, total: 0, days: 0, avg: 0 }));
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const last = new Date(ey, em - 1, ed).getTime();
+  for (let t = new Date(sy, sm - 1, sd); t.getTime() <= last; t.setDate(t.getDate() + 1)) list[t.getDate() - 1].days += 1;
+  for (const l of ledger) {
+    if (l.type !== 'expense' || l.date < start || l.date > end) continue;
+    const cell = list[Number(l.date.slice(8, 10)) - 1];
+    if (cell) cell.total += Number(l.amount) || 0;
+  }
+  for (const c of list) c.avg = c.days ? Math.round(c.total / c.days) : 0;
+  return list;
+}
+
+/** 日にちのうち、days に入っているものの1日あたりの平均（合計 ÷ 日数。該当の日が期間になければ null） */
+export function averageOnDays(list: DayOfMonthAvg[], days: number[]): number | null {
+  const pick = list.filter(c => days.includes(c.day));
+  const n = pick.reduce((a, c) => a + c.days, 0);
+  return n ? Math.round(pick.reduce((a, c) => a + c.total, 0) / n) : null;
 }

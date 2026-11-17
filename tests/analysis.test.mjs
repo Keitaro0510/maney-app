@@ -187,3 +187,36 @@ test('categoryTrend: 上位 n 個ちょうどなら「その他」は作らな�
   const t = categoryTrend([ec('2026-01-01', 'A', 1), ec('2026-01-01', 'B', 2)], 2026, 0, 1, 2);
   assert.deepEqual(t.series.map(s => s.cat), ['B', 'A']);
 });
+
+// ---- 月の中の時期（D32） ----
+import { dayOfMonthAverages, averageOnDays } from '../src/analysis.ts';
+
+test('dayOfMonthAverages: 日にちごとに、その日にちが何回あったかで割る（29〜31日はある月だけ）', () => {
+  // 2026-01-01〜2026-02-28（1月31日・2月28日）。31日は1月だけ、29・30日は1月だけ（2月は28日まで）
+  const t = dayOfMonthAverages([ec('2026-01-31', 'A', 900), ec('2026-01-05', 'A', 100), ec('2026-02-05', 'A', 300)], '2026-01-01', '2026-02-28');
+  assert.equal(t.length, 31);
+  assert.deepEqual([t[0].days, t[27].days, t[28].days, t[30].days], [2, 2, 1, 1]);
+  assert.equal(t[4].avg, 200); // 5日: (100+300)÷2回
+  assert.equal(t[30].avg, 900); // 31日: 900÷1回
+  assert.equal(t[0].avg, 0);
+});
+
+test('dayOfMonthAverages: 期間の途中から・外の記録と収入は数えない', () => {
+  const t = dayOfMonthAverages([ec('2026-01-10', 'A', 999), ec('2026-01-20', 'A', 500), { ...ec('2026-01-20', 'A', 999), type: 'income' }], '2026-01-15', '2026-02-15');
+  assert.equal(t[9].days, 1); // 10日は2/10だけ
+  assert.equal(t[9].total, 0);
+  assert.equal(t[19].avg, 500);
+  assert.equal(t[14].days, 2); // 15日は両端
+});
+
+test('averageOnDays: 指定した日にちの1日あたりの平均。該当がなければ null', () => {
+  const t = dayOfMonthAverages([ec('2026-01-05', 'A', 300), ec('2026-01-10', 'A', 100)], '2026-01-01', '2026-02-28');
+  assert.equal(averageOnDays(t, [5, 10]), 100); // (300+100)÷(2+2)
+  assert.equal(averageOnDays(t, [5]), 150);
+  assert.equal(averageOnDays(t, []), null);
+  assert.equal(averageOnDays(dayOfMonthAverages([], '2026-02-01', '2026-02-10'), [31]), null); // 期間に31日がない
+});
+
+test('weekdayRangeStart: 12か月', () => {
+  assert.equal(weekdayRangeStart([], '12m', '2026-11-17'), '2025-11-18');
+});
