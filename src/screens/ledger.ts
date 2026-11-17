@@ -10,6 +10,7 @@ import { renderCurrentSection } from '../navigation.ts';
 import { renderCal, refreshDayViews } from './calendar.ts';
 import { monthLedger, ledgerPayLabel } from '../ledger.ts';
 import { renderCardList } from './cards.ts';
+import { queueCelebration } from '../mascot-motion.ts';
 import { renderAnalysis } from './analysis.tsx';
 import { renderMonthlyTab, saveMonthlyFromLedger } from './monthly.ts';
 import type { StLedger } from '../compat.ts';
@@ -74,7 +75,7 @@ export function saveLedger(): void{const date=ui.inputById('ldg-date').value,amo
     if(!ok)return;
     closeLdgModal();renderCurrentSection();return;
   }
-  const entry: StLedger={date,amount:parseInt(amount),name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;state.st.ledger.push(entry);save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
+  const entry: StLedger={date,amount:parseInt(amount),name:name||ldgCat,cat:ldgCat,type:ldgType,pay:ldgPay,memo};if(ldgType==='expense'&&ldgCardIdx>=0)entry.cardIdx=ldgCardIdx;if(ldgType==='income')entry.receive=ldgReceive;state.st.ledger.push(entry);queueCelebration();save();closeLdgModal();renderLedger();renderLedgerMetrics();renderCal();renderHome();renderCardList();}
 export function closeLdgModal(): void{ui.elementById('ldg-mbg').classList.remove('open');}
 export function openLdgEdit(i: number): void{ldeIdx=i;const l=state.st.ledger[i];ldeType=l.type;ldeCat=l.cat;ldePay=l.pay||'現金';ldeCardIdx=l.cardIdx!==undefined?l.cardIdx:-1;ldeReceive=l.receive||'現金';ui.inputById('lde-date').value=l.date;ui.inputById('lde-amount').value=String(l.amount);ui.inputById('lde-name').value=l.name;ui.textareaById('lde-memo').value=l.memo||'';renderLdeType();renderLdeCatChips();renderLdePayChips();ui.elementById('ldg-edit-mbg').classList.add('open');}
 export function closeLdgEdit(): void{ui.elementById('ldg-edit-mbg').classList.remove('open');}

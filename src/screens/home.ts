@@ -7,6 +7,7 @@ import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
 import { mascotView, daysSinceRecord, charDelayMs, MASCOT_IMAGE } from '../mascot.ts';
 import { mascotFacts } from '../mascot-facts.ts';
+import { decorateMascot, initMascotMotion } from '../mascot-motion.ts';
 import { ensureHolidays, getHoliday } from '../holidays.ts';
 import { recordStreak } from '../streak.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
@@ -71,6 +72,7 @@ function renderMascot(spendable: number): void{
   img.dataset.mood=v.mood;
   setMascotLine(MoneyUI.elementById('home-mascot-text'),v.text);
   MoneyUI.elementById('home-mascot').hidden=false;
+  decorateMascot({hour:getNow().getHours(),streak:recordStreak(dates,today).current,mood:v.mood,line:v.text}); // 動き（D41）: 夜・王冠・朝ののび・記録のお祝い
 }
 
 // セリフを1文字ずつ出す（動きは CSS。文字ごとに --i を付け、順に出す）。同じセリフのままの再描画では、触らない（何度も動かさない）。
@@ -119,6 +121,7 @@ function renderBalanceChart(): void{const{labels,balances,marks,lowIndex}=buildB
 
 /** ホームの固定ボタンを登録する。 */
 export function bindHomeControls(): void {
+  initMascotMotion({ setLine: text => setMascotLine(MoneyUI.elementById('home-mascot-text'), text) });
   MoneyUI.elementById('home-add-ledger').addEventListener('click', () => openLedgerModal());
   MoneyUI.elementById('home-add-plan').addEventListener('click', () => openPlanModal());
   MoneyUI.elementById('home-open-atm').addEventListener('click', openWd);
