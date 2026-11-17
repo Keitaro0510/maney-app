@@ -4,7 +4,23 @@
 <!-- マスコットのキリン（D33）。表情とセリフは src/mascot.ts。絵は img/（公開するときにそのままコピー）。src は JS で入れる（Vite が名前を書き換えないように） -->
 <div class="mascot" id="home-mascot">
 <img class="mascot-img" id="home-mascot-img" alt="" width="64" height="70" src="img/giraffe-happy.webp" data-mood="happy">
-<div class="mascot-bubble" id="home-mascot-text" role="status">今日の記録、ありがとう！</div>
+<div class="mascot-bubble" id="home-mascot-text" role="status" data-text="今日の記録、ありがとう！">
+<span class="sr-only">今日の記録、ありがとう！</span>
+<span class="mascot-line" aria-hidden="true" style="--step: 40ms;">
+<span class="mascot-ch" style="--i: 0;">今</span>
+<span class="mascot-ch" style="--i: 1;">日</span>
+<span class="mascot-ch" style="--i: 2;">の</span>
+<span class="mascot-ch" style="--i: 3;">記</span>
+<span class="mascot-ch" style="--i: 4;">録</span>
+<span class="mascot-ch" style="--i: 5;">、</span>
+<span class="mascot-ch" style="--i: 6;">あ</span>
+<span class="mascot-ch" style="--i: 7;">り</span>
+<span class="mascot-ch" style="--i: 8;">が</span>
+<span class="mascot-ch" style="--i: 9;">と</span>
+<span class="mascot-ch" style="--i: 10;">う</span>
+<span class="mascot-ch" style="--i: 11;">！</span>
+</span>
+</div>
 </div>
 <div class="acct-box home-main">
 <div class="acct-lbl">使えるお金</div>

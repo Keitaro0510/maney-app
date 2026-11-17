@@ -737,3 +737,9 @@ button.color-swatch.sel{transform:none}
 .mascot-bubble::before{content:"";position:absolute;left:-7px;bottom:12px;width:12px;height:12px;background:var(--color-background-primary);border-left:1px solid var(--color-border-tertiary);border-bottom:1px solid var(--color-border-tertiary);transform:rotate(45deg);border-radius:2px}
 @keyframes mascot-bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
 @media (prefers-reduced-motion:reduce){.mascot-img{animation:none}}
+
+/* マスコットのセリフを1文字ずつ出す（D33。src/screens/home.ts の setMascotLine）。動きを減らす設定では、最初から全部出す */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.mascot-ch{display:inline-block;white-space:pre;opacity:0;animation:mascot-ch .3s ease-out forwards;animation-delay:calc(var(--i) * var(--step,40ms))}
+@keyframes mascot-ch{from{opacity:0;transform:translateY(5px) scale(.9)}60%{transform:translateY(-1px) scale(1.04)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mascot-ch{opacity:1;animation:none}}
