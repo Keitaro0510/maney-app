@@ -1,6 +1,6 @@
 // 通知（Web Push）を送る（Issue #189・D36）。
 // - action=test: ログインした本人の、登録した端末すべてに、テスト通知を送る（アプリの設定の「テスト通知を送る」）
-// 暗号化と送信は _shared/webpush.ts（Node のテストあり）。送り先が「切れた」（404・410）と返したら、その購読を消す。
+// 暗号化と送信は webpush.ts（Node のテストあり）。送り先が「切れた」（404・410）と返したら、その購読を消す。
 // 鍵: secret は VAPID_PRIVATE_KEY（秘密鍵）だけ。公開鍵・連絡先（アプリの URL）は既定値を持つ（VAPID_PUBLIC_KEY・VAPID_SUBJECT で上書きもできる）
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
