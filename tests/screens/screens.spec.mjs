@@ -48,7 +48,8 @@ async function dom(page, selector) {
       const css = e.style.cssText;
       if (css) e.setAttribute('style', css); else e.removeAttribute('style');
     }
-    return copy.outerHTML.replace(/>\s*</g, '>\n<') + '\n';
+    // 共有コード（D39）は毎回変わるので、固定の文字にそろえる
+    return copy.outerHTML.replace(/>\s*</g, '>\n<').replace(/\b[0-9a-f]{4}(?:-[0-9a-f]{4}){3}\b/g, 'xxxx-xxxx-xxxx-xxxx') + '\n';
   });
 }
 
@@ -129,8 +130,10 @@ test('シフト・設定・タスク', async ({ page }) => {
   for (const sec of ['shift', 'set', 'task']) {
     await page.locator(sec === 'set' ? '#settings-btn' : `#nav-${sec}`).click();
     await settle(page);
+    if (sec === 'set') await expect(page.locator('#share-code')).toHaveText(/^[0-9a-f]{4}-/); // 共有コードを読み終えるまで待つ（D39）
     expect.soft(await dom(page, `#sec-${sec}`)).toMatchSnapshot(`${sec}.html`);
-    await shot(page, `${sec}.png`);
+    // 共有コードは毎回変わるので、写真では隠す
+    await shot(page, `${sec}.png`, sec === 'set' ? { mask: [page.locator('canvas'), page.locator('#share-code')] } : {});
   }
 });
 
@@ -534,4 +537,74 @@ test('HTML 特殊文字を含むカード名を文字として表示する', asy
   const list = page.locator('#card-list-sec');
   await expect(list.getByText(name, { exact: true })).toBeVisible();
   await expect(list.locator('img')).toHaveCount(0);
+});
+
+// カレンダーの共有（D39）。サーバーの共有用の関数は、DB のテスト（supabase/tests/database/14_calendar_share.test.sql）で確かめた。
+// ここでは、画面（切り替え・見るだけ・自分の分と混ざらない）を、関数の答えを固定して確かめる
+test('相手のカレンダー（見るだけ。自分のとは混ぜない）', async ({ page }) => {
+  const owner = 'a0000000-0000-4000-8000-0000000000aa';
+  await page.route('**/rest/v1/rpc/list_calendar_shares', route => route.fulfill({ json: [
+    { id: 'b0000000-0000-4000-8000-0000000000b1', direction: 'viewing', status: 'approved', nickname: '彼女', other_name: '', owner_id: owner },
+  ] }));
+  await page.route('**/rest/v1/rpc/shared_calendar', route => route.fulfill({ json: {
+    plans: [{ id: 'p1', title: '映画', start_date: '2026-11-14', end_date: '2026-11-14', start_time: '18:00:00', end_time: '20:00:00', color: 'pink' }],
+    shifts: [{ id: 's1', date: '2026-11-14', start_time: '10:00:00', end_time: '15:00:00', job: 'ドーナツ屋' }],
+  } }));
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-cal').click();
+  await settle(page);
+
+  // はじめは自分のカレンダー。切り替えは「自分」と「彼女」
+  await expect(page.locator('#cal-who .cal-who-btn')).toHaveText(['自分', '彼女']);
+  await expect(page.locator('#cal-add-row')).toBeVisible();
+  await expect(page.locator('#cal-body')).not.toContainText('映画');
+
+  await page.locator('#cal-who [data-cal-who]', { hasText: '彼女' }).click();
+  await settle(page);
+  const day = page.locator('#cal-body .cday[data-day="2026-11-14"]');
+  await expect(day).toContainText('18:00 映画');
+  await expect(day).toContainText('10:00');
+  await expect(page.locator('#cal-who-note')).toContainText('見るだけ');
+  await expect(page.locator('#cal-add-row')).toBeHidden(); // 追加のボタンは出さない
+  // 自分のタスク・お金は出ない（11/12 は自分にはタスクの印が付く日）
+  await expect(page.locator('#cal-body .task-mark')).toHaveCount(0);
+
+  await day.click();
+  await expect(page.locator('#day-detail-content')).toContainText('映画');
+  await expect(page.locator('#day-detail-content')).toContainText('ドーナツ屋');
+  await expect(page.locator('#day-detail-content')).toContainText('10:00〜15:00');
+  await expect(page.locator('#day-detail-content button.edit, #day-detail-content button.del')).toHaveCount(0); // 編集・削除なし
+  await expect(page.locator('#cal-day-add')).toBeHidden();
+
+  // 自分に戻すと、自分のカレンダーに戻る
+  await page.locator('#cal-who [data-cal-who="me"]').click();
+  await settle(page);
+  await expect(page.locator('#cal-body .task-mark').first()).toBeVisible();
+  await expect(page.locator('#cal-body')).not.toContainText('映画');
+  await expect(page.locator('#cal-add-row')).toBeVisible();
+});
+
+test('設定の共有: コードが出て、知らないコードの申請はエラーになる', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#settings-btn').click();
+  await settle(page);
+  await expect(page.locator('#share-code')).toHaveText(/^[0-9a-f]{4}(-[0-9a-f]{4}){3}$/);
+  await expect(page.locator('#share-list')).toContainText('まだ誰ともつながっていません');
+  await page.locator('#share-code-input').fill('0000-0000-0000-0000');
+  await page.locator('#share-request').click();
+  await expect(page.locator('#share-msg')).toContainText('コードが見つかりません');
+  // 名前を保存できる（申請を受けた人には、この名前だけが見える）。空では保存できない
+  await page.locator('#share-name').fill('  ');
+  await page.locator('#share-name-save').click();
+  await expect(page.locator('#share-msg')).toContainText('名前を入れてください');
+  await page.locator('#share-name').fill('テスト太郎');
+  await page.locator('#share-name-save').click();
+  await expect(page.locator('#share-msg')).toBeHidden();
+  // 入力欄を空にして、別のタブから設定に戻ると、サーバーに保存した名前が戻る
+  await page.locator('#share-name').fill('');
+  await page.locator('#nav-cal').click();
+  await page.locator('#settings-btn').click();
+  await expect(page.locator('#share-name')).toHaveValue('テスト太郎');
 });

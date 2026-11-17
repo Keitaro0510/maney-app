@@ -18,9 +18,77 @@ import { openPlanModal, openPlanEdit } from './plans.ts';
 import { openShiftModal } from './shift.ts';
 import { openLedgerModal, openLdgEdit, delLedger } from './ledger.ts';
 import type { StShift } from '../compat.ts';
+import {
+  listShares, fetchSharedCalendar, sharedPlansOnDay, sharedPlanTime, sharedShiftsOnDay, sharedShiftTime,
+  type ShareRow, type SharedCalendar,
+} from '../share.ts';
 
 let calY=getNow().getFullYear(), calM=getNow().getMonth(), selDay: string | null=null;
 let calRenderSeq=0;
+
+// 相手のカレンダー（D39）。見るだけ。自分のカレンダーとは混ぜず、切り替えて見る
+let viewOwner: ShareRow | null=null; // 見ている相手（null なら自分）
+let viewable: ShareRow[]=[]; // 見られる相手（承認済み）
+let viewableAt=0;
+let partnerCache: { key: string; data: SharedCalendar } | null=null;
+let partnerError='';
+const VIEWABLE_TTL=60000;
+const EMPTY_CAL: SharedCalendar={plans:[],shifts:[]};
+
+/** 設定で共有が変わったとき、次にカレンダーを開いたときに、相手の一覧を読み直す */
+export function resetShareView(): void{ viewableAt=0; partnerCache=null; }
+
+async function refreshViewable(): Promise<void>{
+  if(Date.now()-viewableAt<VIEWABLE_TTL) return;
+  try{
+    viewable=(await listShares()).filter(r=>r.direction==='viewing'&&r.status==='approved');
+    viewableAt=Date.now();
+  }catch(e){
+    console.warn('共有の一覧を読めませんでした',e);
+    viewableAt=Date.now()-VIEWABLE_TTL+15000; // 15秒あとにもう一度試す（読めなければ、今ある一覧のまま）
+  }
+  if(viewOwner&&!viewable.some(r=>r.owner_id===viewOwner?.owner_id)){viewOwner=null;partnerCache=null;}
+}
+
+// 「自分／相手」の切り替え。相手が1人もいないときは出さない
+function renderWho(): void{
+  const el=MoneyUI.elementById('cal-who');
+  el.hidden=viewable.length===0;
+  el.innerHTML=el.hidden?'':[`<button type="button" class="cal-who-btn${viewOwner?'':' on'}" data-cal-who="me" aria-pressed="${!viewOwner}">自分</button>`,
+    ...viewable.map(r=>`<button type="button" class="cal-who-btn${viewOwner?.owner_id===r.owner_id?' on':''}" data-cal-who="${MoneyUI.escapeHtml(r.owner_id)}" aria-pressed="${viewOwner?.owner_id===r.owner_id}">${MoneyUI.escapeHtml(r.nickname||'相手')}</button>`)].join('');
+  const note=MoneyUI.elementById('cal-who-note');
+  note.hidden=!viewOwner;
+  note.textContent=viewOwner?(partnerError||`${viewOwner.nickname||'相手'}のカレンダー（見るだけ。予定とシフトだけ見えます）`):'';
+  note.classList.toggle('err',!!partnerError);
+  // 相手を見ているあいだは、追加のボタンを出さない
+  MoneyUI.elementById('cal-day-add').style.display=viewOwner?'none':'flex';
+  MoneyUI.elementById('cal-add-row').style.display=viewOwner?'none':'flex';
+  MoneyUI.elementById('cal-detail-hint').textContent=viewOwner?'日付を押すと、下にその日の予定・シフトが表示されます。':'日付を押すと、下にその日の予定・シフト・記録が表示されます。';
+}
+
+function switchWho(who: string): void{
+  const next=who==='me'?null:viewable.find(r=>r.owner_id===who)||null;
+  if(next?.owner_id===viewOwner?.owner_id) return;
+  viewOwner=next;partnerError='';partnerCache=null;
+  closeDayDetail();
+  void renderCal();
+}
+
+// 今のカレンダー（6週分）に見える範囲の相手の予定とシフトを読む
+async function loadPartner(first: number,total: number): Promise<SharedCalendar | null>{
+  if(!viewOwner) return null;
+  const a=new Date(calY,calM,1-first),b=new Date(calY,calM,total-first);
+  const from=toDS(a.getFullYear(),a.getMonth(),a.getDate()),to=toDS(b.getFullYear(),b.getMonth(),b.getDate());
+  const key=`${viewOwner.owner_id}:${from}:${to}`;
+  if(partnerCache?.key===key) return partnerCache.data;
+  try{
+    const data=await fetchSharedCalendar(viewOwner.owner_id,from,to);
+    partnerCache={key,data};partnerError='';return data;
+  }catch(e){
+    console.warn('相手のカレンダーを読めませんでした',e);
+    partnerError='相手のカレンダーを読み込めませんでした。つながりを確かめてください';return null;
+  }
+}
 export function onCalendarDayChanged(prev: Date, now: Date): void {
   ({y:calY,m:calM}=followMonth({y:calY,m:calM},prev,now));
 }
@@ -29,6 +97,9 @@ export function onCalendarDayChanged(prev: Date, now: Date): void {
 
 export async function renderCal(): Promise<void>{
   const seq=++calRenderSeq;
+  await refreshViewable();
+  if(seq!==calRenderSeq)return;
+  renderWho();
   await renderCalMonth(seq);
   // 日の詳細が開いていれば、今のデータで描き直す（読み込み直したあとに、古い番号のボタンを残さない）
   if(seq===calRenderSeq && selDay && MoneyUI.elementById('day-detail').style.display==='block') dayClick(selDay);
@@ -45,6 +116,9 @@ async function renderCalMonth(seq: number): Promise<void>{
 
   const first=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate(),prev=new Date(calY,calM,0).getDate();
   const total=Math.ceil((first+dim)/7)*7;
+  const partner=await loadPartner(first,total);
+  if(seq!==calRenderSeq)return;
+  if(viewOwner) renderWho(); // 読み込みの失敗を、メッセージに出す
   const byDay: Record<number, StShift[]>={};
   monthShifts(calY,calM).forEach(s=>{const d=new Date(s.date).getDate();(byDay[d]=byDay[d]||[]).push(s);});
   const fcDays=new Set(monthlyRowsIn(calY,calM).map(fc=>monthDay(calY,calM,fc.day))); // 毎月のお金がある日（D14）
@@ -61,6 +135,19 @@ async function renderCalMonth(seq: number): Promise<void>{
     const dow=new Date(y2,m2,day).getDay();
     const holiday=getHoliday(ds);
     const isSun=dow===0,isSat=dow===6;
+
+    if(viewOwner){
+      // 相手のカレンダー: 祝日・予定・シフトだけ（見るだけ。自分のお金・タスクは出さない）
+      const dnumColorP=holiday||isSun?'#A32D2D':isSat?'#185FA5':'var(--color-text-secondary)';
+      let pp='';
+      if(holiday&&!other) pp+=`<div class="pill holiday">${MoneyUI.escapeHtml(holiday)}</div>`;
+      if(!other){
+        sharedShiftsOnDay((partner||EMPTY_CAL).shifts,ds).forEach(sh=>{const c=planColor('teal');pp+=`<div class="pill" style="background:${c.bg};color:${c.fg}">${sharedShiftTime(sh).start}</div>`;});
+        sharedPlansOnDay((partner||EMPTY_CAL).plans,ds).sort((a,b)=>sharedPlanTime(a,ds).min-sharedPlanTime(b,ds).min).forEach(p=>{const c=planColor(p.color),t=sharedPlanTime(p,ds);pp+=`<div class="pill" style="background:${c.bg};color:${c.fg}">${t.start?t.start+' ':''}${MoneyUI.escapeHtml(p.title)}</div>`;});
+      }
+      html+=dayCellHtml(ds,y2,m2,day,other,isT,ds===selDay,dnumColorP,'','',pp);
+      continue;
+    }
 
     const shifts=other?[]:(byDay[day]||[]),wdT=other?[]:state.st.wds.filter(w=>w.date===ds),plans=other?[]:getPlansForDay(ds);
     const hasFc=!other&&fcDays.has(day);
@@ -90,9 +177,14 @@ async function renderCalMonth(seq: number): Promise<void>{
     // 支出・収入の金額はセルに出さない（D10。日の詳細・家計簿では見られる）
 
     const selected=ds===selDay;
-    html+=`<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示${taskLabel}" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="cday-top"><div class="dnum" style="color:${dnumColor}">${day}</div>${taskMark}</div>${pills}</div>`;
+    html+=dayCellHtml(ds,y2,m2,day,other,isT,selected,dnumColor,taskMark,taskLabel,pills);
   }
   MoneyUI.elementById('cal-body').innerHTML=html;
+}
+
+
+function dayCellHtml(ds: string,y2: number,m2: number,day: number,other: boolean,isT: boolean,selected: boolean,dnumColor: string,taskMark: string,taskLabel: string,pills: string): string{
+  return `<div class="cday${other?' otherm':''}${isT?' today':''}${selected?' selected':''}" data-day="${ds}" role="button" tabindex="0" aria-label="${y2}年${m2+1}月${day}日の詳細を表示${taskLabel}" aria-expanded="${selected}" aria-controls="day-detail" aria-describedby="cal-detail-hint"><div class="cday-top"><div class="dnum" style="color:${dnumColor}">${day}</div>${taskMark}</div>${pills}</div>`;
 }
 
 // 指定日のイベントを、今までの追加順で集める。
@@ -167,6 +259,25 @@ function buildDay(ds: string): DayItem[]{
   return items;
 }
 
+// 相手の日の詳細（見るだけ）。予定とシフトだけ
+function buildPartnerDay(ds: string): DayItem[]{
+  const items: DayItem[]=[];
+  const data=partnerCache?.data;
+  if(!data) return items;
+  sharedPlansOnDay(data.plans,ds).forEach(p=>{
+    const c=planColor(p.color),t=sharedPlanTime(p,ds);
+    const timeLabel=t.start&&t.end?`${t.start}〜${t.end}`:t.start?t.start:t.end?`〜${t.end}`:'';
+    const multi=p.end_date!==p.start_date?`<div class="ri-note">${fmtMD(ds2d(p.start_date))}〜${fmtMD(ds2d(p.end_date))}</div>`:'';
+    items.push({sort:t.min,html:`<div class="ri"><div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="badge" style="background:${c.bg};color:${c.fg}">予定</span><div style="min-width:0"><div style="font-size:14px">${MoneyUI.escapeHtml(p.title)}</div>${timeLabel?`<div class="ri-note">${timeLabel}</div>`:''}${multi}</div></div></div>`});
+  });
+  sharedShiftsOnDay(data.shifts,ds).forEach(sh=>{
+    const c=planColor('teal'),t=sharedShiftTime(sh);
+    items.push({sort:hm2min(t.start),html:`<div class="ri"><div style="display:flex;align-items:center;gap:8px"><span class="badge" style="background:${c.bg};color:${c.fg}">${MoneyUI.escapeHtml(sh.job)}</span><span style="font-size:13px">${t.start}〜${t.end}</span></div></div>`});
+  });
+  items.sort((a,b)=>a.sort-b.sort);
+  return items;
+}
+
 export function closeDayDetail(): void{
   MoneyUI.elementById('day-detail').style.display='none';
   document.querySelectorAll('#cal-body .cday.selected').forEach(cell=>{
@@ -195,9 +306,9 @@ export function dayClick(ds: string): void{
     cell.setAttribute('aria-expanded',String(selected));
   });
   const d=ds2d(ds), hd=getHoliday(ds);
-  const items=buildDay(ds);
+  const items=viewOwner?buildPartnerDay(ds):buildDay(ds);
   let html=`<div class="st day-detail-head"><span>${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DAYS[d.getDay()]})${hd?` <span style="color:#A32D2D">・${hd}</span>`:''}</span><span class="day-detail-actions"><button type="button" class="day-detail-close" aria-label="日の詳細を閉じる" data-cal-action="close-detail">×</button></span></div>`;
-  html += items.length ? items.map(i=>i.html).join('') : '<div class="empty">この日のイベントなし</div>';
+  html += items.length ? items.map(i=>i.html).join('') : `<div class="empty">${viewOwner?'この日の予定・シフトなし':'この日のイベントなし'}</div>`;
   MoneyUI.elementById('day-detail-content').innerHTML=html;
   MoneyUI.elementById('day-detail').style.display='block';
 }
@@ -237,9 +348,12 @@ export function bindCalendarControls(): void {
   const root = MoneyUI.elementById('sec-cal');
   root.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
+    const who = event.target.closest<HTMLElement>('[data-cal-who]');
+    if (who && root.contains(who)) { switchWho(who.dataset.calWho || 'me'); return; }
     const action = event.target.closest<HTMLElement>('[data-cal-action]');
     if (action && root.contains(action)) {
       const name = action.dataset.calAction;
+      if (viewOwner && name !== 'close-detail') return; // 相手のカレンダーは見るだけ
       const ds = action.dataset.calDate === 'none' ? undefined : selDay || undefined;
       if (name === 'add-plan') openPlanModal(ds);
       else if (name === 'add-shift') openShiftModal(ds);
