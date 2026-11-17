@@ -328,6 +328,23 @@
 <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">支出のなかった日も 0 円として平均します。29〜31日は、その日がある月だけ数えます。家計簿の記録だけで、毎月のお金は含みません</div>
 </div>
 <div class="card">
+<div class="st">予定・シフトのある日とない日</div>
+<div role="group" aria-label="期間" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+<button type="button" class="chip" aria-pressed="false">全期間</button>
+<button type="button" class="chip" aria-pressed="false">直近12か月</button>
+<button type="button" class="chip sel" aria-pressed="true">直近6か月</button>
+</div>
+<div class="chart-wrap">
+<canvas>
+</canvas>
+</div>
+<div style="font-size: 13px; margin-top: 8px;">ある日 平均 <b>¥200</b>／ない日 平均 <b>¥68</b>
+</div>
+<div style="font-size: 13px; margin-top: 2px;">予定・シフトのある日は、ない日の約 2.9 倍使っています</div>
+<div style="font-size: 12px; color: rgb(186, 117, 23); margin-top: 2px;">予定・シフトのある日が 4 日だけなので、参考程度に見てください</div>
+<div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">予定は、はじめの日から終わりの日までの全日と、シフトの日を数えます。支出のなかった日も 0 円として平均します。家計簿の記録だけで、毎月のお金は含みません</div>
+</div>
+<div class="card">
 <div class="st">支出カレンダー（2026年11月）</div>
 <div class="heat-grid" role="group" aria-label="日ごとの支出">
 <div class="heat-dow">日</div>
