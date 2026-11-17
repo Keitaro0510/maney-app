@@ -11,6 +11,7 @@ import { renderMonthlyTab } from './screens/monthly.ts';
 import { renderShiftSection } from './screens/shift.ts';
 import { renderTaskTab, maybeShowStartupTasks } from './screens/tasks.ts';
 import { initSettingTab } from './screens/settings.ts';
+import { tabFromSearch } from './push.ts';
 
 export function sw(tab: string): void {
   ['home','cal','ledger','shift','task','set'].forEach(name => {
@@ -87,11 +88,21 @@ function showSyncBanner(message: string, actions: BannerAction[]): void {
 
 function hideSyncBanner(): void { elementById('sync-banner').classList.remove('show'); }
 
+// 通知を押してアプリが開いたとき（?tab=〇〇）、その画面を開く。1回だけ（開いたら URL から消す）
+function openTabFromUrl(): void {
+  const tab = tabFromSearch(location.search);
+  if (!tab) return;
+  sw(tab);
+  const url = new URL(location.href);
+  url.searchParams.delete('tab');
+  history.replaceState(null, '', url);
+}
+
 export const appUi: UiPort & AuthUi = {
   showBanner: showSyncBanner, hideBanner: hideSyncBanner, renderCurrentSection, updateSyncStatus,
   hasOpenModal: () => !!document.querySelector('.mbg.open'), downloadJson,
   showLogin: showLoginScreen, hideLogin: hideLoginScreen,
-  renderFirst: () => { renderHome(); void renderCal(); },
+  renderFirst: () => { renderHome(); void renderCal(); openTabFromUrl(); },
   showStartupTasks: () => maybeShowStartupTasks(),
   reload: () => location.reload(),
 };

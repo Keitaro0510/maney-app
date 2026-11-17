@@ -5,6 +5,24 @@ import { getSupa } from './supa.ts';
 /** 送る側の公開鍵（VAPID。秘密ではない）。scripts/gen-vapid.mjs で作った鍵の、公開鍵の方。秘密鍵は Supabase の secret にある */
 export const VAPID_PUBLIC_KEY = 'BMRZljhF3U1xZHWrTvG2p4H5EGF8QrZ-wpSMETgAwTLZeiQHeHZuyLsML4iauIUG_ZxwlEJPh9QLlk85cUFgIqM';
 
+/** 通知から開ける画面（設定は開かない） */
+export const OPENABLE_TABS = ['home', 'cal', 'ledger', 'shift', 'task'] as const;
+export type OpenableTab = typeof OPENABLE_TABS[number];
+const isOpenable = (v: unknown): v is OpenableTab => typeof v === 'string' && (OPENABLE_TABS as readonly string[]).includes(v);
+
+/** URL の ?tab=〇〇 から、開く画面を取り出す（通知を押して、アプリが閉じていたとき。知らない名前は無視） */
+export function tabFromSearch(search: string): OpenableTab | null {
+  const v = new URLSearchParams(search).get('tab');
+  return isOpenable(v) ? v : null;
+}
+
+/** Service Worker からの「この画面を開いて」というメッセージ（通知を押して、アプリが開いていたとき） */
+export function tabFromMessage(data: unknown): OpenableTab | null {
+  if (typeof data !== 'object' || data === null) return null;
+  const m = data as { type?: unknown; tab?: unknown };
+  return m.type === 'open-tab' && isOpenable(m.tab) ? m.tab : null;
+}
+
 /** 画面に出す状態。unsupported＝この環境では使えない／needs-install＝iPhone で、ホーム画面に追加していない／denied＝通知を拒否している／off＝使えるが登録していない／on＝登録している */
 export type PushState = 'unsupported' | 'needs-install' | 'denied' | 'off' | 'on';
 

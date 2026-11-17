@@ -6,20 +6,21 @@ import { test, expect } from '@playwright/test';
 import { EMAIL, PASSWORD, NOW, HOLIDAYS } from './constants.mjs';
 
 // 時刻を固定し、祝日の取得を固定の答えにして、テスト用のユーザーでログインする
-async function open(page) {
+async function open(page, path = '/', { anyScreen = false } = {}) {
   await page.clock.setFixedTime(NOW);
   await page.route('https://www.googleapis.com/**', route => route.fulfill({ json: HOLIDAYS }));
-  await page.goto('/');
+  await page.goto(path);
   const form = page.locator('[data-maney-local-login]');
   await form.locator('input[name=email]').fill(EMAIL);
   await form.locator('input[name=password]').fill(PASSWORD);
   await form.locator('button[value=signin]').click();
   // ログインできたら読み込み直して起動する。サーバーから読み終えるまで待つ
-  await page.waitForFunction(() => {
+  // ホーム以外の画面を最初に開いたとき（通知から開いた場合など）は、ホームは描き直されないので、使えるお金は待たない
+  await page.waitForFunction(anyScreen => {
     const login = document.getElementById('login-screen');
     const spendable = document.getElementById('home-spendable');
-    return !!login && !!spendable && getComputedStyle(login).display === 'none' && spendable.textContent !== '¥0';
-  });
+    return !!login && !!spendable && getComputedStyle(login).display === 'none' && (anyScreen || spendable.textContent !== '¥0');
+  }, anyScreen);
   await settle(page);
 }
 
@@ -649,4 +650,17 @@ test('設定の通知: Service Worker のない環境では、案内だけが出
   await settle(page);
   await expect(page.locator('#push-status')).toContainText('この環境では通知を使えません');
   await expect(page.locator('#push-actions')).toBeHidden();
+});
+
+// 通知を押してアプリが開いたとき（?tab=〇〇）、その画面を開く（D36）。開いたら URL から消す。知らない名前は無視する
+test('通知から開いたとき: ?tab=task でタスクの画面が開く', async ({ page }) => {
+  await open(page, '/?tab=task', { anyScreen: true });
+  await expect(page.locator('#sec-task')).toHaveClass(/active/);
+  await expect(page.locator('#sec-home')).not.toHaveClass(/active/);
+  expect(new URL(page.url()).searchParams.has('tab')).toBe(false);
+});
+
+test('通知から開いたとき: 知らない画面の名前は無視して、ホームのまま', async ({ page }) => {
+  await open(page, '/?tab=set');
+  await expect(page.locator('#sec-home')).toHaveClass(/active/);
 });

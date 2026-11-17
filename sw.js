@@ -78,16 +78,22 @@ self.addEventListener('push', e => {
     body: data.body || '',
     tag: data.tag || undefined,
     icon: './icon-192.png',
-    data: { url: data.url || './' }
+    data: { url: data.url || './', tab: data.tab || '' }
   }));
 });
 
-// 通知を押したら、開いているアプリがあればそれを前に出し、なければ開く
+// 通知を押したら、開いているアプリがあればそれを前に出して、その画面を開くよう知らせる。なければ、?tab=〇〇 付きで開く
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const target = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  const d = e.notification.data || {};
+  const target = new URL(d.url || './', self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    for (const c of list) { if ('focus' in c) return c.focus(); }
+    for (const c of list) {
+      if ('focus' in c) {
+        if (d.tab) c.postMessage({ type: 'open-tab', tab: d.tab });
+        return c.focus();
+      }
+    }
     return self.clients.openWindow(target);
   }));
 });
