@@ -1,6 +1,6 @@
 // 分析の計算（D28）。画面を使わない関数だけ置く（テストできるように）。
 import { addM, toDS, DAYS } from './dates.ts';
-import type { StLedger, StJob } from './compat.ts';
+import type { StLedger, StJob, StPlan, StShift } from './compat.ts';
 
 export type MonthTotal = { y: number; m: number; label: string; income: number; expense: number; net: number };
 
@@ -215,4 +215,43 @@ export function averageOnDays(list: DayOfMonthAvg[], days: number[]): number | n
   const pick = list.filter(c => days.includes(c.day));
   const n = pick.reduce((a, c) => a + c.days, 0);
   return n ? Math.round(pick.reduce((a, c) => a + c.total, 0) / n) : null;
+}
+
+export type DayGroup = { days: number; total: number; avg: number };
+export type EventCompare = { withEvent: DayGroup; without: DayGroup };
+
+/** 予定のある日・シフトのある日の集まり（'YYYY-MM-DD'）。予定は、はじめの日から終わりの日までの全日（削除済みは除く）。
+ *  シフトはその日。長すぎる（1年を超える）予定は、入力の間違いとみなして1年で止める */
+export function eventDaySet(plans: StPlan[], shifts: StShift[]): Set<string> {
+  const set = new Set<string>();
+  for (const p of plans) {
+    if (p._deleted) continue;
+    const start = p.dateStart || p.date;
+    if (!start) continue;
+    const end = p.dateEnd && p.dateEnd >= start ? p.dateEnd : start;
+    const [sy, sm, sd] = start.split('-').map(Number);
+    const [ey, em, ed] = end.split('-').map(Number);
+    const last = new Date(ey, em - 1, ed).getTime();
+    let n = 0;
+    for (let t = new Date(sy, sm - 1, sd); t.getTime() <= last && n < 366; t.setDate(t.getDate() + 1), n++) set.add(toDS(t.getFullYear(), t.getMonth(), t.getDate()));
+  }
+  for (const s of shifts) if (!s._deleted && s.date) set.add(s.date);
+  return set;
+}
+
+/** start〜end（両端を含む）の毎日を、「予定かシフトのある日」とない日に分けて、1日あたりの平均支出を出す。記録のない日は 0 円 */
+export function compareEventDays(ledger: StLedger[], events: Set<string>, start: string, end: string): EventCompare {
+  const withEvent = { days: 0, total: 0, avg: 0 }, without = { days: 0, total: 0, avg: 0 };
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const last = new Date(ey, em - 1, ed).getTime();
+  for (let t = new Date(sy, sm - 1, sd); t.getTime() <= last; t.setDate(t.getDate() + 1)) {
+    (events.has(toDS(t.getFullYear(), t.getMonth(), t.getDate())) ? withEvent : without).days += 1;
+  }
+  for (const l of ledger) {
+    if (l.type !== 'expense' || l.date < start || l.date > end) continue;
+    (events.has(l.date) ? withEvent : without).total += Number(l.amount) || 0;
+  }
+  for (const g of [withEvent, without]) g.avg = g.days ? Math.round(g.total / g.days) : 0;
+  return { withEvent, without };
 }

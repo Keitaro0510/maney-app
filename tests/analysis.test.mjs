@@ -220,3 +220,35 @@ test('averageOnDays: 指定した日にちの1日あたりの平均。該当が�
 test('weekdayRangeStart: 12か月', () => {
   assert.equal(weekdayRangeStart([], '12m', '2026-11-17'), '2025-11-18');
 });
+
+// ---- 予定・シフトの日とない日（D32） ----
+import { eventDaySet, compareEventDays } from '../src/analysis.ts';
+const plan = (dateStart, dateEnd, extra = {}) => ({ id: 1, title: 'p', date: dateStart, dateStart, dateEnd, timeStart: '', timeEnd: '', ...extra });
+const shift = (date, extra = {}) => ({ job: 'j', date, start: null, end: null, rest: 0, wage: 0, ...extra });
+
+test('eventDaySet: 予定は期間の全日、シフトはその日。削除済みは除く・月またぎ', () => {
+  const s = eventDaySet(
+    [plan('2026-01-30', '2026-02-02'), plan('2026-03-05', '2026-03-05'), plan('2026-04-01', '2026-04-03', { _deleted: true })],
+    [shift('2026-01-10'), shift('2026-01-11', { _deleted: true })]);
+  assert.deepEqual([...s].sort(), ['2026-01-10', '2026-01-30', '2026-01-31', '2026-02-01', '2026-02-02', '2026-03-05']);
+});
+
+test('eventDaySet: 終わりの日がない・終わりが前・長すぎる予定', () => {
+  assert.deepEqual([...eventDaySet([plan('2026-01-05', '')], [])], ['2026-01-05']);
+  assert.deepEqual([...eventDaySet([plan('2026-01-05', '2026-01-01')], [])], ['2026-01-05']); // 終わりが前なら開始の日だけ
+  assert.equal(eventDaySet([plan('2026-01-01', '2030-01-01')], []).size, 366);
+});
+
+test('compareEventDays: 予定・シフトのある日とない日で、1日あたりの平均を出す', () => {
+  // 2026-01-01〜01-10。予定の日: 1・2・3日、シフトの日: 3日・10日 → 4日分
+  const ev = eventDaySet([plan('2026-01-01', '2026-01-03')], [shift('2026-01-03'), shift('2026-01-10')]);
+  const r = compareEventDays([ec('2026-01-02', 'A', 800), ec('2026-01-03', 'A', 400), ec('2026-01-05', 'A', 600), ec('2025-12-31', 'A', 999), { ...ec('2026-01-06', 'A', 999), type: 'income' }], ev, '2026-01-01', '2026-01-10');
+  assert.deepEqual(r.withEvent, { days: 4, total: 1200, avg: 300 });
+  assert.deepEqual(r.without, { days: 6, total: 600, avg: 100 });
+});
+
+test('compareEventDays: 該当の日がなければ平均は0（0で割らない）', () => {
+  const r = compareEventDays([], new Set(), '2026-01-01', '2026-01-03');
+  assert.deepEqual(r.withEvent, { days: 0, total: 0, avg: 0 });
+  assert.equal(r.without.days, 3);
+});
