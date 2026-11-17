@@ -1,7 +1,38 @@
 # Claude から予定・タスクを入れる（MCP）の、ローカルでの確かめ方
 
 Issue #190・D37。Edge Function `mcp`（`supabase/functions/mcp/index.ts`）に MCP サーバーを置き、Supabase Auth を OAuth 2.1 の認可サーバーにして、Claude から呼ぶ。
-いまの `mcp` は**検証用**（`hello` と `whoami` だけ。データには触れない）。
+`mcp` は、予定・タスクを読む・追加・変更・削除する（下の「ツール」）。家計簿の記録・残高・設定は、読めない・書けない。
+
+## ツール（D37。2026-11-17）
+
+| ツール | できること |
+|---|---|
+| `list_cards` | カードの名前の一覧（払い方でカードを選ぶため） |
+| `list_plans` | 予定の一覧（期間・キーワード。省くと今日から60日先）。変える・消す相手の id を調べる |
+| `list_tasks` | タスクの一覧（済みを含める・期限・キーワード）。省くと、未完了を期限の近い順に |
+| `add_plan` | 予定を追加（日付・終わりの日・時間・予算・払い方 cash／card・カード名・メモ）。同じタイトル・同じ日があれば、入れずに知らせる |
+| `update_plan` | 予定を変える（日付・時間・予算・払い方・タイトル・メモ・済み）。はじめの日だけ変えると、期間の長さを保って終わりの日もずれる。`start_time` に null で終日 |
+| `delete_plan` | 予定を削除 |
+| `add_task` | タスクを追加（期限・メモ・タグ）。同じタイトル・同じ期限の未完了があれば、入れずに知らせる |
+| `update_task` | タスクを変える（タイトル・期限・メモ・タグ）。`due_date` に null で期限なし |
+| `complete_task` | 済みにする（`done: false` で未完了に戻す） |
+| `delete_task` | タスクを削除 |
+| `whoami` | 動作確認。ログイン中のメールを返す |
+
+決まり:
+- **足りない情報は、Claude が聞き返す**。`add_plan` の説明に「時間・予算・払い方（カードならどのカード）を、ユーザーが言っていないときは、呼ぶ前に必ず聞く。「なし」と言われたら省く」と書いてある。確実な保証はできない（Claude の判断）。最初から「何時、予算はいくら、カードで」と言えば、聞かずに入る
+- 予定の色は、Claude からは指定しない（アプリの新しい予定と同じ `pink`）
+- **保存は、アプリと同じ `apply_op`**（履歴・競合の検知・二重保存の防止つき）を、その人の権限で呼ぶ。削除も履歴に残り、戻せる（`docs/db/RESTORE.md`）。更新・削除は、読んだときの `updated_at` を `base` に付けるので、あとからアプリで変えられていたら、上書きせずに「変更されています」と返す
+- 触れるのは、`plans`・`tasks`・`cards`（名前だけ）・`sync_state`（移行の番号）だけ。家計簿・残高・設定・シフト・毎月のお金は、ツールがない
+- 入力は、zod（形）と `logic.ts`（実在する日付・時刻・予算の範囲・終了時刻だけの指定・カードの名前）で検査する。誤りは、直し方が分かる文面で返す
+- DB や MCP に触れない部分は `supabase/functions/mcp/logic.ts` に分け、`tests/mcp-logic.test.mjs` で確かめる（Node。CI で動く）。実際の DB に対する確かめは `scripts/check-mcp-tools.mjs`（ローカルの Supabase。下の手順）
+
+ローカルで、ツールを実際に呼んで確かめる:
+```bash
+# 「ローカルで試す」の手順 1〜5 のあと（signing_keys・config.toml・supabase start・functions serve mcp・テストユーザー）
+node scripts/check-mcp-tools.mjs
+```
+OAuth でトークンを取り、全ツールを順に呼ぶ（追加・重複・誤り・日付変更・時間を消す・済み・アプリが先に変えたあとの更新・削除）。作ったものは、終わりに片付ける。同意画面の代わりに、`getAuthorizationDetails` → `approveAuthorization` の順に呼ぶ（`getAuthorizationDetails` を飛ばすと、承認が `oauth_authorization_not_found` になる）
 
 ## 仕組み
 
