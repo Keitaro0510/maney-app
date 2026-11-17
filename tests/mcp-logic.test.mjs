@@ -209,3 +209,64 @@ test('describeShift: 確認用の1行', () => {
   assert.equal(describeShift(formatShift({ ...SHIFT, rest_minutes: 0, start_time: '22:00', end_time: '05:30' }, JOBS)), '2026-11-20（金）カフェ 22時〜（翌日）5時30分（実働7.5時間）');
   assert.match(describeShift(formatShift({ ...SHIFT, job_id: 'ない' }, JOBS)), /バイト先不明/);
 });
+
+// ---------------- シフト（追加・変更・削除） ----------------
+import { resolveJob, buildNewShift, buildShiftUpdate, findDuplicateShift } from '../supabase/functions/mcp/logic.ts';
+
+const JOBS_W = [{ id: 'j1', name: 'カフェ', wage: 1200 }, { id: 'j2', name: '居酒屋', wage: 1500 }];
+const CUR_SHIFT = { id: 's1', date: '2026-12-15', job_id: 'j1', start_time: '17:00:00', end_time: '22:00:00', wage: 1200, rest_minutes: 30, updated_at: 'u' };
+
+test('resolveJob: バイト先の名前から選ぶ。無い・複数のときは、登録のバイト先を教える', () => {
+  assert.equal(ok(resolveJob(JOBS_W, 'カフェ')).id, 'j1');
+  assert.equal(ok(resolveJob(JOBS_W, '居酒')).id, 'j2'); // 一部
+  bad(resolveJob(JOBS_W, 'コンビニ'), /バイト先「コンビニ」が見つかりません。登録されているバイト先: 「カフェ」、「居酒屋」/);
+  bad(resolveJob([{ id: 'a', name: 'カフェA', wage: 1 }, { id: 'b', name: 'カフェB', wage: 1 }], 'カフェ'), /バイト先が複数/);
+  bad(resolveJob([], 'カフェ'), /バイト先が登録されていません/);
+});
+
+test('buildNewShift: 時給はバイト先の今の時給をコピー（Claude からは指定しない）。休憩は省くと0', () => {
+  const row = ok(buildNewShift({ job: 'カフェ', date: '2026-12-15', start_time: '17:00', end_time: '22:00', rest_minutes: 30 }, JOBS_W, 4));
+  assert.deepEqual(row, { date: '2026-12-15', start_time: '17:00', end_time: '22:00', rest_minutes: 30, job_id: 'j1', wage: 1200, position: 4 });
+  assert.equal(ok(buildNewShift({ job: '居酒屋', date: '2026-12-15', start_time: '10:00', end_time: '14:00' }, JOBS_W, 0)).rest_minutes, 0);
+  assert.equal(ok(buildNewShift({ job: '居酒屋', date: '2026-12-15', start_time: '10:00', end_time: '14:00' }, JOBS_W, 0)).wage, 1500);
+});
+
+test('buildNewShift: アプリと同じく、退勤は出勤より後だけ（日をまたぐ・同じ時刻は誤り）。休憩・日付・時刻・バイト先の検査', () => {
+  const base = { job: 'カフェ', date: '2026-12-15', start_time: '17:00', end_time: '22:00' };
+  bad(buildNewShift({ ...base, start_time: '22:00', end_time: '05:00' }, JOBS_W, 0), /出勤より後.*日をまたぐ/);
+  bad(buildNewShift({ ...base, end_time: '17:00' }, JOBS_W, 0), /出勤より後/);
+  bad(buildNewShift({ ...base, rest_minutes: 300 }, JOBS_W, 0), /休憩が、働く時間/); // 5時間の勤務に300分
+  bad(buildNewShift({ ...base, rest_minutes: -5 }, JOBS_W, 0), /休憩は/);
+  bad(buildNewShift({ ...base, rest_minutes: 1.5 }, JOBS_W, 0), /休憩は/);
+  bad(buildNewShift({ ...base, date: '2026-02-30' }, JOBS_W, 0), /日付が正しくありません/);
+  bad(buildNewShift({ ...base, start_time: '25:00' }, JOBS_W, 0), /出勤の時刻が正しくありません/);
+  bad(buildNewShift({ ...base, end_time: '9:00' }, JOBS_W, 0), /退勤の時刻が正しくありません/);
+  bad(buildNewShift({ ...base, job: 'ない' }, JOBS_W, 0), /見つかりません/);
+  assert.equal(ok(buildNewShift({ ...base, rest_minutes: 299 }, JOBS_W, 0)).rest_minutes, 299); // ぎりぎり
+});
+
+test('buildShiftUpdate: 変えた列だけ。バイト先を変えたときだけ、時給も新しいバイト先のものに', () => {
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { start_time: '18:00' }, JOBS_W)).changes, { start_time: '18:00' });
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { date: '2026-12-20', rest_minutes: 60 }, JOBS_W)).changes, { date: '2026-12-20', rest_minutes: 60 });
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { start_time: '17:00', end_time: '22:00' }, JOBS_W)).changes, {}); // 変わっていない（秒は無視）
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { job: 'カフェ' }, JOBS_W)).changes, {}); // 同じバイト先なら、時給は触らない
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { job: '居酒屋' }, JOBS_W)).changes, { job_id: 'j2', wage: 1500 });
+  // 過去のシフトの時給は、時給が変わったバイト先でも、そのままにする
+  const raised = [{ id: 'j1', name: 'カフェ', wage: 1400 }];
+  assert.deepEqual(ok(buildShiftUpdate(CUR_SHIFT, { start_time: '18:00' }, raised)).changes, { start_time: '18:00' });
+});
+
+test('buildShiftUpdate: 変えたあとの形も検査する（日をまたぐ・休憩が長い・存在しないバイト先）', () => {
+  bad(buildShiftUpdate(CUR_SHIFT, { end_time: '16:00' }, JOBS_W), /出勤より後/);
+  bad(buildShiftUpdate(CUR_SHIFT, { rest_minutes: 400 }, JOBS_W), /休憩が、働く時間/);
+  bad(buildShiftUpdate(CUR_SHIFT, { start_time: '21:30', rest_minutes: 30 }, JOBS_W), /休憩が、働く時間/); // 30分勤務に30分休憩
+  bad(buildShiftUpdate(CUR_SHIFT, { job: 'ない' }, JOBS_W), /見つかりません/);
+  bad(buildShiftUpdate(CUR_SHIFT, { date: '2026-13-01' }, JOBS_W), /日付が正しくありません/);
+});
+
+test('findDuplicateShift: 同じバイト先・日・時間（秒は無視）。時間が違えば別', () => {
+  assert.equal(findDuplicateShift([CUR_SHIFT], 'j1', '2026-12-15', '17:00', '22:00'), CUR_SHIFT);
+  assert.equal(findDuplicateShift([CUR_SHIFT], 'j1', '2026-12-15', '17:00', '21:00'), null);
+  assert.equal(findDuplicateShift([CUR_SHIFT], 'j2', '2026-12-15', '17:00', '22:00'), null);
+  assert.equal(findDuplicateShift([CUR_SHIFT], 'j1', '2026-12-16', '17:00', '22:00'), null);
+});

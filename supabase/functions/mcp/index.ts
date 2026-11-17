@@ -1,6 +1,6 @@
 // Claude から予定・タスクを入れる・変える MCP サーバー（Issue #190・D37）。
 // 認証は、Supabase Auth を OAuth 2.1 の認可サーバーにする。この関数は、トークンを確かめて、その人として動く（RLS が効く）。
-// 触れるのは、予定（plans）・タスク（tasks）・カードの名前（cards）と、シフト（shifts。読むだけ。時給は出さない）。家計簿の記録・残高・設定は、読めない・書けない。
+// 触れるのは、予定（plans）・タスク（tasks）・シフト（shifts）と、カード・バイト先の名前だけ。時給は、Claude に返さない（シフトを作るとき、バイト先の時給をコピーするだけ）。家計簿の記録・残高・設定は、読めない・書けない。
 // 書き込みは、アプリと同じ apply_op（履歴・競合の検知・二重保存の防止つき）を通す。削除も履歴に残り、戻せる（docs/db/RESTORE.md）。
 // DB や MCP に触れない部分は logic.ts（Node のテストあり）。
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
@@ -12,8 +12,8 @@ import { z } from 'npm:zod@^4.3.6'
 
 import {
   addDays, applyOpProblem, buildNewPlan, buildNewTask, buildPlanUpdate, buildTaskUpdate, describePlan, describeTask,
-  findDuplicatePlan, findDuplicateTask, formatPlan, formatTask, formatShift, describeShift, norm, todayJst, MAX_BUDGET,
-  type CardRef, type JobRef, type Row,
+  findDuplicatePlan, findDuplicateTask, formatPlan, formatTask, formatShift, describeShift, buildNewShift, buildShiftUpdate, findDuplicateShift, norm, todayJst, MAX_BUDGET,
+  type CardRef, type JobFull, type JobRef, type Row,
 } from './logic.ts'
 
 // deno-lint-ignore no-explicit-any
@@ -43,13 +43,26 @@ async function cardsOf(db: Db): Promise<CardRef[]> {
   return data as CardRef[]
 }
 
-async function nextPosition(db: Db, table: 'plans' | 'tasks'): Promise<number> {
+/** 使えるバイト先（削除していないもの。時給つき。時給は、シフトを作るときのコピー元で、Claude には返さない） */
+async function jobsOf(db: Db): Promise<JobFull[]> {
+  const { data, error } = await db.from('jobs').select('id, name, wage').is('deleted_at', null).order('position').order('id')
+  if (error) throw new Error(error.message)
+  return data as JobFull[]
+}
+
+/** 名前を引くためのバイト先（削除済みも。過去のシフトの表示のため） */
+async function jobNamesOf(db: Db): Promise<JobRef[]> {
+  const { data } = await db.from('jobs').select('id, name')
+  return (data as JobRef[]) ?? []
+}
+
+async function nextPosition(db: Db, table: 'plans' | 'tasks' | 'shifts'): Promise<number> {
   const { data, error } = await db.from(table).select('position').order('position', { ascending: false }).limit(1)
   if (error) throw new Error(error.message)
   return ((data?.[0]?.position as number | undefined) ?? -1) + 1
 }
 
-async function getRow(db: Db, table: 'plans' | 'tasks', id: string): Promise<Row | null> {
+async function getRow(db: Db, table: 'plans' | 'tasks' | 'shifts', id: string): Promise<Row | null> {
   const { data, error } = await db.from(table).select('*').eq('id', id).maybeSingle()
   if (error) throw new Error(error.message)
   return data as Row | null
@@ -119,7 +132,7 @@ function registerTools(server: McpServer, db: Db): void {
   })
 
   server.registerTool('list_shifts', {
-    description: 'バイトのシフトの一覧（バイト先の名前・日付・曜日・開始と終了・休憩・実働時間）。読むだけで、追加・変更はできない（アプリで行う）。「バイト」「シフト」の予定は、list_plans ではなく、こちら。期間は、その期間のシフト。省くと、今日から30日先まで。',
+    description: 'バイトのシフトの一覧（バイト先の名前・日付・曜日・開始と終了・休憩・実働時間）。「バイト」「シフト」の予定は、list_plans ではなく、こちら。id は、変える・消すときに使う。期間は、その期間のシフト。省くと、今日から30日先まで。',
     inputSchema: z.object({
       from: date.optional().describe('この日から（省くと今日）'),
       to: date.optional().describe('この日まで（省くと from の30日後）'),
@@ -132,10 +145,80 @@ function registerTools(server: McpServer, db: Db): void {
     const { data, error } = await db.from('shifts').select('id, date, job_id, start_time, end_time, rest_minutes')
       .gte('date', start).lte('date', end).order('date').order('start_time').limit(limit)
     if (error) return problem(`シフトを読めませんでした: ${error.message}`)
-    // 削除済みのバイト先も、名前を引く（過去のシフトの表示のため）
-    const { data: jobData } = await db.from('jobs').select('id, name')
-    const rows = (data as Row[]).map(s => formatShift(s, (jobData as JobRef[]) ?? []))
+    const jobNames = await jobNamesOf(db)
+    const rows = (data as Row[]).map(s => formatShift(s, jobNames))
     return text(`${start}〜${end} のシフトは ${rows.length} 件です。`, rows.map(r => ({ ...r, summary: describeShift(r) })))
+  })
+
+  server.registerTool('list_jobs', {
+    description: 'バイト先の名前の一覧（シフトを入れるとき、どのバイト先か確かめるため）。時給などは返さない。',
+    inputSchema: z.object({}),
+    annotations: { readOnlyHint: true },
+  }, async () => {
+    const jobs = await jobsOf(db)
+    return text(jobs.length ? `バイト先は ${jobs.length} 件です。` : 'バイト先は登録されていません。', jobs.map(j => j.name))
+  })
+
+  // ---------- シフト ----------
+  const SHIFT_ASK = '休憩（分）を、ユーザーが言っていないときは、呼ぶ前に聞くこと（「なし」と言われたら 0）。バイト先が1つだけなら、聞かずにそれでよい。複数あって指定がないときは、list_jobs で確かめて聞く。'
+  server.registerTool('add_shift', {
+    description: `バイトのシフトを1件追加する。${SHIFT_ASK} 時給は指定しない（バイト先の時給が自動で入る）。退勤は、出勤より後の時刻にする（日をまたぐシフトは、アプリでも入れられない）。日付は YYYY-MM-DD（今日の日付から計算して渡す）。同じバイト先・同じ日・同じ時間のシフトがすでにあるときは、入れずに知らせる。シフトを入れると、今年の収入の予想が変わる。`,
+    inputSchema: z.object({
+      job: z.string().min(1).max(100).describe('バイト先の名前'),
+      date: date,
+      start_time: time.describe('出勤'),
+      end_time: time.describe('退勤（出勤より後）'),
+      rest_minutes: z.number().int().min(0).max(720).optional().describe('休憩（分）。省くと 0'),
+      allow_duplicate: z.boolean().default(false),
+    }),
+  }, async (input) => {
+    const jobs = await jobsOf(db)
+    const built = buildNewShift(input, jobs, await nextPosition(db, 'shifts'))
+    if (!built.ok) return problem(built.error)
+    if (!input.allow_duplicate) {
+      const { data } = await db.from('shifts').select('id, job_id, date, start_time, end_time').eq('date', input.date)
+      const dup = findDuplicateShift((data as Row[]) ?? [], String(built.value.job_id), input.date, input.start_time, input.end_time)
+      if (dup) return text(`同じシフトがすでにあるので、入れませんでした（id: ${dup.id}）。別のシフトとして入れるなら allow_duplicate を true にして、もう一度呼んでください。`)
+    }
+    const rowId = crypto.randomUUID()
+    const failed = await applyOp(db, [{ table: 'shifts', action: 'insert', id: rowId, row: built.value }])
+    if (failed) return problem(failed)
+    return text(`シフトを追加しました: ${describeShift(formatShift({ ...built.value, id: rowId }, await jobNamesOf(db)))}`, { id: rowId })
+  })
+
+  server.registerTool('update_shift', {
+    description: 'シフトを変える（バイト先・日付・出勤・退勤・休憩）。変えたい項目だけ渡す。時間を変えるときは、出勤と退勤の両方がそろって、退勤が出勤より後になること。バイト先を変えると、時給も新しいバイト先のものになる。id は list_shifts で確かめる。シフトを変えると、今年の収入の予想が変わる。',
+    inputSchema: z.object({
+      id,
+      job: z.string().min(1).max(100).optional().describe('バイト先の名前'),
+      date: date.optional(),
+      start_time: time.optional(),
+      end_time: time.optional(),
+      rest_minutes: z.number().int().min(0).max(720).optional(),
+    }),
+    annotations: { idempotentHint: true },
+  }, async ({ id: shiftId, ...patch }) => {
+    const current = await getRow(db, 'shifts', shiftId)
+    if (!current) return notFound('シフト', 'list_shifts')
+    const built = buildShiftUpdate(current, patch, await jobsOf(db))
+    if (!built.ok) return problem(built.error)
+    const names = await jobNamesOf(db)
+    if (!Object.keys(built.value.changes).length) return text(`変更はありません: ${describeShift(formatShift(current, names))}`)
+    const failed = await applyOp(db, [{ table: 'shifts', action: 'update', id: shiftId, base: current.updated_at, row: built.value.changes }])
+    if (failed) return problem(failed)
+    return text(`シフトを変えました: ${describeShift(formatShift({ ...current, ...built.value.merged }, names))}`)
+  })
+
+  server.registerTool('delete_shift', {
+    description: 'シフトを削除する。削除は履歴に残り、あとから戻せるが、ユーザーに、どのシフトを消すか確かめてから呼ぶこと。シフトを消すと、今年の収入の予想が変わる。id は list_shifts で確かめる。',
+    inputSchema: z.object({ id }),
+    annotations: { destructiveHint: true },
+  }, async ({ id: shiftId }) => {
+    const current = await getRow(db, 'shifts', shiftId)
+    if (!current) return notFound('シフト', 'list_shifts')
+    const failed = await applyOp(db, [{ table: 'shifts', action: 'delete', id: shiftId, base: current.updated_at }])
+    if (failed) return problem(failed)
+    return text(`シフトを削除しました: ${describeShift(formatShift(current, await jobNamesOf(db)))}`)
   })
 
   // ---------- 予定 ----------
