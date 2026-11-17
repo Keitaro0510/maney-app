@@ -65,6 +65,5 @@ export function mascotView(i: MascotInput): MascotView {
 /** 表情ごとの絵（public ではなく、公開するときにそのままコピーする img/ の中）。ビルドの対象にしないよう、文字として持つ */
 export const MASCOT_IMAGE: Record<Mood, string> = {
   normal: 'img/giraffe-normal.webp',
-  // 「うれしい」の絵ができるまでは、ふつうの絵を使う（D33）
-  happy: 'img/giraffe-normal.webp',
+  happy: 'img/giraffe-happy.webp',
 };
