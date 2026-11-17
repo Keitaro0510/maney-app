@@ -25,30 +25,16 @@ test('monthlyTotals: 範囲の外の記録・金額が文字列・種類が不�
   assert.deepEqual(t.map(x => [x.income, x.expense]), [[0, 0], [0, 700]]);
 });
 
-import { fuyouGauge, fuyouLimits } from '../src/analysis.ts';
+import { incomeSummary } from '../src/analysis.ts';
 
-test('fuyouGauge: 進み具合の段階（70%・90%・超えた）', () => {
-  assert.equal(fuyouGauge(1000, 600, 600).level, 'ok');
-  assert.equal(fuyouGauge(1000, 700, 700).level, 'warn');
-  assert.equal(fuyouGauge(1000, 899, 899).level, 'warn');
-  assert.equal(fuyouGauge(1000, 900, 900).level, 'danger');
-  assert.equal(fuyouGauge(1000, 1000, 1000).level, 'over');
+test('incomeSummary: 受け取った額・これから・今年の合計。壁との比べは出さない（D38）', () => {
+  assert.deepEqual(incomeSummary(500000, 1200000), { received: 500000, upcoming: 700000, total: 1200000 });
+  assert.deepEqual(incomeSummary(0, 0), { received: 0, upcoming: 0, total: 0 });
+  assert.deepEqual(incomeSummary(1400000, 1400000), { received: 1400000, upcoming: 0, total: 1400000 }); // 130万円を超えても、そのまま出す
 });
 
-test('fuyouGauge: 残りと余裕は引き算（超えるとマイナス）。割合は0〜100で止める', () => {
-  const g = fuyouGauge(1030000, 500000, 1200000);
-  assert.equal(g.remaining, 530000);
-  assert.equal(g.margin, -170000); // 予想は超える
-  assert.equal(g.estimatedPct, 100);
-  assert.ok(Math.abs(g.confirmedPct - (500000 / 1030000) * 100) < 1e-9);
-  assert.equal(fuyouGauge(1000, 0, 0).confirmedPct, 0);
-});
-
-test('fuyouLimits: 設定どおりの限度額を出す', () => {
-  assert.deepEqual(fuyouLimits('1030000').map(l => l.amount), [1030000]);
-  assert.deepEqual(fuyouLimits('1300000').map(l => l.amount), [1300000]);
-  assert.deepEqual(fuyouLimits('both').map(l => l.amount), [1030000, 1300000]);
-  assert.deepEqual(fuyouLimits('').map(l => l.amount), []);
+test('incomeSummary: 実績が予想を上回って、予想が確定より小さくなっても、これからはマイナスにしない', () => {
+  assert.deepEqual(incomeSummary(900000, 850000), { received: 900000, upcoming: 0, total: 900000 });
 });
 
 import { dailyExpenseHeat } from '../src/analysis.ts';

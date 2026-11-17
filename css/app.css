@@ -695,9 +695,6 @@ button.color-swatch.sel{transform:none}
 .sync-pill[hidden]{display:none}
 
 /* 分析のゲージ（D28）。弧が0から伸びる。動きを減らす設定の人には、止めて見せる */
-.gauge-arc{transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1),stroke .3s;animation:gauge-in .9s cubic-bezier(.2,.8,.2,1) backwards}
-@keyframes gauge-in{from{stroke-dashoffset:100}}
-@media (prefers-reduced-motion:reduce){.gauge-arc{transition:none;animation:none}}
 
 /* 分析の支出カレンダー（D28）。使った額が多い日ほど濃い赤。出るときに、日付が順にふわっと現れる */
 .heat-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
