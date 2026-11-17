@@ -39,6 +39,17 @@
   </div>
 </div>
 
+<!-- Claude などに予定・タスクを書く許可を出す画面（Issue #190・D37。流れは src/oauth-consent.ts）。Auth から ?authorization_id=... で案内されたときだけ出る -->
+<div id="oauth-consent" hidden role="dialog" aria-modal="true" aria-labelledby="oauth-consent-title">
+  <div class="login-box">
+    <div class="login-icon" aria-hidden="true">🔑</div>
+    <div class="login-title" id="oauth-consent-title">Claude につなぎますか？</div>
+    <div class="login-sub" id="oauth-consent-text"></div>
+    <button type="button" class="btn primary oauth-consent-btn" id="oauth-consent-approve">つなぐ（許可する）</button>
+    <button type="button" class="btn oauth-consent-btn" id="oauth-consent-deny">つながない</button>
+  </div>
+</div>
+
 <!-- 右上: 設定を開くボタン（ログイン後に表示。D10）。ログイン中のアカウントとログアウトは、設定のいちばん下 -->
 <div class="top-actions" id="top-actions" hidden>
   <button type="button" class="icon-btn" id="settings-btn" aria-label="設定">

@@ -1275,6 +1275,7 @@ D33 の4つの表情は、ここまでで出そろった。
 実装:
 - [x] ローカルで、認証つきの MCP（hello・whoami）と OAuth の一連の流れを確かめる（2026-11-17。`supabase/functions/mcp/index.ts`・`scripts/check-mcp-oauth.mjs`・`docs/MCP.md`）
 - [ ] 本番の Auth で OAuth サーバーと動的登録を有効にし、`mcp` をデプロイして、claude.ai のコネクタとスマホの Claude から呼べるか確かめる（本番の設定変更。ユーザーの許可を取る）
-- [ ] 同意画面をアプリに作る
+- [x] 同意画面をアプリに作る（2026-11-17。`src/oauth-consent.ts`・`src/oauth-consent-ui.ts`。アプリのトップで受ける（`authorization_url_path = "/"`）。案内の id は端末に10分だけ置く。許すつなぎ先は claude.ai だけ。テスト付き）
+- [ ] 本番の Auth の設定（Site URL の修正・OAuth サーバーと動的登録の有効化）。**本番の Site URL が、古い名前（money-app）で末尾に空白つきの壊れた値になっていた**。ユーザーがダッシュボードで行う（手順は `docs/MCP.md`）
 - [ ] ツール: `add_task`・`add_plan`・`list_cards`（予算・払い方つき）。書き込みの検査・RLS のテスト
 - [ ] アプリが、サーバーに直接書き込まれた予定・タスクを、開いたときに取り込めるか確かめる（`src/sync.ts`）
