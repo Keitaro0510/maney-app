@@ -242,3 +242,33 @@ export function applyOpProblem(result: unknown): string | null {
   }
   return `保存できませんでした（${String(r.status)}）`;
 }
+
+// ---------------- シフト（読むだけ） ----------------
+
+export type JobRef = { id: string; name: string };
+
+const toMin = (t: string): number => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+
+/** 実働の時間（時間。休憩を引く。終わりが開始より前なら、日をまたぐシフト＝翌日の終わり）。小数第2位まで */
+export function shiftHours(start: string, end: string, restMinutes: number): number {
+  const s = toMin(start), e = toMin(end);
+  const span = e > s ? e - s : e + 24 * 60 - s;
+  return Math.round((Math.max(0, span - restMinutes) / 60) * 100) / 100;
+}
+
+/** シフトを、Claude が読みやすい形にする。時給は出さない（金額の情報は、ツールの対象外） */
+export function formatShift(row: Row, jobs: JobRef[]): Row {
+  const start = hm(row.start_time) ?? '', end = hm(row.end_time) ?? '';
+  const rest = Number(row.rest_minutes) || 0;
+  return {
+    id: row.id, date: row.date, weekday: weekdayOf(String(row.date)), job: jobs.find(j => j.id === row.job_id)?.name ?? null,
+    start_time: start, end_time: end, overnight: toMin(end) <= toMin(start), rest_minutes: rest, hours: shiftHours(start, end, rest),
+  };
+}
+
+/** シフトの1行の説明: 2026-11-20（金）カフェ 17時〜22時（休憩30分・実働4.5時間） */
+export function describeShift(s: Row): string {
+  const rest = Number(s.rest_minutes) > 0 ? `休憩${s.rest_minutes}分・` : '';
+  const next = s.overnight ? '（翌日）' : '';
+  return `${s.date}（${s.weekday}）${s.job ?? 'バイト先不明'} ${fmtTime(String(s.start_time))}〜${next}${fmtTime(String(s.end_time))}（${rest}実働${s.hours}時間）`;
+}

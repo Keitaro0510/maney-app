@@ -179,3 +179,33 @@ test('applyOpProblem: 成功は null。競合・消えた・移行は、やり�
 test('norm: 全角半角・大文字小文字・前後の空白', () => {
   assert.equal(norm('  ＡＢＣ１２３ '), 'abc123');
 });
+
+// ---------------- シフト（読むだけ） ----------------
+import { shiftHours, formatShift, describeShift } from '../supabase/functions/mcp/logic.ts';
+
+const JOBS = [{ id: 'j1', name: 'カフェ' }, { id: 'j2', name: '居酒屋' }];
+const SHIFT = { id: 's1', date: '2026-11-20', job_id: 'j1', start_time: '17:00:00', end_time: '22:00:00', wage: 1200, rest_minutes: 30, updated_at: 'u' };
+
+test('shiftHours: 休憩を引く。日をまたぐシフトは翌日の終わりまで。小数第2位まで', () => {
+  assert.equal(shiftHours('17:00', '22:00', 30), 4.5);
+  assert.equal(shiftHours('09:00', '13:00', 0), 4);
+  assert.equal(shiftHours('22:00', '05:00', 60), 6); // 7時間 − 休憩1時間
+  assert.equal(shiftHours('09:00', '09:20', 0), 0.33);
+  assert.equal(shiftHours('09:00', '09:30', 60), 0); // 休憩が長くても、負にしない
+});
+
+test('formatShift: バイト先の名前・曜日・実働。時給は出さない。日をまたぐシフトの印', () => {
+  const f = formatShift(SHIFT, JOBS);
+  assert.deepEqual(f, { id: 's1', date: '2026-11-20', weekday: '金', job: 'カフェ', start_time: '17:00', end_time: '22:00', overnight: false, rest_minutes: 30, hours: 4.5 });
+  assert.ok(!('wage' in f));
+  const night = formatShift({ ...SHIFT, start_time: '22:00:00', end_time: '05:00:00', rest_minutes: 0 }, JOBS);
+  assert.equal(night.overnight, true);
+  assert.equal(night.hours, 7);
+  assert.equal(formatShift({ ...SHIFT, job_id: 'ない' }, JOBS).job, null); // 削除済みのバイト先でも、落ちない
+});
+
+test('describeShift: 確認用の1行', () => {
+  assert.equal(describeShift(formatShift(SHIFT, JOBS)), '2026-11-20（金）カフェ 17時〜22時（休憩30分・実働4.5時間）');
+  assert.equal(describeShift(formatShift({ ...SHIFT, rest_minutes: 0, start_time: '22:00', end_time: '05:30' }, JOBS)), '2026-11-20（金）カフェ 22時〜（翌日）5時30分（実働7.5時間）');
+  assert.match(describeShift(formatShift({ ...SHIFT, job_id: 'ない' }, JOBS)), /バイト先不明/);
+});
