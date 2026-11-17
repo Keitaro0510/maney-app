@@ -112,3 +112,46 @@ test('spendInWork: 期間の支出・時間・カテゴリの上位（支出だ�
   assert.equal(none.hours, 0); // 時給がなければ時間は0（合計は出る）
   assert.equal(none.total, 10300);
 });
+
+// ---- 曜日ごとの平均（D32） ----
+import { weekdayAverages, weekdayRangeStart, topWeekday } from '../src/analysis.ts';
+
+test('weekdayAverages: 記録のない日も0円として日数に数える（平均は1日あたり）', () => {
+  // 2026-11-02(月)〜2026-11-15(日) の2週間。各曜日2日ずつ
+  const w = weekdayAverages([e('2026-11-02', 'expense', 1000), e('2026-11-09', 'expense', 500), e('2026-11-14', 'expense', 3000)], '2026-11-02', '2026-11-15');
+  assert.deepEqual(w.map(x => x.days), [2, 2, 2, 2, 2, 2, 2]);
+  assert.equal(w[1].total, 1500); assert.equal(w[1].avg, 750); // 月曜
+  assert.equal(w[6].avg, 1500); // 土曜
+  assert.equal(w[0].avg, 0); // 日曜は使っていない
+  assert.equal(w[0].label, '日');
+});
+
+test('weekdayAverages: 曜日ごとの日数が違う期間・両端を含む・期間の外と収入は数えない', () => {
+  // 2026-11-02(月)〜2026-11-04(水)
+  const w = weekdayAverages([e('2026-11-01', 'expense', 999), e('2026-11-02', 'expense', 100), e('2026-11-04', 'expense', 200), e('2026-11-05', 'expense', 999), e('2026-11-03', 'income', 999)], '2026-11-02', '2026-11-04');
+  assert.deepEqual(w.map(x => x.days), [0, 1, 1, 1, 0, 0, 0]);
+  assert.deepEqual([w[1].avg, w[2].avg, w[3].avg], [100, 0, 200]);
+  assert.equal(w[0].avg, 0); // 日数が0の曜日は0で割らない
+});
+
+test('weekdayAverages: 金額が文字列・割り切れない平均は四捨五入', () => {
+  const w = weekdayAverages([e('2026-11-02', 'expense', '100')], '2026-11-02', '2026-11-16'); // 月曜が3回
+  assert.equal(w[1].days, 3);
+  assert.equal(w[1].avg, 33);
+});
+
+test('weekdayRangeStart: 3か月・6か月は今日を含めてさかのぼる。all は最古の支出の日', () => {
+  assert.equal(weekdayRangeStart([], '3m', '2026-11-17'), '2026-08-18');
+  assert.equal(weekdayRangeStart([], '6m', '2026-11-17'), '2026-05-18');
+  assert.equal(weekdayRangeStart([], '3m', '2026-05-31'), '2026-03-01'); // 2月31日は無いので、2月末の翌日
+  assert.equal(weekdayRangeStart([], '3m', '2027-01-15'), '2026-10-16'); // 年をまたぐ
+  const led = [e('2026-03-05', 'income', 1), e('2026-04-10', 'expense', 5), e('2026-06-01', 'expense', 5), e('2026-12-01', 'expense', 5)];
+  assert.equal(weekdayRangeStart(led, 'all', '2026-11-17'), '2026-04-10'); // 収入と、今日より先の記録は数えない
+  assert.equal(weekdayRangeStart([e('2026-03-05', 'income', 1)], 'all', '2026-11-17'), null);
+});
+
+test('topWeekday: 平均が最大の曜日。支出がなければ null', () => {
+  const w = weekdayAverages([e('2026-11-02', 'expense', 100), e('2026-11-06', 'expense', 900)], '2026-11-02', '2026-11-08');
+  assert.equal(topWeekday(w).label, '金');
+  assert.equal(topWeekday(weekdayAverages([], '2026-11-02', '2026-11-08')), null);
+});

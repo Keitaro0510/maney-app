@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import * as ui from '../ui.ts';
 import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
-import { getNow, DAYS } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { getNow, getToday, DAYS } from '../dates.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 import { BadgesCard } from './badges.tsx';
 
@@ -47,6 +47,51 @@ function MonthlyTrend({ totals }: { totals: MonthTotal[] }) {
         <>
           <div className="chart-wrap"><canvas ref={canvas} aria-label="月ごとの収入・支出・収支のグラフ" /></div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>{last.label}は 収入 {yen(last.income)}・支出 {yen(last.expense)}・収支 {yen(last.net)}（家計簿の記録だけ。毎月のお金は含みません）</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const WEEKDAY_RANGES: { id: WeekdayRange; label: string }[] = [{ id: 'all', label: '全期間' }, { id: '6m', label: '直近6か月' }, { id: '3m', label: '直近3か月' }];
+
+/** 曜日ごとの平均支出（D32 の 1）。その曜日の1日あたり。支出の最多の曜日は色を変える。期間は切り替え */
+function WeekdayCard() {
+  const [range, setRange] = useState<WeekdayRange>('3m');
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const today = getToday();
+  const start = weekdayRangeStart(state.st.ledger, range, today);
+  const list = start ? weekdayAverages(state.st.ledger, start, today) : null;
+  const top = list ? topWeekday(list) : null;
+  const key = JSON.stringify(list);
+  useEffect(() => {
+    if (!canvas.current || !list || !top) return;
+    const chart = new Chart(canvas.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: list.map(w => w.label),
+        datasets: [{ label: '1日あたりの平均支出', data: list.map(w => w.avg), backgroundColor: list.map(w => (w.dow === top.dow ? '#A32D2D' : '#A32D2D70')), borderRadius: 4 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: { parsed: { y: number } }) => `平均 ${yen(c.parsed.y)}` } } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: (v: number) => (v >= 10000 ? v / 10000 + '万' : v) } }, x: { ticks: { font: { size: 11 } } } },
+      },
+    });
+    return () => chart.destroy();
+  }, [key]);
+
+  return (
+    <div className="card">
+      <div className="st">曜日ごとの支出（1日あたりの平均）</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }} role="group" aria-label="期間">
+        {WEEKDAY_RANGES.map(r => <button key={r.id} type="button" className={`chip${r.id === range ? ' sel' : ''}`} aria-pressed={r.id === range} onClick={() => setRange(r.id)}>{r.label}</button>)}
+      </div>
+      {!list || !top ? <div className="empty">この期間の支出の記録なし</div> : (
+        <>
+          <div className="chart-wrap"><canvas ref={canvas} aria-label="曜日ごとの平均支出のグラフ" /></div>
+          <div style={{ fontSize: 13, marginTop: 8 }}><b>{top.label}曜日</b>が最も多く、1日あたり平均 {yen(top.avg)}（{top.days}日分）</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>支出のなかった日も 0 円として平均します。家計簿の記録だけで、毎月のお金は含みません</div>
         </>
       )}
     </div>
@@ -176,6 +221,7 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
     <>
       <BadgesCard />
       <MonthlyTrend totals={totals} />
+      <WeekdayCard />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
       <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
       <FuyouCard />

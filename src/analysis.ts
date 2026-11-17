@@ -1,5 +1,5 @@
 // 分析の計算（D28）。画面を使わない関数だけ置く（テストできるように）。
-import { addM } from './dates.ts';
+import { addM, toDS, DAYS } from './dates.ts';
 import type { StLedger, StJob } from './compat.ts';
 
 export type MonthTotal = { y: number; m: number; label: string; income: number; expense: number; net: number };
@@ -108,4 +108,46 @@ export function spendInWork(ledger: StLedger[], y: number, m: number | null, wag
   const top = [...byCat.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, n)
     .map(([cat, amount]) => ({ cat, amount, hours: wage ? workHours(amount, wage) : 0 }));
   return { total, hours: wage ? workHours(total, wage) : 0, top };
+}
+
+export type WeekdayAvg = { dow: number; label: string; total: number; days: number; avg: number };
+export type WeekdayRange = 'all' | '3m' | '6m';
+
+/** 期間の最初の日（'YYYY-MM-DD'）。3m・6m は today から 3・6 か月さかのぼった日の翌日（今日を含めて 3・6 か月分）。
+ *  all は支出の記録でいちばん古い日。支出が1件もなければ null */
+export function weekdayRangeStart(ledger: StLedger[], range: WeekdayRange, today: string): string | null {
+  if (range !== 'all') {
+    const months = range === '3m' ? 3 : 6;
+    const [y, m, d] = today.split('-').map(Number);
+    const dim = new Date(y, m - months, 0).getDate(); // さかのぼった月の日数。同じ日が無ければ月末に寄せる（5/31 の3か月前 → 2/28）
+    const s = new Date(y, m - 1 - months, Math.min(d, dim) + 1);
+    return toDS(s.getFullYear(), s.getMonth(), s.getDate());
+  }
+  let first: string | null = null;
+  for (const l of ledger) if (l.type === 'expense' && l.date <= today && (first === null || l.date < first)) first = l.date;
+  return first;
+}
+
+/** 曜日ごとの支出の平均（1日あたり）。start〜end（'YYYY-MM-DD'。両端を含む）の、支出の記録がない日も 0 円として日数に数える。
+ *  日曜が先頭（dow = 0）。期間の外の記録は数えない */
+export function weekdayAverages(ledger: StLedger[], start: string, end: string): WeekdayAvg[] {
+  const list: WeekdayAvg[] = DAYS.map((label, dow) => ({ dow, label, total: 0, days: 0, avg: 0 }));
+  const [sy, sm, sd] = start.split('-').map(Number);
+  const [ey, em, ed] = end.split('-').map(Number);
+  const last = new Date(ey, em - 1, ed).getTime();
+  for (let t = new Date(sy, sm - 1, sd); t.getTime() <= last; t.setDate(t.getDate() + 1)) list[t.getDay()].days += 1;
+  for (const l of ledger) {
+    if (l.type !== 'expense' || l.date < start || l.date > end) continue;
+    const [y, m, d] = l.date.split('-').map(Number);
+    list[new Date(y, m - 1, d).getDay()].total += Number(l.amount) || 0;
+  }
+  for (const w of list) w.avg = w.days ? Math.round(w.total / w.days) : 0;
+  return list;
+}
+
+/** いちばん平均が多い曜日（支出が全くなければ null。同額なら日曜に近いほう） */
+export function topWeekday(list: WeekdayAvg[]): WeekdayAvg | null {
+  let top: WeekdayAvg | null = null;
+  for (const w of list) if (w.avg > 0 && (top === null || w.avg > top.avg)) top = w;
+  return top;
 }
