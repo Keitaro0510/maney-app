@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import * as ui from '../ui.ts';
 import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
+import { CAT_COL, DOTC } from '../palette.ts';
 import { getNow, getToday, DAYS } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 import { BadgesCard } from './badges.tsx';
 
@@ -98,6 +99,53 @@ function WeekdayCard() {
   );
 }
 
+
+const TREND_RANGES: { months: number; label: string }[] = [{ months: 6, label: '直近6か月' }, { months: 12, label: '直近12か月' }];
+
+/** カテゴリ別の月推移（D32 の 2）。支出を、月ごとにカテゴリで積み上げた棒。上位5つ＋その他 */
+function CategoryTrendCard() {
+  const [months, setMonths] = useState(6);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const now = getNow();
+  const trend = categoryTrend(state.st.ledger, now.getFullYear(), now.getMonth(), months);
+  const empty = trend.series.length === 0;
+  const key = JSON.stringify(trend);
+  useEffect(() => {
+    if (!canvas.current || empty) return;
+    const chart = new Chart(canvas.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: trend.labels,
+        datasets: trend.series.map((s, i) => ({ label: s.cat, data: s.amounts, backgroundColor: s.cat === OTHER_CAT ? '#9AA0A6' : (CAT_COL[s.cat] || DOTC[i % DOTC.length]) })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10, padding: 8 } },
+          tooltip: { callbacks: { label: (c: { dataset: { label: string }; parsed: { y: number } }) => `${c.dataset.label}: ${yen(c.parsed.y)}` } },
+        },
+        scales: { x: { stacked: true, ticks: { font: { size: 10 } } }, y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, callback: (v: number) => (v >= 10000 ? v / 10000 + '万' : v) } } },
+      },
+    });
+    return () => chart.destroy();
+  }, [key, empty]);
+
+  const last = trend.series.length ? trend.monthTotals[trend.monthTotals.length - 1] : 0;
+  return (
+    <div className="card">
+      <div className="st">カテゴリ別の月ごとの支出</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }} role="group" aria-label="期間">
+        {TREND_RANGES.map(r => <button key={r.months} type="button" className={`chip${r.months === months ? ' sel' : ''}`} aria-pressed={r.months === months} onClick={() => setMonths(r.months)}>{r.label}</button>)}
+      </div>
+      {empty ? <div className="empty">この期間の支出の記録なし</div> : (
+        <>
+          <div className="chart-wrap" style={{ height: 240 }}><canvas ref={canvas} aria-label="カテゴリ別の月ごとの支出の積み上げグラフ" /></div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>{trend.labels[trend.labels.length - 1]}の支出は {yen(last)}。多いカテゴリ5つを分け、残りは「{OTHER_CAT}」にまとめています（家計簿の記録だけで、毎月のお金は含みません）</div>
+        </>
+      )}
+    </div>
+  );
+}
 
 const LEVEL_COLOR: Record<FuyouLevel, string | null> = { ok: null, warn: '#BA7517', danger: '#A32D2D', over: '#A32D2D' };
 
@@ -222,6 +270,7 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
       <BadgesCard />
       <MonthlyTrend totals={totals} />
       <WeekdayCard />
+      <CategoryTrendCard />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
       <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
       <FuyouCard />

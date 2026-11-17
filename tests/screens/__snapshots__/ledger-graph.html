@@ -298,6 +298,18 @@
 <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">支出のなかった日も 0 円として平均します。家計簿の記録だけで、毎月のお金は含みません</div>
 </div>
 <div class="card">
+<div class="st">カテゴリ別の月ごとの支出</div>
+<div role="group" aria-label="期間" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+<button type="button" class="chip sel" aria-pressed="true">直近6か月</button>
+<button type="button" class="chip" aria-pressed="false">直近12か月</button>
+</div>
+<div class="chart-wrap" style="height: 240px;">
+<canvas>
+</canvas>
+</div>
+<div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 8px;">11月の支出は ¥8,300。多いカテゴリ5つを分け、残りは「その他」にまとめています（家計簿の記録だけで、毎月のお金は含みません）</div>
+</div>
+<div class="card">
 <div class="st">支出カレンダー（2026年11月）</div>
 <div class="heat-grid" role="group" aria-label="日ごとの支出">
 <div class="heat-dow">日</div>
