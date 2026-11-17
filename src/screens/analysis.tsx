@@ -192,7 +192,7 @@ function MonthCycleCard() {
       {empty ? <div className="empty">この期間の支出の記録なし</div> : (
         <>
           <div className="chart-wrap"><canvas ref={canvas} aria-label="日にち別の平均支出のグラフ" /></div>
-          <div className="heat-legend" style={{ marginTop: 6 }} aria-hidden="true">
+          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-secondary)' }} aria-hidden="true">
             <span style={{ color: PAY_COLOR }}>■</span> 給料日（{payDays.join('・')}日）　{closeDays.length > 0 && <><span style={{ color: CLOSE_COLOR }}>■</span> カードの締め日（{closeDays.join('・')}日）</>}
           </div>
           {top && <div style={{ fontSize: 13, marginTop: 8 }}><b>{top.day}日</b>が最も多く、1日あたり平均 {yen(top.avg)}</div>}
