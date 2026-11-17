@@ -1279,6 +1279,8 @@ D33 の4つの表情は、ここまでで出そろった。
 - [x] 同意画面をアプリに作る（2026-11-17。`src/oauth-consent.ts`・`src/oauth-consent-ui.ts`。アプリのトップで受ける（`authorization_url_path = "/"`）。案内の id は端末に10分だけ置く。許すつなぎ先は claude.ai だけ。テスト付き）
 - [x] 本番の Auth の設定（2026-11-17）。**本番の Site URL が、古い名前（money-app）で末尾に空白つきの壊れた値になっていた**ので `https://keitaro0510.github.io/maney-app/` に直した。OAuth サーバーを有効に、Authorization Path を `/` に、動的登録を有効にした。`mcp`（hello・whoami）を本番にデプロイした。ユーザーの許可を取り、Claude in Chrome でダッシュボードを操作した（`docs/MCP.md`）
 - [x] claude.ai のカスタムコネクタに追加し、web の Claude から `whoami` を呼べた（2026-11-17。Claude in Chrome で操作。OAuth の一連の流れが、本物の claude.ai で通った。つなぎ先は claude.ai で、許可リストを通った。クライアント登録は「自動的に登録（DCR）」。同意画面が「今日のタスク」に隠れる不具合を、`<dialog>` の `showModal` にして直した）
+- [x] 本番の `mcp` を予定・タスクのツール入りに更新し（バージョン2）、claude.ai で確かめた（2026-11-17。ツールが全部出る・書き込みは「承認が必要」・本番の予定とタスクが読める・足りない情報は聞き返される。詳しくは `docs/MCP.md`）
 - [ ] スマホの Claude アプリで、同じコネクタが使えるか確かめる（ユーザー）
+- [ ] 予定・タスクの追加・変更・削除を、実際に頼んでみる（ユーザー。変更は、Claude が毎回確認する）
 - [x] ツール（2026-11-17）: `list_cards`・`list_plans`・`list_tasks`・`add_plan`・`update_plan`・`delete_plan`・`add_task`・`update_task`・`complete_task`・`delete_task`（`supabase/functions/mcp/`。保存は `apply_op`。入力の検査と文面は `logic.ts` に分けてテスト。実際の DB に対する確かめは `scripts/check-mcp-tools.mjs`）。同意画面の文言も、できることに合わせて直した
 - [x] サーバーへの書き込みは、アプリと同じ `apply_op` を通す。アプリは同じテーブルを読むので、開いたとき・アプリに戻ったときに読み込む（`resyncRemote`）。アプリで先に変えたあとにも、互いの変更が消えないことを確かめた（`scripts/check-mcp-tools.mjs`）。アプリで、Claude から入れた予定・タスクが見えるかは、ユーザーが実機で確かめる
