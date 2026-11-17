@@ -6,7 +6,8 @@ import { mountReact } from '../react/mount.tsx';
 import { state } from '../state.ts';
 import { CAT_COL, DOTC } from '../palette.ts';
 import { getNow, getToday, DAYS } from '../dates.ts';
-import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { monthlyTotals, fuyouGauge, fuyouLimits, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, dayOfMonthAverages, averageOnDays, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat, type FuyouGauge, type FuyouLevel } from '../analysis.ts';
+import { jobPayDay } from '../shifts.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
 import { BadgesCard } from './badges.tsx';
 
@@ -147,6 +148,62 @@ function CategoryTrendCard() {
   );
 }
 
+const CYCLE_RANGES: { id: WeekdayRange; label: string }[] = [{ id: 'all', label: '全期間' }, { id: '12m', label: '直近12か月' }, { id: '6m', label: '直近6か月' }];
+const PAY_COLOR = '#185FA5', CLOSE_COLOR = '#BA7517', BASE_COLOR = '#A32D2D70';
+
+/** 月の中の時期（D32 の 3）。1〜31日それぞれの、1日あたりの平均支出。給料日（青）・カードの締め日（オレンジ）の日は色を変える */
+function MonthCycleCard() {
+  const [range, setRange] = useState<WeekdayRange>('6m');
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const today = getToday();
+  const start = weekdayRangeStart(state.st.ledger, range, today);
+  const list = start ? dayOfMonthAverages(state.st.ledger, start, today) : null;
+  const jobs = state.st.jobs.filter(j => !j._deleted);
+  const payDays = [...new Set((jobs.length ? jobs.map(jobPayDay) : [parseInt(String(state.st.shiftPayDay)) || 10]).filter(d => d >= 1 && d <= 31))].sort((a, b) => a - b);
+  const closeDays = [...new Set(state.st.cards.filter(c => !c._deleted).map(c => parseInt(String(c.closeDay))).filter(d => d >= 1 && d <= 31))].sort((a, b) => a - b);
+  const empty = !list || list.every(c => c.total === 0);
+  const key = JSON.stringify([list, payDays, closeDays]);
+  useEffect(() => {
+    if (!canvas.current || !list || empty) return;
+    const chart = new Chart(canvas.current.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: list.map(c => c.day),
+        datasets: [{ label: '1日あたりの平均支出', data: list.map(c => c.avg), backgroundColor: list.map(c => (payDays.includes(c.day) ? PAY_COLOR : closeDays.includes(c.day) ? CLOSE_COLOR : BASE_COLOR)), borderRadius: 2 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { title: (items: { label: string }[]) => `${items[0].label}日`, label: (c: { parsed: { y: number } }) => `平均 ${yen(c.parsed.y)}` } } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: (v: number) => (v >= 10000 ? v / 10000 + '万' : v) } }, x: { ticks: { font: { size: 9 }, autoSkip: false, maxRotation: 0 } } },
+      },
+    });
+    return () => chart.destroy();
+  }, [key, empty]);
+
+  const all = list ? averageOnDays(list, list.map(c => c.day)) : null;
+  const payAvg = list ? averageOnDays(list, payDays) : null;
+  const top = list && !empty ? list.reduce((a, c) => (c.avg > a.avg ? c : a)) : null;
+  return (
+    <div className="card">
+      <div className="st">月の中の時期（日にち別の平均支出）</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }} role="group" aria-label="期間">
+        {CYCLE_RANGES.map(r => <button key={r.id} type="button" className={`chip${r.id === range ? ' sel' : ''}`} aria-pressed={r.id === range} onClick={() => setRange(r.id)}>{r.label}</button>)}
+      </div>
+      {empty ? <div className="empty">この期間の支出の記録なし</div> : (
+        <>
+          <div className="chart-wrap"><canvas ref={canvas} aria-label="日にち別の平均支出のグラフ" /></div>
+          <div style={{ marginTop: 6, fontSize: 11, color: 'var(--color-text-secondary)' }} aria-hidden="true">
+            <span style={{ color: PAY_COLOR }}>■</span> 給料日（{payDays.join('・')}日）　{closeDays.length > 0 && <><span style={{ color: CLOSE_COLOR }}>■</span> カードの締め日（{closeDays.join('・')}日）</>}
+          </div>
+          {top && <div style={{ fontSize: 13, marginTop: 8 }}><b>{top.day}日</b>が最も多く、1日あたり平均 {yen(top.avg)}</div>}
+          {payAvg !== null && all !== null && <div style={{ fontSize: 13, marginTop: 2 }}>給料日の日は 平均 {yen(payAvg)}（ふだんを含めた全体は {yen(all)}）</div>}
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>支出のなかった日も 0 円として平均します。29〜31日は、その日がある月だけ数えます。家計簿の記録だけで、毎月のお金は含みません</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 const LEVEL_COLOR: Record<FuyouLevel, string | null> = { ok: null, warn: '#BA7517', danger: '#A32D2D', over: '#A32D2D' };
 
 /** 扶養の限度額までの残り（D28 の 3）。半円のゲージ。濃い弧＝確定した収入、薄い弧＝シフトの予想 */
@@ -271,6 +328,7 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
       <MonthlyTrend totals={totals} />
       <WeekdayCard />
       <CategoryTrendCard />
+      <MonthCycleCard />
       {monthMode && <SpendHeatmap key={`${y}-${m}`} heat={dailyExpenseHeat(state.st.ledger, y, m)} />}
       <WorkHoursCard period={spendInWork(state.st.ledger, y, monthMode ? m : null, wage)} wage={wage} label={monthMode ? `${y}年${m + 1}月` : `${y}年`} />
       <FuyouCard />
