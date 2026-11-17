@@ -53,6 +53,11 @@
 <div id="sec-home" class="sec active">
   <div class="page-title">ホーム</div>
   <!-- いちばん大事な数字（D11・D22）: この先90日の残高の最低点（使えるお金）。足りないときはマイナスのまま。数えるのは src/money.ts -->
+  <!-- マスコットのキリン（D33）。表情とセリフは src/mascot.ts。絵は img/（公開するときにそのままコピー）。src は JS で入れる（Vite が名前を書き換えないように） -->
+  <div class="mascot" id="home-mascot" hidden>
+    <img class="mascot-img" id="home-mascot-img" alt="" width="64" height="70">
+    <div class="mascot-bubble" id="home-mascot-text" role="status"></div>
+  </div>
   <div class="acct-box home-main">
     <div class="acct-lbl">使えるお金</div>
     <div class="acct-val" id="home-spendable">¥0</div>

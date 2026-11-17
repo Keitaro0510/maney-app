@@ -11,14 +11,14 @@ const srcFiles = readdirSync(new URL('../src/', import.meta.url), { recursive: t
   .filter(f => f.endsWith('.ts') && f !== 'ui.ts').map(f => `src/${f}`);
 // HTML は index.html と、js/・src/ の中で文字として組み立てているもの
 const html = [read('index.html'), ...jsFiles.map(read), ...srcFiles.map(read)].join('\n');
-const TAG = { inputById: 'input', selectById: 'select', textareaById: 'textarea', dialogById: 'dialog' };
+const TAG = { inputById: 'input', selectById: 'select', textareaById: 'textarea', dialogById: 'dialog', imageById: 'img' };
 
 // id ごとの要素の種類（<tag ... id="x">）
 const tagsOf = id => new Set([...html.matchAll(/<(\w+)\b[^<>]*?\bid=["']([^"'$]+)["']/g)].filter(m => m[2] === id).map(m => m[1].toLowerCase()));
 
 // js/・src/ で、id を文字そのままで渡している所。`${prefix}-close` のように組み立てる id は、ここでは確かめられない
 // js/ は MoneyUI.inputById('x')、src/ は import した inputById('x')
-const calls = [...jsFiles, ...srcFiles].flatMap(f => [...read(f).matchAll(/(?<![\w.])(?:(?:MoneyUI|ui)\.)?(inputById|selectById|textareaById|dialogById)\('([^']+)'\)/g)]
+const calls = [...jsFiles, ...srcFiles].flatMap(f => [...read(f).matchAll(/(?<![\w.])(?:(?:MoneyUI|ui)\.)?(inputById|selectById|textareaById|dialogById|imageById)\('([^']+)'\)/g)]
   .map(m => ({ file: f, fn: m[1], id: m[2] })));
 
 test('MoneyUI.〜ById で取る要素を使っている', () => {

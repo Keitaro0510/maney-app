@@ -5,6 +5,8 @@ import { getToday, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
+import { mascotView, MASCOT_IMAGE } from '../mascot.ts';
+import { recordStreak } from '../badges.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
 import { monthlyRowsIn, monthlyPayLabel } from './monthly.ts';
@@ -44,10 +46,22 @@ export function renderHome(): void{const y=gY(),m=gM(),d=gD();
   const balEl=MoneyUI.elementById('home-balance');
   balEl.textContent=yenSigned(bal);balEl.classList.toggle('negative',bal<0);
   renderHomeTasks();
+  renderMascot(sp.amount);
   // 今日のお知らせ（作り方は前と同じ）
   let ahtml='';const todayDS=toDS(y,m,d);state.st.cards.forEach((card,ci)=>{if(monthDay(y,m,parseInt(card.billDay))===d){const f=cycle(card,0),actual=getActualCard(ci,y,m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(card.name)}</strong> 引き落とし ¥${parseInt(String(actual.actualAmount)).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(f.amount>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(card.name)}</strong> の引き落とし日（推定 ¥${f.amount.toLocaleString()}）</div>`;}if(!card._deleted&&cardCloseDay(card,y,m)===d)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(card.name)}</strong> の締め日</div>`;});state.st.jobs.forEach(job=>{const jPayD=monthDay(y,m,jobPayDay(job)),jShimeD=jobCloseDayNum(job,y,m);if(d===jPayD){const sm=addM(y,m,-1);const estInc=totalShiftIncForJob(job.name,sm.y,sm.m);const actual=getActualSalary(job.name,sm.y,sm.m);if(actual)ahtml+=`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料（${sm.m+1}月分） 入金 ¥${parseInt(String(actual.actualAmount)).toLocaleString()} <span class="act-badge">実額反映済</span></div>`;else if(estInc>0)ahtml+=`<div class="abar-action"><strong>${MoneyUI.escapeHtml(job.name)}</strong> 給料の入金日（${sm.m+1}月分 推定 ¥${estInc.toLocaleString()}）</div>`;}if(d===jShimeD&&d!==jPayD)ahtml+=`<div class="abar neutral">今日は <strong>${MoneyUI.escapeHtml(job.name)}</strong> の締め日 — ${jPayD}日払い</div>`;});monthlyRowsIn(y,m).filter(fc=>monthDay(y,m,fc.day)===d).forEach(fc=>{ahtml+=fc.kind==='income'?`<div class="abar ok">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> 入金 ¥${fc.amount.toLocaleString()}</div>`:`<div class="abar warn">今日 <strong>${MoneyUI.escapeHtml(fc.name)}</strong> ${monthlyPayLabel(fc)} ¥${fc.amount.toLocaleString()}</div>`;});state.st.shifts.filter(s=>s.date===todayDS).forEach(s=>{const r=calcShiftInc(s);ahtml+=`<div class="abar info">今日 <strong>${MoneyUI.escapeHtml(s.job)}</strong> ${s.start}〜${s.end} (¥${r.total.toLocaleString()})</div>`;});getPlansForDay(todayDS).filter(p=>!p.done).forEach(p=>{const c=planColor(p.color);ahtml+=`<div class="abar plan" style="--dot:${c.dot}">📅 <strong>${MoneyUI.escapeHtml(p.title)}</strong>${(p.budget||0)>0?` 予算 ¥${(p.budget||0).toLocaleString()}`:''}</div>`;});MoneyUI.elementById('alerts-home').innerHTML=ahtml?`<section class="card home-alerts" aria-labelledby="home-alerts-title"><h2 class="home-alerts-title" id="home-alerts-title">今日のお知らせ</h2>${ahtml}</section>`:'';
   renderHomeUpcoming(rows);
   if(MoneyUI.dialogById('home-more').open)renderHomeMore();
+}
+
+// マスコットのキリン（D33）。表情とセリフは src/mascot.ts が決める。絵の src は、変わったときだけ入れ直す
+function renderMascot(spendable: number): void{
+  const today=getToday(),dates=state.st.ledger.map(l=>l.date);
+  const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),today});
+  const img=MoneyUI.imageById('home-mascot-img');
+  if(img.getAttribute('src')!==MASCOT_IMAGE[v.mood])img.setAttribute('src',MASCOT_IMAGE[v.mood]);
+  img.dataset.mood=v.mood;
+  MoneyUI.elementById('home-mascot-text').textContent=v.text;
+  MoneyUI.elementById('home-mascot').hidden=false;
 }
 
 // これからのお金の動き（2週間）。給料・引き落とし・予定など、口座のお金が動くものを日付の順に（src/money.ts の upcoming）

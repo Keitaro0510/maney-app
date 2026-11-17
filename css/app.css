@@ -728,3 +728,12 @@ button.color-swatch.sel{transform:none}
 .ach-bar{height:100%;border-radius:3px;transform-origin:left;transition:width .5s ease;animation:wh-in .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0) * 90ms)}
 @keyframes ach-pop{from{transform:scale(.4) rotate(-14deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach.got .ach-medal,.ach-bar{animation:none;transition:none}}
+
+/* マスコットのキリン（D33）。ホームの「使えるお金」の上。絵は img/、表情とセリフは src/mascot.ts */
+.mascot{display:flex;align-items:flex-end;gap:10px;margin:0 0 10px}
+.mascot[hidden]{display:none}
+.mascot-img{width:64px;height:auto;flex-shrink:0;transform-origin:50% 100%;-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent);animation:mascot-bob 3.6s ease-in-out infinite}
+.mascot-bubble{position:relative;flex:1;min-width:0;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);color:var(--color-text-primary);border-radius:14px;padding:9px 12px;font-size:13px;line-height:1.5;font-weight:600;margin-bottom:14px}
+.mascot-bubble::before{content:"";position:absolute;left:-7px;bottom:12px;width:12px;height:12px;background:var(--color-background-primary);border-left:1px solid var(--color-border-tertiary);border-bottom:1px solid var(--color-border-tertiary);transform:rotate(45deg);border-radius:2px}
+@keyframes mascot-bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
+@media (prefers-reduced-motion:reduce){.mascot-img{animation:none}}
