@@ -49,6 +49,7 @@ function byId<T extends HTMLElement>(id: string, type: { new (): T }, what: stri
 export function inputById(id: string): HTMLInputElement { return byId(id, HTMLInputElement, '入力欄（input）'); }
 export function selectById(id: string): HTMLSelectElement { return byId(id, HTMLSelectElement, '選択欄（select）'); }
 export function textareaById(id: string): HTMLTextAreaElement { return byId(id, HTMLTextAreaElement, '入力欄（textarea）'); }
+export function imageById(id: string): HTMLImageElement { return byId(id, HTMLImageElement, '画像（img）'); }
 export function dialogById(id: string): HTMLDialogElement { return byId(id, HTMLDialogElement, '画面（dialog）'); }
 /** 必ずある要素（div・section など）。ないときは、どの id かを書いて止める */
 export function elementById(id: string): HTMLElement { return byId(id, HTMLElement, '要素'); }

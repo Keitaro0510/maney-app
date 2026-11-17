@@ -26,5 +26,5 @@ test('画面のモジュールは window の関数を直接呼ばない', () => 
 });
 
 test('画面の部品（src/ui.ts）が出すもの', () => {
-  assert.deepEqual(Object.keys(ui).sort(), ['checkRow', 'dialogById', 'downloadJson', 'el', 'elementById', 'escapeHtml', 'inputById', 'openSheet', 'selectById', 'textareaById', 'toast']);
+  assert.deepEqual(Object.keys(ui).sort(), ['checkRow', 'dialogById', 'downloadJson', 'el', 'elementById', 'escapeHtml', 'imageById', 'inputById', 'openSheet', 'selectById', 'textareaById', 'toast']);
 });
