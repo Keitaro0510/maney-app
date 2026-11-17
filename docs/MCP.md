@@ -76,14 +76,27 @@ Auth は、認可の途中で、**`<Site URL><authorization_url_path>?authorizat
   - claude.ai の実際の redirect_uri は、Anthropic の資料では `https://claude.ai/api/mcp/auth_callback`。違っていた場合は、画面に出るつなぎ先を見て、許可リスト（`ALLOWED_REDIRECT_HOSTS`）を直す
 - 画面には、つなぎ先の名前と host、できること（予定とタスクの追加。家計簿は読めない・書けない）を出す
 
-## 本番の今の状態（2026-11-17。読み取りだけで確かめた）
+## 本番の今の状態
 
-- **署名鍵**: すでに ES256（JWKS で確認）。変更は要らない
-- **OAuth サーバー機能**: 無効（`feature_disabled`）
-- **Site URL が壊れている**: `https://keitaro0510.github.io/money-app/ `（古い名前の `money-app`・末尾に空白つき。開くと 404）。今の Google ログインは、戻り先を毎回明示している（`redirectTo: currentUrl()`）ので影響が出ていないが、**OAuth の案内は「Site URL ＋ パス」で作られるので、直さないと同意画面に来られない**。正しくは `https://keitaro0510.github.io/maney-app/`
-- **Edge Function `mcp`**: まだ無い
+2026-11-17 に、ユーザーの許可を取って、Supabase のダッシュボード（Claude in Chrome で操作）と、Edge Function のデプロイで変えた。
 
-## 本番に出す手順（ユーザーが Supabase のダッシュボードで行う部分と、Claude が行う部分）
+変える前に見つかったこと:
+- **Site URL が壊れていた**: `https://keitaro0510.github.io/money-app/ `（古い名前の `money-app`・末尾に空白つき。開くと 404）。今の Google ログインは、戻り先を毎回明示している（`redirectTo: currentUrl()`）ので影響が出ていなかったが、**OAuth の案内は「Site URL ＋ パス」で作られるので、直さないと同意画面に来られない**
+- 署名鍵は、すでに ES256（JWKS で確認）。OAuth サーバー機能は無効（`feature_disabled`）。`mcp` は無かった
+
+変えたこと（2026-11-17）:
+- [x] **Site URL** を `https://keitaro0510.github.io/maney-app/` に直した（空白もなくした）。Redirect URLs には、正しい `…/maney-app/` と `…/maney-app` が元から入っていた（変更なし）
+- [x] **OAuth Server**（ベータ）を有効にした。**Authorization Path** を `/` に、**Allow Dynamic OAuth Apps**（動的登録）を有効にした（確認のダイアログ「誰でもクライアントを登録できる公開の入口ができる」を承認。アプリ側は、claude.ai の戻り先以外を拒否して備えている）
+- [x] Edge Function `mcp`（検証用の `hello`・`whoami`。データには触れない）を本番にデプロイした（`verify_jwt = false`。関数が自分でトークンを検証する。バージョン1）
+
+読み取りで確かめたこと:
+- 認可サーバーの案内が、Claude が探すルート直下（`/.well-known/oauth-authorization-server/auth/v1`）で `200` で返る。動的登録の入口が動く（空の登録は「redirect_uris が必要」と検証の応答）
+- `mcp`: 認証なしは `401` と `WWW-Authenticate`、`/oauth-protected-resource` が認可サーバーを案内、壊れたトークンは `401`
+
+ダッシュボードの操作の注意（Claude in Chrome）:
+- 上に出るバナーで、画面がずれる。座標ではなく、要素の指定で押し、入力の前に画面で確かめる（座標のクリックが外れて、キー入力がダッシュボードのショートカットに当たったことがあった。移動だけで、設定は変わらなかった）
+
+## 本番に出す手順（1〜4 は 2026-11-17 に済み。5・6 が残り）
 
 ダッシュボードの設定（ユーザー）:
 1. Authentication → **URL Configuration** → **Site URL** を `https://keitaro0510.github.io/maney-app/` にする（末尾の空白に注意）。**Redirect URLs** に、同じ `https://keitaro0510.github.io/maney-app/` が入っていることを確かめる（今のログインが使っているので、入っているはず）
