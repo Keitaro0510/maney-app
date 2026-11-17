@@ -4,7 +4,7 @@
 import { ENV } from './env.ts';
 import { state } from './state.ts';
 import { getSupa } from './supa.ts';
-import { elementById } from './ui.ts';
+import { dialogById, elementById } from './ui.ts';
 import { appUi } from './navigation.ts';
 import {
   authorizationIdFromSearch, rememberAuthorizationId, runConsent, type ConsentAsk, type ConsentUi,
@@ -21,12 +21,15 @@ export function captureAuthorizationId(): void {
 }
 
 function ask({ clientName, host }: ConsentAsk): Promise<'approve' | 'deny'> {
-  const box = elementById('oauth-consent');
+  const box = dialogById('oauth-consent');
   elementById('oauth-consent-text').textContent =
     `「${clientName}」（${host}）が、あなたのアカウントでこのアプリにつなぎます。つなぐと、Claude の会話から、予定とタスクを追加できます（家計簿の記録や金額は、読めません・書けません）。`;
-  box.hidden = false;
+  // showModal なので、今日のタスクなど、先に開いているダイアログより前に出る。Esc で黙って閉じないようにする（押したのは「つなぐ／つながない」だけにする）
+  const keepOpen = (event: Event): void => event.preventDefault();
+  box.addEventListener('cancel', keepOpen);
+  box.showModal();
   return new Promise(resolve => {
-    const done = (answer: 'approve' | 'deny'): void => { box.hidden = true; resolve(answer); };
+    const done = (answer: 'approve' | 'deny'): void => { box.removeEventListener('cancel', keepOpen); box.close(); resolve(answer); };
     elementById('oauth-consent-approve').addEventListener('click', () => done('approve'), { once: true });
     elementById('oauth-consent-deny').addEventListener('click', () => done('deny'), { once: true });
   });

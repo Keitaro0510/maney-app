@@ -196,7 +196,8 @@ DB整備の方針は [PLAN.md](../archive/db-review/PLAN.md) で決め、2026-10
   - [x] ローカルで、認証つきの MCP と OAuth の一連の流れを確かめた（2026-11-17。D37・`docs/MCP.md`）
   - [x] 本番で OAuth サーバーを有効にし、Site URL を直し、`mcp`（hello・whoami）をデプロイした（2026-11-17。D37）
   - [x] 同意画面をアプリに作った（2026-11-17。D37。claude.ai の戻り先だけ許す）
-  - [ ] claude.ai のカスタムコネクタに追加し、スマホの Claude から呼べるか確かめる
+  - [x] claude.ai のカスタムコネクタに追加し、web の Claude から `whoami` を呼べた（2026-11-17）
+  - [ ] スマホの Claude アプリで、同じコネクタが使えるか確かめる
 
 ## UI の見直し（D29。2026-11-07）
 
