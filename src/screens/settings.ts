@@ -21,7 +21,7 @@ export function initSettingTab(): void {
   const s = state.st;
   inputById('set-bal').value = String(s.acctBase || ''); inputById('set-bal-date').value = s.baseDate || getToday();
   selectById('set-close').value = String(s.shiftCloseDay || 31); inputById('set-pay').value = String(s.shiftPayDay || 10);
-  inputById('set-bud').value = String(s.budget || ''); selectById('set-fuyou').value = s.fuyouLimit || '1300000';
+  inputById('set-bud').value = String(s.budget || '');
   inputById('set-other-inc').value = String(s.otherIncome || '');
   updateShiftCyclePreview(); renderWdHist(); renderCatTags(); renderCardList();
 }
@@ -38,7 +38,7 @@ export function bindSettingsControls(): void {
   }
   elementById('set-close').addEventListener('change', () => { updateShiftCyclePreview(); saveSettingFields(); });
   elementById('set-pay').addEventListener('input', updateShiftCyclePreview);
-  for (const id of ['set-bal', 'set-bal-date', 'set-pay', 'set-bud', 'set-fuyou', 'set-other-inc']) {
+  for (const id of ['set-bal', 'set-bal-date', 'set-pay', 'set-bud', 'set-other-inc']) {
     elementById(id).addEventListener('change', saveSettingFields);
   }
 }
@@ -50,7 +50,7 @@ export function saveSettingFields(): void {
   const next = {
     acctBase: parseInt(inputById('set-bal').value) || 0, baseDate: inputById('set-bal-date').value || getToday(),
     shiftCloseDay: parseInt(selectById('set-close').value) || 31, shiftPayDay: parseInt(inputById('set-pay').value) || 10,
-    budget: parseInt(inputById('set-bud').value) || 0, fuyouLimit: selectById('set-fuyou').value,
+    budget: parseInt(inputById('set-bud').value) || 0,
     otherIncome: parseInt(inputById('set-other-inc').value) || 0,
   };
   if ((Object.keys(next) as (keyof typeof next)[]).every(k => String(state.st[k] ?? '') === String(next[k]))) return;
