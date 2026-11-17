@@ -48,7 +48,8 @@ async function dom(page, selector) {
       const css = e.style.cssText;
       if (css) e.setAttribute('style', css); else e.removeAttribute('style');
     }
-    return copy.outerHTML.replace(/>\s*</g, '>\n<') + '\n';
+    // 共有コード（D39）は毎回変わるので、固定の文字にそろえる
+    return copy.outerHTML.replace(/>\s*</g, '>\n<').replace(/\b[0-9a-f]{4}(?:-[0-9a-f]{4}){3}\b/g, 'xxxx-xxxx-xxxx-xxxx') + '\n';
   });
 }
 
@@ -129,8 +130,10 @@ test('シフト・設定・タスク', async ({ page }) => {
   for (const sec of ['shift', 'set', 'task']) {
     await page.locator(sec === 'set' ? '#settings-btn' : `#nav-${sec}`).click();
     await settle(page);
+    if (sec === 'set') await expect(page.locator('#share-code')).toHaveText(/^[0-9a-f]{4}-/); // 共有コードを読み終えるまで待つ（D39）
     expect.soft(await dom(page, `#sec-${sec}`)).toMatchSnapshot(`${sec}.html`);
-    await shot(page, `${sec}.png`);
+    // 共有コードは毎回変わるので、写真では隠す
+    await shot(page, `${sec}.png`, sec === 'set' ? { mask: [page.locator('canvas'), page.locator('#share-code')] } : {});
   }
 });
 
