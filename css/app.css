@@ -555,10 +555,6 @@ button.color-swatch{width:44px;height:44px;padding:3px;background-clip:content-b
 .color-swatches{gap:2px}
 button.color-swatch.sel{transform:none}
 .color-swatch.sel{border-color:var(--color-text-primary);transform:scale(1.15)}
-.date-mode-tabs{display:flex;gap:2px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:3px;margin-bottom:12px}
-.date-mode-tab{flex:1;min-height:44px;padding:7px 0;text-align:center;font:inherit;font-size:13px;border:0;border-radius:7px;background:transparent;cursor:pointer;color:var(--color-text-secondary);font-weight:500}
-.date-mode-tab.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;border:0.5px solid var(--color-border-tertiary)}
-.date-mode-tab:focus-visible{outline:2px solid var(--color-brand);outline-offset:2px}
 .cat-tag{display:inline-flex;align-items:center;min-height:44px;padding:0 0 0 14px;border-radius:100px;font-size:13px;border:0.5px solid var(--color-border-secondary);margin:3px}
 /* 消すボタン（×）。見える × は小さいまま、押せる所を 44px にする（#71） */
 .cat-tag-del{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:transparent;cursor:pointer;color:var(--color-text-secondary);font:inherit;font-size:17px;line-height:1;-webkit-tap-highlight-color:transparent}

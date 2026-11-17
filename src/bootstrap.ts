@@ -30,7 +30,7 @@ function onDayChange(now: Date): void {
   if (state.currentUser) { renderCurrentSection(); maybeShowStartupTasks(); }
 }
 
-const CHOICE_SELECTOR = 'button.pay-chip,button.chip,button.color-swatch,button.chk-day,#dmt-single,#dmt-range,#plan-mode-allday,#plan-mode-timed';
+const CHOICE_SELECTOR = 'button.pay-chip,button.chip,button.color-swatch,button.chk-day,#plan-mode-allday,#plan-mode-timed';
 const syncPressed = (button: Element): void => button.setAttribute('aria-pressed', button.classList.contains('sel') || button.classList.contains('active') ? 'true' : 'false');
 function syncChoicePressed(root: ParentNode): void { root.querySelectorAll(CHOICE_SELECTOR).forEach(syncPressed); }
 
