@@ -2,16 +2,47 @@
 import { renderHome } from './home.ts';
 import { state } from '../state.ts';
 import { save } from '../sync.ts';
-import { getToday, ds2d } from '../dates.ts';
+import { getToday, ds2d, toDS, DAYS } from '../dates.ts';
+import { budgetsForDays } from '../plans.ts';
 import { PLAN_COLORS, COLOR_NAMES } from '../palette.ts';
 import * as ui from '../ui.ts';
 import { renderCal, refreshDayViews } from './calendar.ts';
 import type { StPlan } from '../compat.ts';
 
-let planEditIdx=-1, planDateMode='single', planColorSel='pink';
+type PlanDateMode='multi'|'single'|'range'; // multi=新しい予定（日付を複数選ぶ）、single・range=編集のとき（1日・前からある連続の予定）
+let planEditIdx=-1, planDateMode: PlanDateMode='multi', planColorSel='pink';
+const selPlanDays=new Set<string>();
+let planCalY=0, planCalM=0;
 export function renderColorSwatches(): void{ui.elementById('plan-color-swatches').innerHTML=PLAN_COLORS.map(c=>`<button type="button" class="color-swatch${planColorSel===c.key?' sel':''}" style="background:${c.dot}" data-plan-action="color" data-color="${c.key}" aria-label="${COLOR_NAMES[c.key]}"></button>`).join('');}
 export function selPlanColor(key: string): void{planColorSel=key;renderColorSwatches();}
-export function setDateMode(mode: string): void{planDateMode=mode;ui.elementById('dmt-single').classList.toggle('active',mode==='single');ui.elementById('dmt-range').classList.toggle('active',mode==='range');ui.elementById('date-single-wrap').style.display=mode==='single'?'block':'none';ui.elementById('date-range-wrap').style.display=mode==='range'?'block':'none';}
+export function setDateMode(mode: PlanDateMode): void{planDateMode=mode;ui.elementById('date-multi-wrap').style.display=mode==='multi'?'block':'none';ui.elementById('date-single-wrap').style.display=mode==='single'?'block':'none';ui.elementById('date-range-wrap').style.display=mode==='range'?'block':'none';}
+
+// 日付を複数選ぶカレンダー（新しい予定。シフトと同じ作り）
+export function renderPlanCal(): void{
+  ui.elementById('plan-cal-lbl').textContent=planCalY+'年'+(planCalM+1)+'月';
+  const first=new Date(planCalY,planCalM,1).getDay(),dim=new Date(planCalY,planCalM+1,0).getDate(),prev=new Date(planCalY,planCalM,0).getDate();
+  const total=Math.ceil((first+dim)/7)*7;let html='';
+  for(let i=0;i<total;i++){
+    let day,y2=planCalY,m2=planCalM,other=false;
+    if(i<first){day=prev-first+i+1;m2=planCalM-1;if(m2<0){m2=11;y2--;}other=true;}
+    else if(i>=first+dim){day=i-first-dim+1;m2=planCalM+1;if(m2>11){m2=0;y2++;}other=true;}
+    else day=i-first+1;
+    const ds=toDS(y2,m2,day);
+    html+=`<button type="button" class="chk-day${other?' off':''}${selPlanDays.has(ds)?' sel':''}" aria-label="${m2+1}月${day}日" aria-pressed="${selPlanDays.has(ds)}" data-plan-action="day" data-date="${ds}" data-other="${other}">${day}</button>`;
+  }
+  ui.elementById('plan-cal-grid').innerHTML=html;
+  updatePlanMultiHint();
+}
+export function updatePlanMultiHint(): void{
+  ui.elementById('plan-sel-count').textContent=selPlanDays.size+'日';
+  const hint=ui.elementById('plan-multi-hint');
+  const budget=parseInt(ui.inputById('plan-budget').value)||0;
+  const first=[...selPlanDays].sort()[0];
+  hint.hidden=!(selPlanDays.size>1);
+  hint.textContent=selPlanDays.size>1?`選んだ日ごとに、1日の予定ができます${budget>0?`（予算は最初の日 ${first.slice(5).replace('-','/')} だけに入ります）`:''}`:'';
+}
+export function togglePlanDay(ds: string, other: boolean): void{if(other)return;if(selPlanDays.has(ds))selPlanDays.delete(ds);else selPlanDays.add(ds);renderPlanCal();}
+export function planCalShift(dir: number): void{planCalM+=dir;if(planCalM<0){planCalM=11;planCalY--;}else if(planCalM>11){planCalM=0;planCalY++;}renderPlanCal();}
 export function updateRangePreview(): void{const s=ui.inputById('plan-date-start').value,e=ui.inputById('plan-date-end').value,el=ui.elementById('range-preview');if(!s||!e){el.textContent='';return;}const days=Math.round((ds2d(e).getTime()-ds2d(s).getTime())/(864e5))+1;el.textContent=days>=1?`${days}日間の予定として登録されます`:'終了日は開始日より後にしてください';}
 let planCardIdx=-1; // -1=現金、0以上=カードインデックス
 
@@ -60,7 +91,11 @@ export function openPlanModal(ds?: string): void{
   ui.inputById('plan-date-end').value=ds||getToday();
   ui.inputById('plan-budget').value='';
   ui.elementById('plan-save-btn').textContent='追加';
-  setDateMode('single');
+  // 日付は複数選べる（日の詳細から開いたときは、その日を選んだ状態で）
+  selPlanDays.clear();selPlanDays.add(ds||getToday());
+  const base=ds2d(ds||getToday());planCalY=base.getFullYear();planCalM=base.getMonth();
+  ui.elementById('plan-cal-dow').innerHTML=DAYS.map(d=>`<div style="font-size:11px;color:var(--color-text-secondary);text-align:center;font-weight:500">${d}</div>`).join('');
+  setDateMode('multi');renderPlanCal();
   // 新規予定はデフォルト終日
   ui.inputById('plan-allday').checked=true;
   ui.inputById('plan-time-start').value='';
@@ -103,6 +138,22 @@ export function savePlan(): void{
   if(!title)return;
   const budget=parseInt(ui.inputById('plan-budget').value)||0,memo=ui.textareaById('plan-memo').value.trim(),color=planColorSel;
   let dateStart,dateEnd;
+  if(planDateMode==='multi'){
+    // 新しい予定: 選んだ日ごとに、1日の予定を作る（予算は最初の日だけ。D40）
+    if(!selPlanDays.size)return;
+    const allDayM=ui.inputById('plan-allday').checked;
+    const tsM=allDayM?'':(ui.inputById('plan-time-start').value||'');
+    let teM=allDayM?'':(ui.inputById('plan-time-end').value||'');
+    if(!tsM||(teM&&teM<tsM))teM=''; // 開始がない・終了が開始より前なら、終了は捨てる（1日の予定なので）
+    const base=Date.now();
+    budgetsForDays(selPlanDays,budget).forEach((e,i)=>{
+      const p: StPlan={id:base+i,title,date:e.date,dateStart:e.date,dateEnd:e.date,timeStart:tsM,timeEnd:teM,budget:e.budget,memo,color,done:false};
+      if(planCardIdx>=0)p.planCardIdx=planCardIdx;
+      state.st.plans.push(p);
+    });
+    save();closePlanModal();renderCal();refreshDayViews();renderHome();
+    return;
+  }
   if(planDateMode==='range'){
     dateStart=ui.inputById('plan-date-start').value;
     dateEnd=ui.inputById('plan-date-end').value;
@@ -134,8 +185,9 @@ export function bindPlanControls(): void {
     const target = event.target.closest<HTMLElement>('[data-plan-action]');
     if (!target) return;
     const action = target.dataset.planAction;
-    if (action === 'date-single') setDateMode('single');
-    else if (action === 'date-range') setDateMode('range');
+    if (action === 'day' && target.dataset.date) togglePlanDay(target.dataset.date, target.dataset.other === 'true');
+    else if (action === 'cal-prev') planCalShift(-1);
+    else if (action === 'cal-next') planCalShift(1);
     else if (action === 'all-day') setPlanTimeMode(true);
     else if (action === 'timed') setPlanTimeMode(false);
     else if (action === 'close') closePlanModal();
@@ -144,6 +196,7 @@ export function bindPlanControls(): void {
     else if (action === 'pay' && target.dataset.index !== undefined) selPlanPay(Number(target.dataset.index));
   });
   ui.inputById('plan-allday').addEventListener('change', togglePlanAllDay);
+  ui.inputById('plan-budget').addEventListener('input', updatePlanMultiHint);
   for (const id of ['plan-date-start', 'plan-date-end']) ui.inputById(id).addEventListener('input', updateRangePreview);
 }
 

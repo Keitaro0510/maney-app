@@ -450,8 +450,15 @@
 <div class="mbg" id="wd-mbg"><div class="modal"><div class="modal-handle"></div><h3>ATMで現金を引き出す</h3><div class="amount-display" id="wd-display">¥0</div><div class="numpad"><button class="numkey" data-atm-key="1">1</button><button class="numkey" data-atm-key="2">2</button><button class="numkey" data-atm-key="3">3</button><button class="numkey" data-atm-key="4">4</button><button class="numkey" data-atm-key="5">5</button><button class="numkey" data-atm-key="6">6</button><button class="numkey" data-atm-key="7">7</button><button class="numkey" data-atm-key="8">8</button><button class="numkey" data-atm-key="9">9</button><button class="numkey" data-atm-key="000">000</button><button class="numkey" data-atm-key="0">0</button><button class="numkey" data-atm-key="backspace">⌫</button></div><div style="display:flex;gap:8px"><button class="btn full" style="margin-top:0;flex:1" data-atm-action="close">キャンセル</button><button class="btn primary full" style="margin-top:0;flex:2" data-atm-action="withdraw">引き出す</button></div></div></div>
 <div class="mbg" id="plan-mbg"><div class="modal"><div class="modal-handle"></div><h3 id="plan-modal-title">予定を追加</h3>
   <div class="fg"><label>タイトル</label><input id="plan-title" placeholder="旅行、ライブなど"/></div>
-  <div class="date-mode-tabs" role="group" aria-label="日にち"><button type="button" class="date-mode-tab active" id="dmt-single" data-plan-action="date-single">1日</button><button type="button" class="date-mode-tab" id="dmt-range" data-plan-action="date-range">期間（連続日程）</button></div>
-  <div id="date-single-wrap" class="fg"><label>日付</label><input type="date" id="plan-date"/></div>
+  <!-- 日にち（D40）。新しい予定は、シフトと同じく日付を複数選ぶ（選んだ日ごとに1日の予定ができる）。編集のときだけ、1日の予定は日付、前からある連続の予定は開始日・終了日を出す -->
+  <div id="date-multi-wrap" class="fg"><label>日付を選択（複数OK）</label>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span id="plan-cal-lbl" style="font-size:13px;color:var(--color-text-secondary);font-weight:500"></span><div style="display:flex;gap:6px"><button type="button" class="btn sm" data-plan-action="cal-prev" aria-label="前の月">&#8592;</button><button type="button" class="btn sm" data-plan-action="cal-next" aria-label="次の月">&#8594;</button></div></div>
+    <div id="plan-cal-dow" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px"></div>
+    <div id="plan-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+    <div style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">選択中: <span id="plan-sel-count">0日</span></div>
+    <div class="hint" id="plan-multi-hint" hidden></div>
+  </div>
+  <div id="date-single-wrap" class="fg" style="display:none"><label>日付</label><input type="date" id="plan-date"/></div>
   <div id="date-range-wrap" style="display:none"><div class="fgr"><div class="fg"><label>開始日</label><input type="date" id="plan-date-start"/></div><div class="fg"><label>終了日</label><input type="date" id="plan-date-end"/></div></div><div id="range-preview" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px"></div></div>
   <div class="plan-time-card is-all-day" id="plan-time-wrap">
     <div class="plan-time-header"><span class="plan-time-title">予定の時間</span><div class="plan-time-toggle" role="group" aria-label="予定の時間設定"><button type="button" id="plan-mode-allday" class="active" data-plan-action="all-day">終日</button><button type="button" id="plan-mode-timed" data-plan-action="timed">時刻指定</button></div></div>

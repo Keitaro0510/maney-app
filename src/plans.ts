@@ -19,4 +19,10 @@ export function planTimeOnDay(p: Pick<StPlan, 'date' | 'dateStart' | 'dateEnd' |
   return { start: '', end: '', min: -1 };
 }
 
+/** 選んだ日それぞれの「1日の予定」にするときの、日ごとの予算。日付の順に並べ、重なりは1つにする。
+ *  予算は最初の日だけに入れる（ほかの日は0。合計は入れた額のまま。D40） */
+export function budgetsForDays(days: Iterable<string>, budget: number): { date: string; budget: number }[] {
+  return [...new Set(days)].sort().map((date, i) => ({ date, budget: i === 0 ? budget : 0 }));
+}
+
 export const LEGACY_PLANS = { getPlansForDay, planTimeOnDay, hm2min };

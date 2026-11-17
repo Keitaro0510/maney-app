@@ -7,11 +7,68 @@
 <label for="plan-title">タイトル</label>
 <input id="plan-title" placeholder="旅行、ライブなど">
 </div>
-<div class="date-mode-tabs" role="group" aria-label="日にち">
-<button type="button" class="date-mode-tab active" id="dmt-single" data-plan-action="date-single" aria-pressed="true">1日</button>
-<button type="button" class="date-mode-tab" id="dmt-range" data-plan-action="date-range" aria-pressed="false">期間（連続日程）</button>
+<!-- 日にち（D40）。新しい予定は、シフトと同じく日付を複数選ぶ（選んだ日ごとに1日の予定ができる）。編集のときだけ、1日の予定は日付、前からある連続の予定は開始日・終了日を出す -->
+<div id="date-multi-wrap" class="fg" style="display: block;">
+<label>日付を選択（複数OK）</label>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+<span id="plan-cal-lbl" style="font-size: 13px; color: var(--color-text-secondary); font-weight: 500;">2026年11月</span>
+<div style="display: flex; gap: 6px;">
+<button type="button" class="btn sm" data-plan-action="cal-prev" aria-label="前の月">←</button>
+<button type="button" class="btn sm" data-plan-action="cal-next" aria-label="次の月">→</button>
 </div>
-<div id="date-single-wrap" class="fg" style="display: block;">
+</div>
+<div id="plan-cal-dow" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px;">
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">日</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">月</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">火</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">水</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">木</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">金</div>
+<div style="font-size: 11px; color: var(--color-text-secondary); text-align: center; font-weight: 500;">土</div>
+</div>
+<div id="plan-cal-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;">
+<button type="button" class="chk-day" aria-label="11月1日" aria-pressed="false" data-plan-action="day" data-date="2026-11-01" data-other="false">1</button>
+<button type="button" class="chk-day" aria-label="11月2日" aria-pressed="false" data-plan-action="day" data-date="2026-11-02" data-other="false">2</button>
+<button type="button" class="chk-day" aria-label="11月3日" aria-pressed="false" data-plan-action="day" data-date="2026-11-03" data-other="false">3</button>
+<button type="button" class="chk-day" aria-label="11月4日" aria-pressed="false" data-plan-action="day" data-date="2026-11-04" data-other="false">4</button>
+<button type="button" class="chk-day" aria-label="11月5日" aria-pressed="false" data-plan-action="day" data-date="2026-11-05" data-other="false">5</button>
+<button type="button" class="chk-day" aria-label="11月6日" aria-pressed="false" data-plan-action="day" data-date="2026-11-06" data-other="false">6</button>
+<button type="button" class="chk-day" aria-label="11月7日" aria-pressed="false" data-plan-action="day" data-date="2026-11-07" data-other="false">7</button>
+<button type="button" class="chk-day" aria-label="11月8日" aria-pressed="false" data-plan-action="day" data-date="2026-11-08" data-other="false">8</button>
+<button type="button" class="chk-day" aria-label="11月9日" aria-pressed="false" data-plan-action="day" data-date="2026-11-09" data-other="false">9</button>
+<button type="button" class="chk-day" aria-label="11月10日" aria-pressed="false" data-plan-action="day" data-date="2026-11-10" data-other="false">10</button>
+<button type="button" class="chk-day" aria-label="11月11日" aria-pressed="false" data-plan-action="day" data-date="2026-11-11" data-other="false">11</button>
+<button type="button" class="chk-day sel" aria-label="11月12日" aria-pressed="true" data-plan-action="day" data-date="2026-11-12" data-other="false">12</button>
+<button type="button" class="chk-day" aria-label="11月13日" aria-pressed="false" data-plan-action="day" data-date="2026-11-13" data-other="false">13</button>
+<button type="button" class="chk-day" aria-label="11月14日" aria-pressed="false" data-plan-action="day" data-date="2026-11-14" data-other="false">14</button>
+<button type="button" class="chk-day" aria-label="11月15日" aria-pressed="false" data-plan-action="day" data-date="2026-11-15" data-other="false">15</button>
+<button type="button" class="chk-day" aria-label="11月16日" aria-pressed="false" data-plan-action="day" data-date="2026-11-16" data-other="false">16</button>
+<button type="button" class="chk-day" aria-label="11月17日" aria-pressed="false" data-plan-action="day" data-date="2026-11-17" data-other="false">17</button>
+<button type="button" class="chk-day" aria-label="11月18日" aria-pressed="false" data-plan-action="day" data-date="2026-11-18" data-other="false">18</button>
+<button type="button" class="chk-day" aria-label="11月19日" aria-pressed="false" data-plan-action="day" data-date="2026-11-19" data-other="false">19</button>
+<button type="button" class="chk-day" aria-label="11月20日" aria-pressed="false" data-plan-action="day" data-date="2026-11-20" data-other="false">20</button>
+<button type="button" class="chk-day" aria-label="11月21日" aria-pressed="false" data-plan-action="day" data-date="2026-11-21" data-other="false">21</button>
+<button type="button" class="chk-day" aria-label="11月22日" aria-pressed="false" data-plan-action="day" data-date="2026-11-22" data-other="false">22</button>
+<button type="button" class="chk-day" aria-label="11月23日" aria-pressed="false" data-plan-action="day" data-date="2026-11-23" data-other="false">23</button>
+<button type="button" class="chk-day" aria-label="11月24日" aria-pressed="false" data-plan-action="day" data-date="2026-11-24" data-other="false">24</button>
+<button type="button" class="chk-day" aria-label="11月25日" aria-pressed="false" data-plan-action="day" data-date="2026-11-25" data-other="false">25</button>
+<button type="button" class="chk-day" aria-label="11月26日" aria-pressed="false" data-plan-action="day" data-date="2026-11-26" data-other="false">26</button>
+<button type="button" class="chk-day" aria-label="11月27日" aria-pressed="false" data-plan-action="day" data-date="2026-11-27" data-other="false">27</button>
+<button type="button" class="chk-day" aria-label="11月28日" aria-pressed="false" data-plan-action="day" data-date="2026-11-28" data-other="false">28</button>
+<button type="button" class="chk-day" aria-label="11月29日" aria-pressed="false" data-plan-action="day" data-date="2026-11-29" data-other="false">29</button>
+<button type="button" class="chk-day" aria-label="11月30日" aria-pressed="false" data-plan-action="day" data-date="2026-11-30" data-other="false">30</button>
+<button type="button" class="chk-day off" aria-label="12月1日" aria-pressed="false" data-plan-action="day" data-date="2026-12-01" data-other="true">1</button>
+<button type="button" class="chk-day off" aria-label="12月2日" aria-pressed="false" data-plan-action="day" data-date="2026-12-02" data-other="true">2</button>
+<button type="button" class="chk-day off" aria-label="12月3日" aria-pressed="false" data-plan-action="day" data-date="2026-12-03" data-other="true">3</button>
+<button type="button" class="chk-day off" aria-label="12月4日" aria-pressed="false" data-plan-action="day" data-date="2026-12-04" data-other="true">4</button>
+<button type="button" class="chk-day off" aria-label="12月5日" aria-pressed="false" data-plan-action="day" data-date="2026-12-05" data-other="true">5</button>
+</div>
+<div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 8px;">選択中: <span id="plan-sel-count">1日</span>
+</div>
+<div class="hint" id="plan-multi-hint" hidden="">
+</div>
+</div>
+<div id="date-single-wrap" class="fg" style="display: none;">
 <label for="plan-date">日付</label>
 <input type="date" id="plan-date">
 </div>

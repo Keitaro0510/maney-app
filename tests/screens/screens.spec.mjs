@@ -452,16 +452,21 @@ test('設定のカテゴリとカードを実際の操作で追加・編集・�
   expect(await page.evaluate(() => 'addCatExp' in window || 'addCard' in window)).toBe(false);
 });
 
-test('予定の入力画面で期間・時刻・色・支払いを選ぶ', async ({ page }) => {
+test('予定の入力画面で日付（複数）・時刻・色・支払いを選ぶ', async ({ page }) => {
   await open(page);
   await closeAll(page);
   await page.locator('#home-add-plan').click();
   await expect(page.locator('#plan-mbg')).toHaveClass(/open/);
-  await page.locator('#plan-mbg [data-plan-action="date-range"]').click();
-  await expect(page.locator('#date-range-wrap')).toBeVisible();
-  await page.locator('#plan-date-start').fill('2026-11-12');
-  await page.locator('#plan-date-end').fill('2026-11-13');
-  await expect(page.locator('#range-preview')).toContainText('2日間');
+  // 新しい予定は、シフトと同じく日付を複数選ぶ（D40）。はじめは今日だけが選ばれている。「1日／期間」のタブはない
+  await expect(page.locator('#date-multi-wrap')).toBeVisible();
+  await expect(page.locator('#plan-sel-count')).toHaveText('1日');
+  await expect(page.locator('#plan-mbg [data-plan-action="date-range"]')).toHaveCount(0);
+  await page.locator('#plan-cal-grid [data-date="2026-11-20"]').click();
+  await expect(page.locator('#plan-sel-count')).toHaveText('2日');
+  await page.locator('#plan-cal-grid [data-date="2026-11-20"]').click(); // もう一度押すと外れる
+  await expect(page.locator('#plan-sel-count')).toHaveText('1日');
+  await page.locator('#plan-mbg [data-plan-action="cal-next"]').click();
+  await expect(page.locator('#plan-cal-lbl')).toHaveText('2026年12月');
   await page.locator('#plan-mbg [data-plan-action="timed"]').click();
   await expect(page.locator('#plan-time-wrap')).not.toHaveClass(/is-all-day/);
   await page.locator('#plan-color-swatches [data-plan-action="color"]').nth(1).click();
@@ -471,6 +476,32 @@ test('予定の入力画面で期間・時刻・色・支払いを選ぶ', async
   await page.locator('#plan-mbg [data-plan-action="close"]').click();
   await expect(page.locator('#plan-mbg')).not.toHaveClass(/open/);
   expect(await page.evaluate(() => 'setDateMode' in window || 'savePlan' in window)).toBe(false);
+});
+
+test('予定を、選んだ日ごとに1日の予定として入れる（予算は最初の日だけ）', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#nav-cal').click();
+  await settle(page);
+  await page.locator('#cal-add-row [data-cal-action="add-plan"]').click();
+  await page.locator('#plan-title').fill('お休み');
+  await page.locator('#plan-cal-grid [data-date="2026-11-18"]').click();
+  await page.locator('#plan-cal-grid [data-date="2026-11-25"]').click();
+  await expect(page.locator('#plan-sel-count')).toHaveText('3日'); // 今日（11/12）と、18日・25日
+  await page.locator('#plan-budget').fill('3000');
+  await expect(page.locator('#plan-multi-hint')).toContainText('最初の日 11/12 だけ');
+  await page.locator('#plan-mbg [data-plan-action="save"]').click();
+  await expect(page.locator('#plan-mbg')).not.toHaveClass(/open/);
+  for (const d of ['2026-11-12', '2026-11-18', '2026-11-25']) {
+    await expect(page.locator(`#cal-body .cday[data-day="${d}"]`)).toContainText('お休み');
+  }
+  await expect(page.locator('#cal-body .cday[data-day="2026-11-19"]')).not.toContainText('お休み');
+  // 日ごとに別々の予定なので、1日だけ消せる。予算は最初の日だけに入っている
+  await page.locator('#cal-body .cday[data-day="2026-11-18"]').click();
+  await expect(page.locator('#day-detail-content')).toContainText('お休み');
+  await expect(page.locator('#day-detail-content')).not.toContainText('3,000');
+  await page.locator('#cal-body .cday[data-day="2026-11-12"]').click();
+  await expect(page.locator('#day-detail-content')).toContainText('3,000');
 });
 
 test('シフトとバイト先の操作をボタンから行う', async ({ page }) => {
