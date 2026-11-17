@@ -8,6 +8,7 @@ import { renderCal } from './calendar.ts';
 import { renderCardList } from './cards.ts';
 import { renderWdHist } from './atm.ts';
 import { initShareSection } from './share-settings.ts';
+import { initPushSection } from './push-settings.ts';
 
 export function addCatExp(): void { const e = inputById('new-cat-exp'), v = e.value.trim(); if (!v || state.st.catExp.includes(v)) return; state.st.catExp.push(v); save(); e.value = ''; renderCatTags(); }
 export function addCatInc(): void { const e = inputById('new-cat-inc'), v = e.value.trim(); if (!v || state.st.catInc.includes(v)) return; state.st.catInc.push(v); save(); e.value = ''; renderCatTags(); }
@@ -24,7 +25,7 @@ export function initSettingTab(): void {
   selectById('set-close').value = String(s.shiftCloseDay || 31); inputById('set-pay').value = String(s.shiftPayDay || 10);
   inputById('set-bud').value = String(s.budget || '');
   inputById('set-other-inc').value = String(s.otherIncome || '');
-  updateShiftCyclePreview(); renderWdHist(); renderCatTags(); renderCardList(); initShareSection();
+  updateShiftCyclePreview(); renderWdHist(); renderCatTags(); renderCardList(); initShareSection(); initPushSection();
 }
 /** 設定の入力とカテゴリ操作を起動時に一度だけ登録する。 */
 export function bindSettingsControls(): void {

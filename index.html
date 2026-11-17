@@ -302,6 +302,17 @@
     <div class="form-err" id="share-msg" role="alert" hidden></div>
     <div id="share-list" class="share-list"></div>
   </div>
+  <!-- 通知（Issue #189・D36。src/screens/push-settings.ts）。朝の予定・タスクを、この端末に知らせる。金額は入れない -->
+  <div class="card"><div class="st">通知</div>
+    <div class="share-note">朝に、今日の予定と期限のタスクを知らせます（金額は入れません）。端末ごとに「受け取る」を押します。</div>
+    <div class="share-note" id="push-status" role="status"></div>
+    <div id="push-actions" class="backup-actions" hidden>
+      <button type="button" class="ui-btn primary" id="push-enable" hidden>通知を受け取る</button>
+      <button type="button" class="ui-btn" id="push-test" hidden>テスト通知を送る</button>
+      <button type="button" class="ui-btn danger" id="push-disable" hidden>やめる</button>
+    </div>
+    <div class="form-err" id="push-msg" role="alert" hidden></div>
+  </div>
   <!-- アカウント（いちばん下。D10） -->
   <div class="card"><div class="st">アカウント</div>
     <div class="account-email">ログイン中: <span id="account-email"></span></div>

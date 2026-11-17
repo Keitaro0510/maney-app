@@ -394,6 +394,10 @@ deno_version = 2
 [functions.mcp]
 verify_jwt = false
 
+# 通知を送る（Issue #189・D36）。アプリからのテスト通知は、関数がログインを確かめる。定期の送信は、合言葉（secret）で確かめる
+[functions.push]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327

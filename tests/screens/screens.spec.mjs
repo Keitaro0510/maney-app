@@ -639,3 +639,14 @@ test('設定の共有: コードが出て、知らないコードの申請はエ
   await page.locator('#settings-btn').click();
   await expect(page.locator('#share-name')).toHaveValue('テスト太郎');
 });
+
+// 通知（Issue #189・D36）。手元の開発サーバーには Service Worker がないので、「使えません」の案内が出て、ボタンは出ない。
+// 実際に届くことは、実機（iPhone）で確かめる
+test('設定の通知: Service Worker のない環境では、案内だけが出る', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await page.locator('#settings-btn').click();
+  await settle(page);
+  await expect(page.locator('#push-status')).toContainText('この環境では通知を使えません');
+  await expect(page.locator('#push-actions')).toBeHidden();
+});
