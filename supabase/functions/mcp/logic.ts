@@ -61,17 +61,18 @@ export function normalizeTags(tags: string[]): Result<string[]> {
   return ok(out);
 }
 
-/** カードの名前から、カードを1つ選ぶ。完全に同じ名前が優先。なければ、名前の一部が合うものが1つだけのとき。ないときは、登録のカードを教える */
-export function resolveCard(cards: CardRef[], name: string): Result<CardRef> {
+/** 名前から、1つ選ぶ（カード・バイト先）。完全に同じ名前が優先。なければ、名前の一部が合うものが1つだけのとき。ないときは、登録の一覧を教える */
+function resolveNamed<T extends { name: string }>(items: T[], name: string, label: string): Result<T> {
   const want = norm(name);
-  const names = cards.length ? cards.map(c => `「${c.name}」`).join('、') : '（カードが登録されていません）';
-  const exact = cards.filter(c => norm(c.name) === want);
+  const names = items.length ? items.map(c => `「${c.name}」`).join('、') : `（${label}が登録されていません）`;
+  const exact = items.filter(c => norm(c.name) === want);
   if (exact.length === 1) return ok(exact[0]);
-  const partial = cards.filter(c => want && norm(c.name).includes(want));
+  const partial = items.filter(c => want && norm(c.name).includes(want));
   if (partial.length === 1) return ok(partial[0]);
-  if (partial.length > 1) return fail(`「${name}」に合うカードが複数あります（${partial.map(c => `「${c.name}」`).join('、')}）。どれか教えてください`);
-  return fail(`カード「${name}」が見つかりません。登録されているカード: ${names}`);
+  if (partial.length > 1) return fail(`「${name}」に合う${label}が複数あります（${partial.map(c => `「${c.name}」`).join('、')}）。どれか教えてください`);
+  return fail(`${label}「${name}」が見つかりません。登録されている${label}: ${names}`);
 }
+export const resolveCard = (cards: CardRef[], name: string): Result<CardRef> => resolveNamed(cards, name, 'カード');
 
 // ---------------- 予定 ----------------
 
@@ -246,6 +247,9 @@ export function applyOpProblem(result: unknown): string | null {
 // ---------------- シフト（読むだけ） ----------------
 
 export type JobRef = { id: string; name: string };
+/** バイト先（時給つき。シフトを作るとき、その日の時給としてコピーする）。時給は、Claude には返さない */
+export type JobFull = JobRef & { wage: number };
+export const resolveJob = (jobs: JobFull[], name: string): Result<JobFull> => resolveNamed(jobs, name, 'バイト先');
 
 const toMin = (t: string): number => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 
@@ -271,4 +275,60 @@ export function describeShift(s: Row): string {
   const rest = Number(s.rest_minutes) > 0 ? `休憩${s.rest_minutes}分・` : '';
   const next = s.overnight ? '（翌日）' : '';
   return `${s.date}（${s.weekday}）${s.job ?? 'バイト先不明'} ${fmtTime(String(s.start_time))}〜${next}${fmtTime(String(s.end_time))}（${rest}実働${s.hours}時間）`;
+}
+
+// ---------------- シフト（追加・変更・削除） ----------------
+
+export type ShiftInput = { job: string; date: string; start_time: string; end_time: string; rest_minutes?: number };
+export type ShiftPatch = Partial<ShiftInput>;
+export const MAX_REST_MINUTES = 720;
+
+/** シフトの形の検査。アプリの入力と同じく、終わりは開始より後（日をまたぐシフトは受け付けない）。休憩は、働く時間より短く */
+function checkShiftShape(row: { date: string; start_time: string; end_time: string; rest_minutes: number }): string | null {
+  if (!isValidDate(row.date)) return `日付が正しくありません（${row.date}）。YYYY-MM-DD の形で、実在する日にしてください`;
+  if (!isValidTime(row.start_time)) return `出勤の時刻が正しくありません（${row.start_time}）。HH:MM の形にしてください`;
+  if (!isValidTime(row.end_time)) return `退勤の時刻が正しくありません（${row.end_time}）。HH:MM の形にしてください`;
+  if (toMin(row.end_time) <= toMin(row.start_time)) return '退勤は、出勤より後の時刻にしてください（日をまたぐシフトは、アプリでも入れられません）';
+  if (!Number.isInteger(row.rest_minutes) || row.rest_minutes < 0 || row.rest_minutes > MAX_REST_MINUTES) return `休憩は 0〜${MAX_REST_MINUTES} 分の整数にしてください`;
+  if (row.rest_minutes >= toMin(row.end_time) - toMin(row.start_time)) return '休憩が、働く時間と同じか、それより長くなっています';
+  return null;
+}
+
+/** 新しいシフトの行（apply_op の insert の row）。時給は、バイト先の今の時給をコピーする（アプリと同じ） */
+export function buildNewShift(input: ShiftInput, jobs: JobFull[], position: number): Result<Row> {
+  const row = { date: input.date, start_time: input.start_time, end_time: input.end_time, rest_minutes: input.rest_minutes ?? 0 };
+  const bad = checkShiftShape(row);
+  if (bad) return fail(bad);
+  const job = resolveJob(jobs, input.job);
+  if (!job.ok) return job;
+  return ok({ ...row, job_id: job.value.id, wage: job.value.wage, position });
+}
+
+/** シフトを変える。変えた列だけを返す。バイト先を変えたときだけ、時給も新しいバイト先のものにする */
+export function buildShiftUpdate(current: Row, patch: ShiftPatch, jobs: JobFull[]): Result<{ changes: Row; merged: Row }> {
+  const cur = {
+    date: String(current.date), start_time: hm(current.start_time) ?? '', end_time: hm(current.end_time) ?? '',
+    rest_minutes: Number(current.rest_minutes) || 0, job_id: String(current.job_id), wage: Number(current.wage) || 0,
+  };
+  const next = {
+    date: patch.date ?? cur.date, start_time: patch.start_time ?? cur.start_time, end_time: patch.end_time ?? cur.end_time,
+    rest_minutes: patch.rest_minutes ?? cur.rest_minutes,
+  };
+  const bad = checkShiftShape(next);
+  if (bad) return fail(bad);
+  let job_id = cur.job_id, wage = cur.wage;
+  if (patch.job !== undefined) {
+    const job = resolveJob(jobs, patch.job);
+    if (!job.ok) return job;
+    if (job.value.id !== cur.job_id) { job_id = job.value.id; wage = job.value.wage; }
+  }
+  const merged: Row = { ...next, job_id, wage };
+  const changes: Row = {};
+  for (const k of Object.keys(merged)) if (merged[k] !== (cur as Row)[k]) changes[k] = merged[k];
+  return ok({ changes, merged });
+}
+
+/** 同じバイト先・同じ日・同じ時間のシフトが、すでにあるか */
+export function findDuplicateShift(existing: Row[], job_id: string, date: string, start_time: string, end_time: string): Row | null {
+  return existing.find(s => s.job_id === job_id && s.date === date && hm(s.start_time) === start_time && hm(s.end_time) === end_time) ?? null;
 }

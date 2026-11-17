@@ -72,19 +72,49 @@ try {
   step('list_cards', await call('list_cards'));
 
   // ---- シフト（読むだけ）。アプリと同じ apply_op で、バイト先とシフトを作ってから、読めるか確かめる ----
-  const jobId = crypto.randomUUID(), shiftId = crypto.randomUUID(), nightId = crypto.randomUUID();
+  const jobId = crypto.randomUUID(), job2Id = crypto.randomUUID(), shiftId = crypto.randomUUID(), nightId = crypto.randomUUID();
+  const jobName = `検証カフェ${Date.now() % 10000}`, job2Name = `検証居酒屋${Date.now() % 10000}`;
   const mk = await supa.rpc('apply_op', { op: { id: crypto.randomUUID(), epoch: 1, changes: [
-    { table: 'jobs', action: 'insert', id: jobId, row: { name: `検証カフェ${Date.now() % 10000}`, color: 'blue', wage: 1200, position: 0 } },
+    { table: 'jobs', action: 'insert', id: jobId, row: { name: jobName, color: 'blue', wage: 1200, position: 0 } },
+    { table: 'jobs', action: 'insert', id: job2Id, row: { name: job2Name, color: 'green', wage: 1500, position: 1 } },
     { table: 'shifts', action: 'insert', id: shiftId, row: { date: '2026-12-15', job_id: jobId, start_time: '17:00', end_time: '22:00', wage: 1200, rest_minutes: 30, position: 0 } },
     { table: 'shifts', action: 'insert', id: nightId, row: { date: '2026-12-16', job_id: jobId, start_time: '22:00', end_time: '05:00', wage: 1200, rest_minutes: 0, position: 1 } },
   ] } });
   assert.equal(mk.data?.status, 'applied', JSON.stringify(mk));
-  created.jobs.push(jobId); created.shifts.push(shiftId, nightId);
+  created.jobs.push(jobId, job2Id); created.shifts.push(shiftId, nightId);
   const shifts = await call('list_shifts', { from: '2026-12-15', to: '2026-12-16' });
   step('list_shifts（日をまたぐシフトも・時給は出ない）', shifts);
   assert.match(shifts.text, /実働4.5時間/);
   assert.match(shifts.text, /"overnight": true/);
   assert.doesNotMatch(shifts.text, /1200|wage/);
+
+  // ---- シフトの追加・変更・削除 ----
+  const jobs = await call('list_jobs');
+  step('list_jobs（時給は出ない）', jobs);
+  assert.match(jobs.text, new RegExp(jobName)); assert.doesNotMatch(jobs.text, /1200|1500|wage/);
+  const sadd = await call('add_shift', { job: jobName.slice(0, 6), date: '2026-12-18', start_time: '09:00', end_time: '13:00', rest_minutes: 30 });
+  step('add_shift（バイト先は名前の一部）', sadd);
+  assert.ok(!sadd.error, sadd.text);
+  const newShiftId = idOf(sadd.text); created.shifts.push(newShiftId);
+  const { data: srow } = await supa.from('shifts').select('*').eq('id', newShiftId).single();
+  assert.equal(srow.wage, 1200); assert.equal(srow.rest_minutes, 30); assert.equal(srow.start_time, '09:00:00'); // 時給は、バイト先の時給のコピー
+  step('add_shift（同じシフト → 入れずに知らせる）', await call('add_shift', { job: jobName, date: '2026-12-18', start_time: '09:00', end_time: '13:00' }));
+  const overnight = await call('add_shift', { job: jobName, date: '2026-12-19', start_time: '22:00', end_time: '05:00' });
+  step('add_shift（日をまたぐ → 誤り）', overnight);
+  assert.ok(overnight.error); assert.match(overnight.text, /出勤より後/);
+  step('add_shift（バイト先がない → 誤り）', await call('add_shift', { job: 'ないバイト先', date: '2026-12-19', start_time: '09:00', end_time: '13:00' }));
+  step('add_shift（休憩が長い → 誤り）', await call('add_shift', { job: jobName, date: '2026-12-19', start_time: '09:00', end_time: '10:00', rest_minutes: 60 }));
+  step('update_shift（時間と休憩を変える）', await call('update_shift', { id: newShiftId, start_time: '10:00', end_time: '14:00', rest_minutes: 0 }));
+  const { data: srow2 } = await supa.from('shifts').select('start_time,end_time,rest_minutes,wage').eq('id', newShiftId).single();
+  assert.deepEqual([srow2.start_time, srow2.end_time, srow2.rest_minutes, srow2.wage], ['10:00:00', '14:00:00', 0, 1200]);
+  step('update_shift（バイト先を変える → 時給も変わる）', await call('update_shift', { id: newShiftId, job: job2Name }));
+  const { data: srow3 } = await supa.from('shifts').select('job_id,wage').eq('id', newShiftId).single();
+  assert.deepEqual([srow3.job_id, srow3.wage], [job2Id, 1500]);
+  step('update_shift（日付を変える）', await call('update_shift', { id: newShiftId, date: '2026-12-21' }));
+  step('update_shift（終わりを開始より前に → 誤り）', await call('update_shift', { id: newShiftId, end_time: '09:00' }));
+  step('delete_shift', await call('delete_shift', { id: newShiftId }));
+  created.shifts = created.shifts.filter(x => x !== newShiftId);
+  step('delete_shift（もう無い）', await call('delete_shift', { id: newShiftId }));
 
   // ---- 予定 ----
   const title = `検証の飲み会 ${Date.now() % 100000}`;
