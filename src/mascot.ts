@@ -1,4 +1,6 @@
-// マスコット（キリン）の表情とセリフ（D33）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
+import { factLines, type MascotFacts } from './mascot-facts.ts';
+
+// マスコット（キリン）の表情とセリフ（D33・D34）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
 // 表情は「ふつう」「うれしい」「心配」「応援」の4つ。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
 
 export type Mood = 'normal' | 'happy' | 'worried' | 'cheer';
@@ -12,6 +14,8 @@ export type MascotInput = {
   recordedToday: boolean;
   /** 最後に記録した日から、何日たったか（今日記録していれば 0。記録が1件もなければ null。今日より先の日付は数えない） */
   daysSinceRecord: number | null;
+  /** セリフの材料（給料日・予算のペース・曜日の傾向。D34）。ふだんと今日記録したときの文に混ぜる。なければ決まった文だけ */
+  facts?: MascotFacts;
   /** 今日（'YYYY-MM-DD'）。セリフを日替わりにするために使う */
   today: string;
 };
@@ -77,7 +81,9 @@ const MOOD_OF: Record<Situation, Mood> = { short: 'worried', streak: 'happy', re
 /** 表情とセリフ。セリフは状況ごとに数種類あり、日替わりで選ぶ（同じ日は同じ文） */
 export function mascotView(i: MascotInput): MascotView {
   const situation = situationOf(i);
-  const lines = LINES[situation];
+  // 材料から作れる文は、ふだんと今日記録したときの文の前に足す（足りない・連続・おかえりのときは、決まった文だけ）
+  const extra = i.facts && (situation === 'greeting' || situation === 'recorded') ? factLines(i.facts) : [];
+  const lines = [...extra, ...LINES[situation]];
   const text = lines[dayNo(i.today) % lines.length].replace('{n}', String(i.streak));
   return { mood: MOOD_OF[situation], situation, text };
 }
