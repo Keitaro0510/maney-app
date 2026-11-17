@@ -28,7 +28,8 @@ test('mascotView: うれしい顔は、連続記録か今日の記録のとき�
 });
 
 test('mascotView: セリフは日替わり（同じ日は同じ文、3日で一巡する）。連続日数が入る', () => {
-  const t = d => mascotView({ ...base, today: d }).text;
+  // 今日記録したとき（材料なし）は、決まった3文だけが回る
+  const t = d => mascotView({ ...base, recordedToday: true, today: d }).text;
   assert.equal(t('2026-11-17'), t('2026-11-17'));
   assert.notEqual(t('2026-11-17'), t('2026-11-18'));
   assert.equal(t('2026-11-17'), t('2026-11-20'));
