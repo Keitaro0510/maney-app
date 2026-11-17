@@ -66,7 +66,17 @@
   <!-- いちばん大事な数字（D11・D22）: この先90日の残高の最低点（使えるお金）。足りないときはマイナスのまま。数えるのは src/money.ts -->
   <!-- マスコットのキリン（D33）。表情とセリフは src/mascot.ts。絵は img/（公開するときにそのままコピー）。src は JS で入れる（Vite が名前を書き換えないように） -->
   <div class="mascot" id="home-mascot" hidden>
-    <img class="mascot-img" id="home-mascot-img" alt="" width="64" height="70">
+    <!-- 動き（D41。src/mascot-motion.ts）: つつくと「ぽよん」・ときどき小ワザ・記録でコインのお祝い・夜は Zzz・記録が7日続くと王冠。ボタンが動き、中の .mascot-bob がゆっくり揺れる -->
+    <div class="mascot-stage">
+      <button type="button" class="mascot-btn" id="home-mascot-btn" aria-label="キリンをつつく">
+        <span class="mascot-bob">
+          <img class="mascot-img" id="home-mascot-img" alt="" width="64" height="70">
+          <span class="mascot-crown" id="home-mascot-crown" aria-hidden="true" hidden><svg viewBox="0 0 32 22" width="100%" height="auto"><path d="M3 20 1.5 6 9 12.5 16 2.5l7 10L30.5 6 29 20Z" fill="#F5B82E" stroke="#C98A12" stroke-width="1.6" stroke-linejoin="round"/><circle cx="1.5" cy="5.5" r="2" fill="#E5533D"/><circle cx="16" cy="2.5" r="2.2" fill="#E5533D"/><circle cx="30.5" cy="5.5" r="2" fill="#E5533D"/></svg></span>
+          <span class="mascot-zzz" id="home-mascot-zzz" aria-hidden="true" hidden><i>z</i><i>z</i><i>Z</i></span>
+        </span>
+      </button>
+      <div class="mascot-coins" id="home-mascot-coins" aria-hidden="true"></div>
+    </div>
     <div class="mascot-bubble" id="home-mascot-text" role="status"></div>
   </div>
   <div class="acct-box home-main">

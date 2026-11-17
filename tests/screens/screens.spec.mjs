@@ -6,8 +6,8 @@ import { test, expect } from '@playwright/test';
 import { EMAIL, PASSWORD, NOW, HOLIDAYS } from './constants.mjs';
 
 // 時刻を固定し、祝日の取得を固定の答えにして、テスト用のユーザーでログインする
-async function open(page, path = '/', { anyScreen = false } = {}) {
-  await page.clock.setFixedTime(NOW);
+async function open(page, path = '/', { anyScreen = false, now = NOW } = {}) {
+  await page.clock.setFixedTime(now);
   await page.route('https://www.googleapis.com/**', route => route.fulfill({ json: HOLIDAYS }));
   await page.goto(path);
   const form = page.locator('[data-maney-local-login]');
@@ -678,4 +678,64 @@ test('シフトタブ: 今年の収入の数字が重ならない', async ({ pag
   await expect(page.locator('#sec-shift')).toContainText('今月と月別の収入');
   await expect(page.locator('#year-this-month')).toBeVisible();
   await expect(page.locator('#year-transport')).toBeVisible();
+});
+
+// ホームのキリンの動き（D41）。どの動きを出すかの決め事は tests/mascot-play.test.mjs。ここでは、画面で動くことを確かめる
+test('キリン: つつくと「ぽよん」と動いて、ひとこと返す。5回続けると回る', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  const btn = page.locator('#home-mascot-btn');
+  const text = page.locator('#home-mascot-text');
+  await expect(btn).toBeVisible();
+  const before = await text.textContent();
+  await btn.click();
+  await expect(btn).toHaveClass(/play-poyon/);
+  await expect(text).not.toHaveText(before);
+  await expect(btn).not.toHaveClass(/play-poyon/); // 動きが終われば、クラスは外れる
+  for (let i = 0; i < 4; i++) await btn.click();
+  await expect(btn).toHaveClass(/play-spin/);
+});
+
+test('キリン: 動きを減らす設定では、動かさずに、ひとことだけ返す', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open(page);
+  await closeAll(page);
+  const btn = page.locator('#home-mascot-btn');
+  const text = page.locator('#home-mascot-text');
+  const before = await text.textContent();
+  await btn.click();
+  await expect(text).not.toHaveText(before);
+  expect(await btn.evaluate(el => [...el.classList].filter(c => c.startsWith('play-')))).toEqual([]);
+});
+
+test('キリン: 夜は眠そうで Zzz が出る。昼は出ない', async ({ page }) => {
+  await open(page, '/', { now: new Date('2026-11-12T22:30:00+09:00') });
+  await closeAll(page);
+  await expect(page.locator('#home-mascot')).toHaveClass(/night/);
+  await expect(page.locator('#home-mascot-zzz')).toBeVisible();
+  await page.locator('#home-mascot-btn').click();
+  await expect(page.locator('#home-mascot-text')).toContainText(/ふあぁ|むにゃ|zzz/);
+});
+
+test('キリン: 昼は Zzz も王冠も出ない（記録の連続が7日に満たない）', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await expect(page.locator('#home-mascot')).not.toHaveClass(/night/);
+  await expect(page.locator('#home-mascot-zzz')).toBeHidden();
+  await expect(page.locator('#home-mascot-crown')).toBeHidden();
+});
+
+test('キリン: 記録を足すと、コインが跳ねてお祝いする（直したり消したりでは出ない）', async ({ page }) => {
+  await open(page);
+  await closeAll(page);
+  await expect(page.locator('#home-mascot-coins .mascot-coin')).toHaveCount(0);
+  await page.locator('#home-add-ledger').click();
+  await page.locator('#ldg-amount').fill('321');
+  await page.locator('#ldg-name').fill('お祝いの確認');
+  await page.locator('#ldg-mbg [data-ledger-action="save-add"]').click();
+  await expect(page.locator('#ldg-mbg')).not.toHaveClass(/open/);
+  await expect(page.locator('#home-mascot-coins .mascot-coin').first()).toBeAttached();
+  await expect(page.locator('#home-mascot-text')).toContainText(/記録|ナイス|コツコツ|その調子/);
+  await expect(page.locator('#home-mascot-btn')).toHaveClass(/play-hop/);
+  await expect(page.locator('#home-mascot-coins .mascot-coin')).toHaveCount(0, { timeout: 5000 }); // 跳ね終わると消える
 });
