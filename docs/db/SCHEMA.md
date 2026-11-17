@@ -238,6 +238,7 @@ flowchart LR
 | `private.archive_user_data` | 切り替える前の JSON の複製と履歴 | 経緯の記録 |
 | `private.share_codes` | 共有コード（1人1つ。16桁）と、共有で見せる名前（1〜20文字） | 相手に渡して、カレンダーの共有を申請してもらう（D39） |
 | `private.calendar_shares` | 見せる人・見る人・承認済みか・見る人が付けた呼び名 | 承認された相手にだけ、予定とシフトを返す（D39） |
+| `public.push_subscriptions` | 通知（Web Push）の購読情報（端末ごとに1行。送り先・暗号の鍵・端末の名前） | 朝の通知を送る（D36）。端末に結び付く情報なので、**毎日の写し・読み込み・行の履歴には入れない**（バックアップに含めない。戻したら、端末で通知を登録し直す）。登録は関数 `register_push_subscription` だけ（同じ端末を別の人が登録したら付け替える）。アプリは自分の行を読む・消すだけ |
 
 カレンダーの共有（D39）の2つの表は、アプリが直接は読み書きできず、関数（`get_my_share_code`・`get_my_share_name`・`set_my_share_name`・`request_calendar_share`・`list_calendar_shares`・`respond_calendar_share`・`revoke_calendar_share`・`shared_calendar` など）だけを通す。`shared_calendar` が返すのは、承認済みの相手の予定（id・タイトル・日付・時刻・色）とシフト（id・日付・時刻・バイト先の名前）だけで、予算・カード・メモ・時給などは返さない。
 

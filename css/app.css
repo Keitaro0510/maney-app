@@ -753,3 +753,6 @@ button.color-swatch.sel{transform:none}
 .share-sub{font-size:12px;color:var(--color-text-secondary)}
 .share-btns{display:flex;gap:6px;flex-shrink:0}
 .share-empty{font-size:13px;color:var(--color-text-secondary)}
+
+/* hidden 属性を、display の指定より優先する（通知のボタンの出し分け。D36） */
+.ui-btn[hidden],.backup-actions[hidden]{display:none}
