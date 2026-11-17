@@ -1277,6 +1277,7 @@ D33 の4つの表情は、ここまでで出そろった。
 - [ ] 本番の Auth で OAuth サーバーと動的登録を有効にし、`mcp` をデプロイして、claude.ai のコネクタとスマホの Claude から呼べるか確かめる（本番の設定変更。ユーザーの許可を取る）
 - [x] 同意画面をアプリに作る（2026-11-17。`src/oauth-consent.ts`・`src/oauth-consent-ui.ts`。アプリのトップで受ける（`authorization_url_path = "/"`）。案内の id は端末に10分だけ置く。許すつなぎ先は claude.ai だけ。テスト付き）
 - [x] 本番の Auth の設定（2026-11-17）。**本番の Site URL が、古い名前（money-app）で末尾に空白つきの壊れた値になっていた**ので `https://keitaro0510.github.io/maney-app/` に直した。OAuth サーバーを有効に、Authorization Path を `/` に、動的登録を有効にした。`mcp`（hello・whoami）を本番にデプロイした。ユーザーの許可を取り、Claude in Chrome でダッシュボードを操作した（`docs/MCP.md`）
-- [ ] claude.ai のカスタムコネクタに追加し、スマホの Claude から呼べるか確かめる（同意画面は、claude.ai 以外の戻り先を拒否する。実際の戻り先が違えば、画面に出るので許可リストを直す）
+- [x] claude.ai のカスタムコネクタに追加し、web の Claude から `whoami` を呼べた（2026-11-17。Claude in Chrome で操作。OAuth の一連の流れが、本物の claude.ai で通った。つなぎ先は claude.ai で、許可リストを通った。クライアント登録は「自動的に登録（DCR）」。同意画面が「今日のタスク」に隠れる不具合を、`<dialog>` の `showModal` にして直した）
+- [ ] スマホの Claude アプリで、同じコネクタが使えるか確かめる（ユーザー）
 - [ ] ツール: `add_task`・`add_plan`・`list_cards`（予算・払い方つき）。書き込みの検査・RLS のテスト
 - [ ] アプリが、サーバーに直接書き込まれた予定・タスクを、開いたときに取り込めるか確かめる（`src/sync.ts`）

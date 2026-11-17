@@ -96,7 +96,23 @@ Auth は、認可の途中で、**`<Site URL><authorization_url_path>?authorizat
 ダッシュボードの操作の注意（Claude in Chrome）:
 - 上に出るバナーで、画面がずれる。座標ではなく、要素の指定で押し、入力の前に画面で確かめる（座標のクリックが外れて、キー入力がダッシュボードのショートカットに当たったことがあった。移動だけで、設定は変わらなかった）
 
-## 本番に出す手順（1〜4 は 2026-11-17 に済み。5・6 が残り）
+## claude.ai でつないだ結果（2026-11-17。Claude in Chrome で操作）
+
+**成功。** claude.ai のカスタムコネクタ「maney」から、OAuth を通して本番の `mcp` を呼べた。新しい会話で「maney の whoami を呼んで」と頼むと、ログイン中のメールアドレス（keitaro.takaoki@gmail.com）が返った。
+
+つなぎ方（claude.ai の設定は「プラグイン」に移っている。プラグイン → 追加 → カスタムコネクタを追加）:
+- 名前: `maney`／URL: `https://sgvyjolyfuqchugltvls.supabase.co/functions/v1/mcp`
+- 認証: 「今すぐサインイン」（検出済み）／OAuth クライアント: **「自動的に登録（DCR）」**（検出済み）。既定の「Claude の公開アイデンティティ（CIMD）」は、Supabase の対応を確かめていないので選ばなかった
+- 追加すると、ブラウザでアプリの同意画面（「Claude につなぎますか？」）が開く。つなぎ先は「Claude（claude.ai）」と表示され、許可リストを通った。「つなぐ」を押すと「maneyに接続しました」
+- ツールを初めて使うときは、Claude が「1回だけ許可／常に許可」を聞く（Claude 側の確認）
+
+つまずいたことと、直したこと:
+- **コネクタの URL を Chrome に入力したとき、`v` が1文字抜けて `/functions/1/mcp` になった**（ツールの文字入力で、`v` だけが落ちる）。Claude は `/functions/1/mcp` に接続しに行き、「サインインサービスに登録できませんでした」と出た。Supabase のログ（`edge_logs`）で、リクエストの URL が `functions/1/mcp` になっているのを見て気づいた。コネクタを削除して作り直し、`v` だけ別に入力して、画面で確かめた
+- **同意画面が、「今日のタスク」のダイアログに隠れた**。アプリを開くと、タスクの `<dialog>`（`showModal`。最前面）が先に開き、`z-index` だけでは前に出られなかった。同意画面も `<dialog>` の `showModal` にして、あとから開くものが前に出るようにした。Esc で黙って閉じないようにもした
+
+スマホの Claude アプリで使えるかは、まだ確かめていない（web で追加したコネクタは、同じアカウントのスマホでも使えるはず。ユーザーが確かめる）。
+
+## 本番に出す手順（2026-11-17 にすべて済み。スマホの Claude での確認だけ残り）
 
 ダッシュボードの設定（ユーザー）:
 1. Authentication → **URL Configuration** → **Site URL** を `https://keitaro0510.github.io/maney-app/` にする（末尾の空白に注意）。**Redirect URLs** に、同じ `https://keitaro0510.github.io/maney-app/` が入っていることを確かめる（今のログインが使っているので、入っているはず）

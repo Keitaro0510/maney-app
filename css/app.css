@@ -745,7 +745,9 @@ button.color-swatch.sel{transform:none}
 @media (prefers-reduced-motion:reduce){.mascot-ch{opacity:1;animation:none}}
 
 /* ===== Claude につなぐ許可の画面（Issue #190・D37）。ログイン画面と同じ見た目 ===== */
-#oauth-consent{position:fixed;inset:0;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;z-index:520;padding:2rem}
-#oauth-consent[hidden]{display:none}
+/* <dialog> の showModal なので、画面の最前面（ほかのダイアログ＝今日のタスクより、あとから開いたものが前）に出る */
+#oauth-consent{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;padding:2rem;background:var(--color-background-secondary);color:var(--color-text-primary)}
+#oauth-consent[open]{display:flex;align-items:center;justify-content:center}
+#oauth-consent::backdrop{background:transparent}
 #oauth-consent .login-sub{margin-bottom:1.5rem}
 .oauth-consent-btn{display:block;width:100%;margin-top:8px;min-height:44px}
