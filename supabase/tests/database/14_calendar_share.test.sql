@@ -2,7 +2,7 @@
 -- 実行: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(35);
 
 -- A＝持ち主、B＝見る人、C＝関係のない人
 insert into auth.users (id, email) values
@@ -57,9 +57,15 @@ select is((select count(*)::int from public.list_calendar_shares()), 0, 'はじ�
 insert into codes values ('a', public.get_my_share_code());
 
 -- ============================================================
--- B: 申請（7）
+-- B: 名前を付けて、申請（11）
 -- ============================================================
 select set_config('request.jwt.claims', '{"sub":"b0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
+select throws_ok(
+  $$ select public.request_calendar_share((select code from codes where who = 'a'), '彼女') $$,
+  '22023', '先に、自分の名前を設定してください（相手に見える名前です）', '自分の名前を付ける前は申請できない');
+select throws_ok($$ select public.set_my_share_name('  ') $$, '22023', '名前を入れてください', '空の名前は設定できない');
+select is(public.set_my_share_name('  はなこ  '), 'はなこ', '名前を設定できる（前後の空白は落ちる）');
+select is(public.get_my_share_name(), 'はなこ', '設定した名前を読める');
 select throws_ok(
   $$ select public.request_calendar_share('0000000000000000', '彼女') $$, 'P0002', 'コードが見つかりません', '知らないコードでは申請できない');
 select throws_ok(
@@ -80,12 +86,14 @@ select is(
   '(viewing,pending,彼女)', 'B の一覧に、承認待ちの申請が出る');
 
 -- ============================================================
--- A: 承認する（4）
+-- A: 承認する（5）
 -- ============================================================
 select set_config('request.jwt.claims', '{"sub":"a0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
 select is(
-  (select row(direction, status, other_email)::text from public.list_calendar_shares()),
-  '(sharing,pending,b@example.com)', 'A の一覧に、B の申請が出る');
+  (select row(direction, status, other_name)::text from public.list_calendar_shares()),
+  '(sharing,pending,はなこ)', 'A の一覧に、B が付けた名前で申請が出る');
+select ok(not exists (select 1 from public.list_calendar_shares() l where l::text like '%example.com%'),
+  '一覧にメールアドレスは出ない');
 insert into share_id select id from public.list_calendar_shares();
 select set_config('request.jwt.claims', '{"sub":"c0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
 select throws_ok(

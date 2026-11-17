@@ -284,7 +284,11 @@
   </div>
   <!-- カレンダーの共有（D39。src/screens/share-settings.ts）。相手には予定とシフトだけ見える。予算・カード・メモは見えない -->
   <div class="card"><div class="st">カレンダーの共有</div>
-    <div class="share-note">コードを渡した相手が申請し、あなたが承認すると、相手があなたの予定とシフトを見られます（見るだけ。予算・カード・メモは見えません）。お互いに見るには、両方で申請と承認をします。</div>
+    <div class="share-note">コードを渡した相手が申請し、あなたが承認すると、相手があなたの予定とシフトを見られます（見るだけ。予算・カード・メモは見えません）。申請には、自分の名前の設定が要ります（申請を受けた人には、この名前だけが見えます。メールアドレスは見えません）。お互いに見るには、両方で申請と承認をします。</div>
+    <div class="fg"><label for="share-name">あなたの名前（申請したとき、相手に見えます）</label>
+      <div class="share-code-row"><input id="share-name" type="text" maxlength="20" placeholder="例: たろう" style="flex:1;min-width:0"/>
+        <button type="button" class="ui-btn sm" id="share-name-save">保存</button></div>
+    </div>
     <div class="fg"><label>あなたのコード</label>
       <div class="share-code-row"><code id="share-code" class="share-code"></code>
         <button type="button" class="ui-btn sm" id="share-copy">コピー</button>

@@ -11,10 +11,10 @@ export type SharedPlan = {
 export type SharedShift = { id: string; date: string; start_time: string; end_time: string; job: string };
 export type SharedCalendar = { plans: SharedPlan[]; shifts: SharedShift[] };
 
-/** direction: viewing＝自分が見る側（nickname は相手の呼び名） / sharing＝自分が見せる側（other_email が相手） */
+/** direction: viewing＝自分が見る側（nickname は相手の呼び名） / sharing＝自分が見せる側（other_name は、相手が自分で付けた名前。メールアドレスは来ない） */
 export type ShareRow = {
   id: string; direction: 'viewing' | 'sharing'; status: 'pending' | 'approved';
-  nickname: string; other_email: string; owner_id: string;
+  nickname: string; other_name: string; owner_id: string;
 };
 
 async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
@@ -24,6 +24,8 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
 }
 
 export const getMyShareCode = (): Promise<string> => call<string>('get_my_share_code');
+export const getMyShareName = (): Promise<string> => call<string>('get_my_share_name');
+export const setMyShareName = (name: string): Promise<string> => call<string>('set_my_share_name', { p_name: name });
 export const resetMyShareCode = (): Promise<string> => call<string>('reset_my_share_code');
 export const requestShare = (code: string, nickname: string): Promise<void> =>
   call<void>('request_calendar_share', { p_code: code, p_nickname: nickname });

@@ -1,11 +1,12 @@
 // 設定タブの「カレンダーの共有」（D39）。共有コードを渡す・相手のコードで申請する・承認する・解除する。
 import { elementById, inputById, escapeHtml, toast } from '../ui.ts';
 import {
-  getMyShareCode, resetMyShareCode, requestShare, listShares, respondShare, revokeShare, formatShareCode, type ShareRow,
+  getMyShareCode, getMyShareName, setMyShareName, resetMyShareCode, requestShare, listShares, respondShare, revokeShare, formatShareCode, type ShareRow,
 } from '../share.ts';
 import { resetShareView, renderCal } from './calendar.ts';
 
 let myCode = '';
+let myName = '';
 let rows: ShareRow[] = [];
 let busy = false;
 // 押し間違いを防ぐため、解除と作り直しは2回押す（1回目で「もう一度押すと…」になる）
@@ -37,10 +38,10 @@ function rowHtml(r: ShareRow): string {
     btn(action, armed === `${action}:${r.id}` ? armLabel : label, 'danger');
   if (r.direction === 'sharing') {
     if (r.status === 'pending') {
-      return `<div class="share-row"><div class="share-who"><div>${escapeHtml(r.other_email)}</div><div class="share-sub">あなたのカレンダーを見たいと申請しています</div></div>`
+      return `<div class="share-row"><div class="share-who"><div>${escapeHtml(r.other_name || '名前なし')}</div><div class="share-sub">あなたのカレンダーを見たいと申請しています</div></div>`
         + `<div class="share-btns">${btn('approve', '承認', 'primary')}${btn('reject', '断る')}</div></div>`;
     }
-    return `<div class="share-row"><div class="share-who"><div>${escapeHtml(r.other_email)}</div><div class="share-sub">あなたのカレンダーを見られます</div></div>`
+    return `<div class="share-row"><div class="share-who"><div>${escapeHtml(r.other_name || '名前なし')}</div><div class="share-sub">あなたのカレンダーを見られます</div></div>`
       + `<div class="share-btns">${armedBtn('revoke', '解除', 'もう一度押すと解除')}</div></div>`;
   }
   const name = escapeHtml(r.nickname || '相手');
@@ -61,7 +62,8 @@ function render(): void {
 
 async function reload(): Promise<void> {
   try {
-    [myCode, rows] = await Promise.all([getMyShareCode(), listShares()]);
+    [myCode, myName, rows] = await Promise.all([getMyShareCode(), getMyShareName(), listShares()]);
+    if (document.activeElement !== inputById('share-name')) inputById('share-name').value = myName;
   } catch (e) {
     setMsg(errText(e));
   }
@@ -100,6 +102,11 @@ export function bindShareControls(): void {
   elementById('share-reset').addEventListener('click', () => {
     if (!arm('reset')) return;
     void run(async () => { myCode = await resetMyShareCode(); }, 'コードを作り直しました（承認前の申請は消えました）');
+  });
+  elementById('share-name-save').addEventListener('click', () => {
+    const name = inputById('share-name').value.trim();
+    if (!name) { setMsg('名前を入れてください'); return; }
+    void run(async () => { myName = await setMyShareName(name); }, '名前を保存しました');
   });
   elementById('share-request').addEventListener('click', () => {
     const code = inputById('share-code-input').value.trim();

@@ -1331,10 +1331,10 @@ D33 の4つの表情は、ここまでで出そろった。
 - 予算などを「画面で隠す」のではなく、**サーバーが列ごと返さない**ので、画面を直しても・通信を覗いても、見せない情報は届かない
 
 作り（2026-11-17）:
-- `plans`・`shifts` の RLS はゆるめない。表（`private.share_codes`・`private.calendar_shares`）は `private` に置き、アプリからは `security definer` の関数だけを通す（`get_my_share_code`・`reset_my_share_code`・`request_calendar_share`・`list_calendar_shares`・`respond_calendar_share`・`revoke_calendar_share`・`shared_calendar`）。マイグレーションは `20261117120000_calendar_share.sql`、テストは `supabase/tests/database/14_calendar_share.test.sql`
+- `plans`・`shifts` の RLS はゆるめない。表（`private.share_codes`・`private.calendar_shares`）は `private` に置き、アプリからは `security definer` の関数だけを通す（`get_my_share_code`・`reset_my_share_code`・`get_my_share_name`・`set_my_share_name`・`request_calendar_share`・`list_calendar_shares`・`respond_calendar_share`・`revoke_calendar_share`・`shared_calendar`）。マイグレーションは `20261117120000_calendar_share.sql`、テストは `supabase/tests/database/14_calendar_share.test.sql`
 - `shared_calendar` は、承認済みの相手にだけ、100日までの範囲の予定とシフトを返す（読み取り専用。書き込む関数はない）
 - 設定タブに「カレンダーの共有」のカード（`src/screens/share-settings.ts`）、カレンダーに切り替え（`src/screens/calendar.ts`）、通信は `src/share.ts`
-- 申請を受けた持ち主には、申請した人のメールアドレスが見える（誰の申請か分かるように）。コードは16桁（推測されにくい）。漏れたときは「作り直す」で新しくでき、承認前の申請は消える（承認済みの相手はそのまま）
+- 申請を受けた持ち主に見えるのは、**申請した人が自分で付けた「名前」だけ**（メールアドレスは返さない。ユーザーの指摘で、メールをやめて名前にした）。名前は設定の共有カードで付ける（1〜20文字）。**名前が未設定だと申請できない**（持ち主が誰か分かるように）。コードは16桁（推測されにくい）。漏れたときは「作り直す」で新しくでき、承認前の申請は消える（承認済みの相手はそのまま）
 - 解除・コードの作り直しは、押し間違いを防ぐため2回押す
 
 あとで（ユーザーが言ったら）:

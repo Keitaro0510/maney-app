@@ -544,7 +544,7 @@ test('HTML 特殊文字を含むカード名を文字として表示する', asy
 test('相手のカレンダー（見るだけ。自分のとは混ぜない）', async ({ page }) => {
   const owner = 'a0000000-0000-4000-8000-0000000000aa';
   await page.route('**/rest/v1/rpc/list_calendar_shares', route => route.fulfill({ json: [
-    { id: 'b0000000-0000-4000-8000-0000000000b1', direction: 'viewing', status: 'approved', nickname: '彼女', other_email: '', owner_id: owner },
+    { id: 'b0000000-0000-4000-8000-0000000000b1', direction: 'viewing', status: 'approved', nickname: '彼女', other_name: '', owner_id: owner },
   ] }));
   await page.route('**/rest/v1/rpc/shared_calendar', route => route.fulfill({ json: {
     plans: [{ id: 'p1', title: '映画', start_date: '2026-11-14', end_date: '2026-11-14', start_time: '18:00:00', end_time: '20:00:00', color: 'pink' }],
@@ -595,4 +595,16 @@ test('設定の共有: コードが出て、知らないコードの申請はエ
   await page.locator('#share-code-input').fill('0000-0000-0000-0000');
   await page.locator('#share-request').click();
   await expect(page.locator('#share-msg')).toContainText('コードが見つかりません');
+  // 名前を保存できる（申請を受けた人には、この名前だけが見える）。空では保存できない
+  await page.locator('#share-name').fill('  ');
+  await page.locator('#share-name-save').click();
+  await expect(page.locator('#share-msg')).toContainText('名前を入れてください');
+  await page.locator('#share-name').fill('テスト太郎');
+  await page.locator('#share-name-save').click();
+  await expect(page.locator('#share-msg')).toBeHidden();
+  // 入力欄を空にして、別のタブから設定に戻ると、サーバーに保存した名前が戻る
+  await page.locator('#share-name').fill('');
+  await page.locator('#nav-cal').click();
+  await page.locator('#settings-btn').click();
+  await expect(page.locator('#share-name')).toHaveValue('テスト太郎');
 });

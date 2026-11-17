@@ -1,6 +1,7 @@
 -- D39: 相手とカレンダーを見せ合う（読み取り専用）。
 -- 共有コードを渡す → 相手が申請 → 持ち主が承認、の流れ。承認された相手には、予定とシフトの「見せる列だけ」を返す。
 -- plans・shifts の RLS はゆるめない。表は private に置き、アプリからは下の関数だけを通す（security definer）。
+-- 申請を受けた持ち主に見えるのは、申請した人が自分で付けた「名前」だけ（メールアドレスは返さない）
 -- 返さないもの: 予算・カード・メモ・済み・時給・休憩（plans・shifts のほかの列、ほかのテーブルすべて）
 
 -- ============================================================
@@ -9,9 +10,10 @@
 create table private.share_codes (
   user_id uuid primary key references auth.users (id) on delete cascade,
   code text not null unique check (code ~ '^[0-9a-f]{16}$'),
+  display_name text not null default '' check (char_length(display_name) <= 20), -- 申請したとき、持ち主に見える名前（自分で付ける）
   created_at timestamptz not null default now()
 );
-comment on table private.share_codes is '共有コード（1人1つ。16桁の16進数。作り直すと前のコードでは申請できない）';
+comment on table private.share_codes is '共有コード（1人1つ。16桁の16進数。作り直すと前のコードでは申請できない）と、共有で見せる名前';
 
 create table private.calendar_shares (
   id uuid primary key default gen_random_uuid(),
@@ -55,6 +57,39 @@ begin
 end;
 $$;
 
+-- 共有で相手に見せる名前（申請したとき、持ち主に見える。1〜20文字）
+create or replace function public.get_my_share_name()
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'ログインが必要です' using errcode = '28000'; end if;
+  return coalesce((select display_name from private.share_codes where user_id = uid), '');
+end;
+$$;
+
+create or replace function public.set_my_share_name(p_name text)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := auth.uid();
+  n text := left(btrim(coalesce(p_name, '')), 20);
+begin
+  if uid is null then raise exception 'ログインが必要です' using errcode = '28000'; end if;
+  if n = '' then raise exception '名前を入れてください' using errcode = '22023'; end if;
+  insert into private.share_codes (user_id, code, display_name)
+  values (uid, substr(replace(gen_random_uuid()::text, '-', ''), 1, 16), n)
+  on conflict (user_id) do update set display_name = excluded.display_name;
+  return n;
+end;
+$$;
+
 -- 作り直す（コードが漏れたとき）。すでに承認した相手はそのまま。承認前の申請は、コードを知っていた人のものなので消す
 create or replace function public.reset_my_share_code()
 returns text
@@ -93,6 +128,9 @@ begin
   select user_id into owner from private.share_codes where code = code_norm;
   if owner is null then raise exception 'コードが見つかりません' using errcode = 'P0002'; end if;
   if owner = uid then raise exception '自分のコードは使えません' using errcode = '22023'; end if;
+  if coalesce((select display_name from private.share_codes where user_id = uid), '') = '' then
+    raise exception '先に、自分の名前を設定してください（相手に見える名前です）' using errcode = '22023';
+  end if;
   begin
     insert into private.calendar_shares (owner_id, viewer_id, nickname)
     values (owner, uid, left(btrim(coalesce(p_nickname, '')), 20));
@@ -102,9 +140,9 @@ begin
 end;
 $$;
 
--- 一覧。direction: 'viewing'＝自分が見る側（持ち主の名前は nickname） / 'sharing'＝自分が見せる側（相手のメールを出す）
+-- 一覧。direction: 'viewing'＝自分が見る側（持ち主の呼び名は nickname） / 'sharing'＝自分が見せる側（相手が付けた名前を other_name に出す。メールは出さない）
 create or replace function public.list_calendar_shares()
-returns table (id uuid, direction text, status text, nickname text, other_email text, owner_id uuid)
+returns table (id uuid, direction text, status text, nickname text, other_name text, owner_id uuid)
 language plpgsql
 security definer
 set search_path = ''
@@ -116,8 +154,8 @@ begin
     select s.id, 'viewing'::text, s.status, s.nickname, ''::text, s.owner_id
       from private.calendar_shares s where s.viewer_id = uid
     union all
-    select s.id, 'sharing'::text, s.status, ''::text, coalesce(u.email, '')::text, s.owner_id
-      from private.calendar_shares s join auth.users u on u.id = s.viewer_id
+    select s.id, 'sharing'::text, s.status, ''::text, coalesce(c.display_name, '')::text, s.owner_id
+      from private.calendar_shares s left join private.share_codes c on c.user_id = s.viewer_id
       where s.owner_id = uid
     order by 3, 1;
 end;
@@ -214,6 +252,8 @@ $$;
 -- ============================================================
 revoke all on table private.share_codes, private.calendar_shares from public, anon, authenticated;
 revoke all on function public.get_my_share_code() from public, anon;
+revoke all on function public.get_my_share_name() from public, anon;
+revoke all on function public.set_my_share_name(text) from public, anon;
 revoke all on function public.reset_my_share_code() from public, anon;
 revoke all on function public.request_calendar_share(text, text) from public, anon;
 revoke all on function public.list_calendar_shares() from public, anon;
@@ -221,6 +261,8 @@ revoke all on function public.respond_calendar_share(uuid, boolean) from public,
 revoke all on function public.revoke_calendar_share(uuid) from public, anon;
 revoke all on function public.shared_calendar(uuid, date, date) from public, anon;
 grant execute on function public.get_my_share_code() to authenticated;
+grant execute on function public.get_my_share_name() to authenticated;
+grant execute on function public.set_my_share_name(text) to authenticated;
 grant execute on function public.reset_my_share_code() to authenticated;
 grant execute on function public.request_calendar_share(text, text) to authenticated;
 grant execute on function public.list_calendar_shares() to authenticated;
