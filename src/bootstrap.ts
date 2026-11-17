@@ -18,6 +18,7 @@ import { bindSettingsControls } from './screens/settings.ts';
 import { bindCardControls } from './screens/cards.ts';
 import { bindPlanControls } from './screens/plans.ts';
 import { elementById } from './ui.ts';
+import { captureAuthorizationId, maybeAskConsent } from './oauth-consent-ui.ts';
 
 function onDayChange(now: Date): void {
   const prev = getNow();
@@ -88,5 +89,6 @@ export function startBootstrap(): void {
   });
   window.addEventListener('focus', () => watcher.check());
   window.addEventListener('online', resyncRemote);
-  void loadData();
+  captureAuthorizationId(); // Claude などからの許可の依頼（?authorization_id=...）。ログインを挟んでも忘れないよう、先に端末に置く（D37）
+  void loadData().then(maybeAskConsent);
 }

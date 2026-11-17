@@ -63,14 +63,40 @@ Claude（スマホ）──OAuth──▶ Supabase Auth（認可サーバー）�
 - `revokeGrant` の引数は `{ clientId }`（文字列そのものではない）
 - 認可サーバーの案内の場所は、ローカルでは `/auth/v1/.well-known/oauth-authorization-server`。本番では、ルート直下の `/.well-known/oauth-authorization-server/auth/v1` でも返るはず（本番で確かめる）
 
-## 本番に出すときに要ること（まだやっていない）
+## 同意画面の設計（2026-11-17）
 
-本番の Supabase は、**署名鍵はすでに ES256**（JWKS で確認）。OAuth サーバー機能は**無効**（`feature_disabled`）。
+Auth は、認可の途中で、**`<Site URL><authorization_url_path>?authorization_id=<id>`** へ人を案内する。同意画面は Supabase が持たないので、アプリに作る（`src/oauth-consent.ts`・`src/oauth-consent-ui.ts`・`index.html` の `#oauth-consent`）。
 
-- [ ] 本番の Auth で、OAuth サーバー（**ベータ**）と動的なクライアント登録を有効にする
-- [ ] 同意画面（`authorization_url_path`）を、アプリの静的サイトに置く。GitHub Pages は `https://keitaro0510.github.io/maney-app/` の下なので、置き場所と Site URL の関係を確かめる
-- [ ] `supabase functions deploy mcp`（公開される。検証用の `hello`・`whoami` は、データに触れない）
-- [ ] claude.ai の設定でカスタムコネクタを追加する（URL: `https://sgvyjolyfuqchugltvls.supabase.co/functions/v1/mcp`）
-- [ ] スマホの Claude から呼べるか確かめる
+決めたこと:
+- **別のページを増やさず、アプリのトップ（`/maney-app/`）で受ける**。`authorization_url_path = "/"`。既存のログインと Supabase のクライアントを、そのまま使える
+  - ローカルの Auth で、Site URL とパスの結合を確かめた（`https://…/maney-app/` + `/oauth/consent` → `https://…/maney-app/oauth/consent?authorization_id=…`。スラッシュの重複は Auth が整える。`/` なら `https://…/maney-app/?authorization_id=…`）
+- 案内の id は、**端末に一時保存**（10分）してから URL を整える。ログイン（Google）を挟むと、戻り先の許可リストの一致が厳しく、`?authorization_id` が消えるおそれがあるため
+- ログインしていなければ、ふつうのログイン画面。ログインして戻ってきたら、保存した id で許可の画面を出す
+- **許してよいつなぎ先は、`https://claude.ai` の redirect_uri だけ**（動的登録は、だれでも名前を自由に付けて登録できるため、名前ではなく戻り先で確かめる）。それ以外は、本人に聞かずに拒否し、つなぎ先を画面に出すだけで、そこへは移らない。ローカル（`ENV.target = local`）のときだけ、手元（127.0.0.1・localhost）も許す
+  - claude.ai の実際の redirect_uri は、Anthropic の資料では `https://claude.ai/api/mcp/auth_callback`。違っていた場合は、画面に出るつなぎ先を見て、許可リスト（`ALLOWED_REDIRECT_HOSTS`）を直す
+- 画面には、つなぎ先の名前と host、できること（予定とタスクの追加。家計簿は読めない・書けない）を出す
+
+## 本番の今の状態（2026-11-17。読み取りだけで確かめた）
+
+- **署名鍵**: すでに ES256（JWKS で確認）。変更は要らない
+- **OAuth サーバー機能**: 無効（`feature_disabled`）
+- **Site URL が壊れている**: `https://keitaro0510.github.io/money-app/ `（古い名前の `money-app`・末尾に空白つき。開くと 404）。今の Google ログインは、戻り先を毎回明示している（`redirectTo: currentUrl()`）ので影響が出ていないが、**OAuth の案内は「Site URL ＋ パス」で作られるので、直さないと同意画面に来られない**。正しくは `https://keitaro0510.github.io/maney-app/`
+- **Edge Function `mcp`**: まだ無い
+
+## 本番に出す手順（ユーザーが Supabase のダッシュボードで行う部分と、Claude が行う部分）
+
+ダッシュボードの設定（ユーザー）:
+1. Authentication → **URL Configuration** → **Site URL** を `https://keitaro0510.github.io/maney-app/` にする（末尾の空白に注意）。**Redirect URLs** に、同じ `https://keitaro0510.github.io/maney-app/` が入っていることを確かめる（今のログインが使っているので、入っているはず）
+   - 影響: 今のログインは戻り先を明示しているので変わらない。確認のため、設定後に一度ログアウト→ログインして動くことを確かめる
+2. Authentication → **OAuth Server**（ベータ）を有効にする
+   - **Allow dynamic OAuth apps**（動的登録）を有効にする
+   - **Authorization Path**（同意画面のパス）を `/` にする
+   - 影響: クライアントが自由に登録できるようになるが、本人が同意画面で許可しないと何も起きない。同意画面は上のとおり、claude.ai の戻り先以外を拒否する
+
+Claude が行う部分（上の設定が済んでから）:
+3. このアプリ（同意画面）を公開する（PR をマージ。`?authorization_id` がないときは、今までと何も変わらない）
+4. `mcp`（検証用の `hello`・`whoami`。データに触れない）をデプロイする
+5. claude.ai の設定で、カスタムコネクタを追加する（ユーザー。URL: `https://sgvyjolyfuqchugltvls.supabase.co/functions/v1/mcp`）
+6. スマホの Claude から呼べるか確かめる
 
 本番の設定を変えるのは、ユーザーの許可を取ってから（CLAUDE.md の「本番アプリとしてのルール」）。
