@@ -9,7 +9,6 @@ import { getNow, getToday, DAYS } from '../dates.ts';
 import { monthlyTotals, incomeSummary, dailyExpenseHeat, averageWage, fmtHours, spendInWork, categoryTrend, OTHER_CAT, dayOfMonthAverages, averageOnDays, eventDaySet, compareEventDays, weekdayAverages, weekdayRangeStart, topWeekday, type WeekdayRange, type SpendPeriod, type MonthTotal, type MonthHeat } from '../analysis.ts';
 import { jobPayDay } from '../shifts.ts';
 import { yearConfirmedIncome, yearEstimatedIncome } from './shift.ts';
-import { BadgesCard } from './badges.tsx';
 
 const yen = (n: number): string => (n < 0 ? '-' : '') + '¥' + Math.abs(n).toLocaleString();
 
@@ -363,7 +362,6 @@ function Analysis({ y, m, monthMode }: { y: number; m: number; monthMode: boolea
   const wage = averageWage(state.st.jobs);
   return (
     <>
-      <BadgesCard />
       <MonthlyTrend totals={totals} />
       <WeekdayCard />
       <CategoryTrendCard />

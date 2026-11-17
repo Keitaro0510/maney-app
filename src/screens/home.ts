@@ -8,7 +8,7 @@ import { estimateAcct, buildBalanceSeries } from '../home.ts';
 import { mascotView, daysSinceRecord, charDelayMs, MASCOT_IMAGE } from '../mascot.ts';
 import { mascotFacts } from '../mascot-facts.ts';
 import { ensureHolidays, getHoliday } from '../holidays.ts';
-import { recordStreak } from '../badges.ts';
+import { recordStreak } from '../streak.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
 import { monthlyRowsIn, monthlyPayLabel } from './monthly.ts';
