@@ -1,12 +1,13 @@
 // ホームの画面（D20 の 8）。計算は ../home.ts。
 import { state } from '../state.ts';
 import { currentRows } from '../sync.ts';
-import { getToday, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates.ts';
+import { getToday, getNow, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '../dates.ts';
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
 import { mascotView, daysSinceRecord, charDelayMs, MASCOT_IMAGE } from '../mascot.ts';
 import { mascotFacts } from '../mascot-facts.ts';
+import { ensureHolidays, getHoliday } from '../holidays.ts';
 import { recordStreak } from '../badges.ts';
 import { cycle, getActualCard, cardCloseDay } from '../cards.ts';
 import { jobPayDay, jobCloseDayNum, totalShiftIncForJob, getActualSalary, calcShiftInc } from '../shifts.ts';
@@ -55,9 +56,16 @@ export function renderHome(): void{const y=gY(),m=gM(),d=gD();
 }
 
 // マスコットのキリン（D33）。表情とセリフは src/mascot.ts が決める。絵の src は、変わったときだけ入れ直す
+let holidayAskedFor: string | null=null; // 今日の祝日を、もう調べに行ったか（1日1回。ネットにつながらなければ、祝日なしで動く）
 function renderMascot(spendable: number): void{
   const today=getToday(),dates=state.st.ledger.map(l=>l.date);
-  const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),daysSinceRecord:daysSinceRecord(dates,today),facts:mascotFacts({ledger:state.st.ledger,payDays:(state.st.jobs.filter(j=>!j._deleted).length?state.st.jobs.filter(j=>!j._deleted).map(jobPayDay):[parseInt(String(state.st.shiftPayDay))||10]),budget:Number(state.st.budget)||0,today}),today});
+  if(holidayAskedFor!==today){holidayAskedFor=today;void ensureHolidays([today]).then(()=>{if(getHoliday(today))renderMascot(spendable);});}
+  const jobs=state.st.jobs.filter(j=>!j._deleted);
+  const facts=mascotFacts({
+    ledger:state.st.ledger,payDays:jobs.length?jobs.map(jobPayDay):[parseInt(String(state.st.shiftPayDay))||10],budget:Number(state.st.budget)||0,today,
+    plans:state.st.plans,shifts:state.st.shifts,holiday:getHoliday(today),
+  });
+  const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),daysSinceRecord:daysSinceRecord(dates,today),facts,hour:getNow().getHours(),today});
   const img=MoneyUI.imageById('home-mascot-img');
   if(img.getAttribute('src')!==MASCOT_IMAGE[v.mood])img.setAttribute('src',MASCOT_IMAGE[v.mood]);
   img.dataset.mood=v.mood;

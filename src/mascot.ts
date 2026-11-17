@@ -1,6 +1,6 @@
-import { factLines, type MascotFacts } from './mascot-facts.ts';
+import { factLines, noticeLines, ambientLines, periodOf, type MascotFacts, type Period } from './mascot-facts.ts';
 
-// マスコット（キリン）の表情とセリフ（D33・D34）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
+// マスコット（キリン）の表情とセリフ（D33・D34・D35）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
 // 表情は「ふつう」「うれしい」「心配」「応援」の4つ。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
 
 export type Mood = 'normal' | 'happy' | 'worried' | 'cheer';
@@ -14,8 +14,10 @@ export type MascotInput = {
   recordedToday: boolean;
   /** 最後に記録した日から、何日たったか（今日記録していれば 0。記録が1件もなければ null。今日より先の日付は数えない） */
   daysSinceRecord: number | null;
-  /** セリフの材料（給料日・予算のペース・曜日の傾向。D34）。ふだんと今日記録したときの文に混ぜる。なければ決まった文だけ */
+  /** セリフの材料（給料日・予算のペース・曜日の傾向・今日の予定とシフト・祝日・先月との比べ。D34・D35）。なければ決まった文だけ */
   facts?: MascotFacts;
+  /** 今の時（0〜23）。時間帯のあいさつと、夜の「明日のシフト」に使う。省くと昼（12時）として扱う */
+  hour?: number;
   /** 今日（'YYYY-MM-DD'）。セリフを日替わりにするために使う */
   today: string;
 };
@@ -26,7 +28,7 @@ export const STREAK_CHEER = 3;
 /** 記録のない日が何日あいたら「おかえり」と迎えるか */
 export const AWAY_DAYS = 3;
 
-const LINES: Record<Situation, string[]> = {
+const LINES: Record<Exclude<Situation, 'greeting'>, string[]> = {
   short: [
     'ちょっと足りなくなりそう。一緒に見てみよう',
     '大丈夫、まだ間に合うよ。「くわしく見る」で確かめよう',
@@ -47,11 +49,14 @@ const LINES: Record<Situation, string[]> = {
     '久しぶり！ゆっくりで大丈夫、少しずつ付けよう',
     'また会えてうれしいな。思い出せる分だけで大丈夫',
   ],
-  greeting: [
-    'こんにちは！今日の支出を記録しようね',
-    '今日もおつかれさま。使ったお金はあるかな？',
-    '今日も一緒にやっていこうね',
-  ],
+};
+
+/** ふだんのあいさつ。時間帯で変える（夜に「こんにちは」と言わないように） */
+const GREETING: Record<Period, string[]> = {
+  morning: ['おはよう！今日も一緒にやっていこうね', 'おはよう。ゆっくりスタートしようね', '朝だね！今日の支出も、あとで記録しようね'],
+  day: ['こんにちは！今日の支出を記録しようね', '今日もおつかれさま。使ったお金はあるかな？', '今日も一緒にやっていこうね'],
+  evening: ['こんばんは。今日の分、記録しておこうね', 'おつかれさま！今日はどんな1日だった？', '夕方だね。今日使ったお金を記録しようね'],
+  night: ['夜おそいね。今日もおつかれさま', '今日もよくがんばったね。ゆっくり休んでね', '記録は明日でも大丈夫。ゆっくり休もうね'],
 };
 
 /** 'YYYY-MM-DD' を、1970-01-01 からの通し日にする（日替わりの番号に使う） */
@@ -78,14 +83,32 @@ export function situationOf(i: MascotInput): Situation {
 /** 状況ごとの表情。足りないときは泣き顔（心配）、記録できた・連続のときはうれしい顔 */
 const MOOD_OF: Record<Situation, Mood> = { short: 'worried', streak: 'happy', recorded: 'happy', away: 'cheer', greeting: 'normal' };
 
-/** 表情とセリフ。セリフは状況ごとに数種類あり、日替わりで選ぶ（同じ日は同じ文） */
+/** 表情とセリフ。
+ *  1. 足りない（心配）・おかえり（応援）のときは、その場面の決まった文だけ（気持ちを優先する）
+ *  2. 今日のお知らせ（夜おそいときの明日のシフト → 今日のシフト・予定・祝日）があれば、それを言う（連続記録・今日記録した・ふだんのとき）。
+ *     夜の明日のシフトがあれば必ずそれ。ほかは時間帯（6時間ごと）で順に入れ替える
+ *  3. なければ、状況の決まった文を、日替わりで選ぶ。ふだんは、材料の文（給料日・予算・曜日）と、ひとこと（先月との比べ・貯まった額・季節）、
+ *     時間帯のあいさつを混ぜる。今日記録したときは、材料の文だけ混ぜる。連続記録のときは決まった文だけ */
 export function mascotView(i: MascotInput): MascotView {
   const situation = situationOf(i);
-  // 材料から作れる文は、ふだんと今日記録したときの文の前に足す（足りない・連続・おかえりのときは、決まった文だけ）
-  const extra = i.facts && (situation === 'greeting' || situation === 'recorded') ? factLines(i.facts) : [];
-  const lines = [...extra, ...LINES[situation]];
-  const text = lines[dayNo(i.today) % lines.length].replace('{n}', String(i.streak));
-  return { mood: MOOD_OF[situation], situation, text };
+  const hour = i.hour ?? 12;
+  const base = { mood: MOOD_OF[situation], situation };
+  const fill = (text: string): string => text.replace('{n}', String(i.streak));
+  if (situation === 'short' || situation === 'away') {
+    const lines = LINES[situation];
+    return { ...base, text: fill(lines[dayNo(i.today) % lines.length]) };
+  }
+  if (i.facts) {
+    const { urgent, today } = noticeLines(i.facts, hour);
+    if (urgent) return { ...base, text: urgent };
+    if (today.length) return { ...base, text: today[Math.floor(hour / 6) % today.length] };
+  }
+  const [, m, d] = i.today.split('-').map(Number);
+  const facts = i.facts ? factLines(i.facts) : [];
+  const lines = situation === 'greeting' ? [...facts, ...ambientLines(i.facts, m, d), ...GREETING[periodOf(hour)]]
+    : situation === 'recorded' ? [...facts, ...LINES.recorded]
+    : LINES[situation];
+  return { ...base, text: fill(lines[dayNo(i.today) % lines.length]) };
 }
 
 /** セリフを1文字ずつ出すときの、1文字あたりの間隔（ミリ秒）。短い文はゆっくり、長い文は全体が 1.6 秒に収まるように速くする。上限 40、下限 15 */

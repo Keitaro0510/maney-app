@@ -98,3 +98,129 @@ test('mascotView: 材料がなくても（facts なしでも）今までどお�
   const v = mascotView({ spendable: 1, streak: 0, recordedToday: false, daysSinceRecord: 1, today: '2026-11-17' });
   assert.ok(v.text.length > 0);
 });
+
+// ---------------- D35: 今日のお知らせ・ひとこと ----------------
+import { tomorrowOf, todayShiftFact, tomorrowShiftFact, todayPlansFact, lastMonthFact, fmtTime, periodOf, noticeLines, ambientLines } from '../src/mascot-facts.ts';
+
+const shift = (date, start = '17:00', end = '22:00', extra = {}) => ({ job: 'カフェ', date, start, end, rest: 0, wage: 1000, ...extra });
+const plan = (title, dateStart, dateEnd = dateStart, extra = {}) => ({ id: 1, title, date: dateStart, dateStart, dateEnd, timeStart: '', timeEnd: '', ...extra });
+const inc = (date, amount) => ({ date, type: 'income', amount, name: '', cat: '', pay: '' });
+
+test('tomorrowOf: 月末・年末・うるう日をまたぐ', () => {
+  assert.equal(tomorrowOf('2026-11-30'), '2026-12-01');
+  assert.equal(tomorrowOf('2026-12-31'), '2027-01-01');
+  assert.equal(tomorrowOf('2028-02-28'), '2028-02-29');
+});
+
+test('fmtTime・periodOf: 9:00 → 9時、9:30 → 9時30分。時間帯の境目', () => {
+  assert.equal(fmtTime('09:00'), '9時');
+  assert.equal(fmtTime('09:30'), '9時30分');
+  assert.equal(fmtTime('17:05'), '17時5分');
+  assert.deepEqual([4, 5, 9, 10, 16, 17, 20, 21, 23, 0].map(periodOf), ['night', 'morning', 'morning', 'day', 'day', 'evening', 'evening', 'night', 'night', 'night']);
+});
+
+test('todayShiftFact: 今日のシフトと、今月で何日目か（同じ日に2つでも1日。削除済み・今日より先・先月は数えない）', () => {
+  const s = [shift('2026-11-03'), shift('2026-11-10'), shift('2026-11-17', '09:00', '13:00'), shift('2026-11-17', '17:00'), shift('2026-11-18'), shift('2026-10-30'), shift('2026-11-05', '17:00', '22:00', { _deleted: true })];
+  assert.deepEqual(todayShiftFact(s, '2026-11-17'), { job: 'カフェ', start: '09:00', end: '13:00', nth: 3 }); // 3・10・17日
+  assert.equal(todayShiftFact(s, '2026-11-16'), null);
+  assert.equal(todayShiftFact([], '2026-11-17'), null);
+});
+
+test('tomorrowShiftFact: 明日（月末は来月1日）のいちばん早いシフト', () => {
+  assert.equal(tomorrowShiftFact([shift('2026-12-01', '10:00', '15:00')], '2026-11-30').start, '10:00');
+  assert.equal(tomorrowShiftFact([shift('2026-11-18', '17:00', '22:00', { _deleted: true })], '2026-11-17'), null);
+  assert.equal(tomorrowShiftFact([shift('2026-11-18', null, null)], '2026-11-17').start, null); // 時刻なし
+});
+
+test('todayPlansFact: 今日の予定（期間予定の途中の日も）。済み・削除は除く。時刻は、はじめの日だけ', () => {
+  const p = [plan('飲み会', '2026-11-17', '2026-11-17', { timeStart: '19:00' }), plan('旅行', '2026-11-16', '2026-11-18', { timeStart: '08:00' }), plan('済み', '2026-11-17', '2026-11-17', { done: true }), plan('消した', '2026-11-17', '2026-11-17', { _deleted: true }), plan('明日', '2026-11-18')];
+  assert.deepEqual(todayPlansFact(p, '2026-11-17'), [{ title: '飲み会', time: '19:00' }, { title: '旅行', time: '' }]);
+  assert.deepEqual(todayPlansFact(p, '2026-11-16'), [{ title: '旅行', time: '08:00' }]);
+});
+
+test('lastMonthFact: 先月の黒字（貯まった額）と、先月の同じ日までとの支出の比べ', () => {
+  const led = [inc('2026-10-25', 100000), ex('2026-10-05', 40000), ex('2026-10-10', 10000), ex('2026-10-20', 20000), ex('2026-11-02', 20000), ex('2026-11-12', 20000)];
+  // 先月（10月）は収入10万 − 支出7万 = 3万の黒字。11/15 まで: 先月の15日までの支出は 5万、今月は 4万 → 1万少ない
+  const f = lastMonthFact(led, '2026-11-15');
+  assert.equal(f.saved, 30000);
+  assert.deepEqual(f.compare, { diff: -10000 });
+  assert.equal(lastMonthFact(led, '2026-11-07').compare, null); // 月の初め（7日まで）は比べない
+  assert.equal(lastMonthFact([], '2026-11-15'), null);
+  assert.equal(lastMonthFact([ex('2026-10-05', 2000), ex('2026-11-02', 100)], '2026-11-15'), null); // 先月の支出が3000円未満・赤字
+  const small = lastMonthFact([ex('2026-10-05', 10000), ex('2026-11-02', 10500)], '2026-11-15'); // 差が500円（5%）
+  assert.equal(small, null);
+  // 年またぎ: 1月の「先月」は前の年の12月
+  assert.deepEqual(lastMonthFact([ex('2026-12-05', 10000), ex('2027-01-03', 2000)], '2027-01-15').compare, { diff: -8000 });
+});
+
+test('noticeLines: 夜（21時から）は明日のシフトが最優先。今日のシフト・予定・祝日は、あるものだけ', () => {
+  const none = { daysToPayday: null, budget: null, weekday: null };
+  assert.deepEqual(noticeLines(none, 12), { urgent: null, today: [] });
+  const f = {
+    ...none, holiday: '文化の日',
+    todayShift: { job: 'カフェ', start: '17:00', end: '22:00', nth: 3 },
+    tomorrowShift: { job: 'カフェ', start: '09:00', end: '13:00' },
+    todayPlans: [{ title: '飲み会', time: '19:00' }],
+  };
+  assert.equal(noticeLines(f, 20).urgent, null); // 20時まではまだ言わない
+  assert.equal(noticeLines(f, 21).urgent, '明日は9時からカフェだよ！早めに休もうね');
+  assert.deepEqual(noticeLines(f, 12).today, ['今日はカフェの日！今月3日目のバイトだよ（17時〜22時）', '今日は19時から「飲み会」だよ', '今日は文化の日だよ']);
+  assert.equal(noticeLines({ ...none, tomorrowShift: { job: 'カフェ', start: null, end: null } }, 22).urgent, '明日はカフェのシフトがあるよ。早めに休もうね');
+});
+
+test('noticeLines: 予定が複数のときは「ほかn件」。時刻なしのシフト・予定の言い方', () => {
+  const none = { daysToPayday: null, budget: null, weekday: null };
+  assert.deepEqual(noticeLines({ ...none, todayPlans: [{ title: 'A', time: '' }, { title: 'B', time: '' }, { title: 'C', time: '' }] }, 12).today, ['今日は「A」ほか2件の予定があるよ']);
+  assert.deepEqual(noticeLines({ ...none, todayPlans: [{ title: 'A', time: '' }] }, 12).today, ['今日は「A」の予定があるよ']);
+  assert.deepEqual(noticeLines({ ...none, todayShift: { job: 'カフェ', start: null, end: null, nth: 1 } }, 12).today, ['今日はカフェの日！今月1日目のバイトだよ']);
+});
+
+test('ambientLines: 貯まった額は月の初めの10日間だけ。先月との比べ。季節のひとこと（材料なしでも出る）', () => {
+  const f = { daysToPayday: null, budget: null, weekday: null, lastMonth: { saved: 30000, compare: { diff: -10000 } } };
+  const early = ambientLines(f, 11, 5);
+  assert.ok(early.some(t => /先月は ¥30,000 貯まったよ/.test(t)));
+  assert.ok(early.some(t => /先月の今ごろより、支出が ¥10,000 少ない/.test(t)));
+  assert.ok(!ambientLines(f, 11, 11).some(t => /貯まった/.test(t)));
+  assert.match(ambientLines({ ...f, lastMonth: { saved: null, compare: { diff: 4000 } } }, 11, 20)[0], /¥4,000 多め/);
+  assert.equal(ambientLines(undefined, 12, 20).length, 1); // 季節だけ
+  assert.match(ambientLines(undefined, 12, 20)[0], /年末/);
+  for (let m = 1; m <= 12; m++) assert.ok(ambientLines(undefined, m, 20)[0].length > 5, `${m}月`);
+});
+
+test('D35 の文も、責めたり、叱ったりする言葉を使わない', () => {
+  const f = {
+    daysToPayday: null, budget: null, weekday: null, holiday: '勤労感謝の日',
+    todayShift: { job: 'カフェ', start: '09:00', end: '18:00', nth: 12 }, tomorrowShift: { job: 'カフェ', start: '06:30', end: null },
+    todayPlans: [{ title: '旅行', time: '' }], lastMonth: { saved: 12345, compare: { diff: 5000 } },
+  };
+  const all = [...Object.values(noticeLines(f, 22)).flat(), ...ambientLines(f, 5, 3), ...ambientLines({ ...f, lastMonth: { saved: null, compare: { diff: -5000 } } }, 5, 3)];
+  for (let m = 1; m <= 12; m++) all.push(ambientLines(undefined, m, 20)[0]);
+  for (const text of all) { assert.ok(text); assert.doesNotMatch(text, /使いすぎ|ダメ|だめ|ざんねん|残念|節約しな|我慢|やめ|遅刻|サボ/); }
+});
+
+test('mascotView: 今日のお知らせは、連続記録・今日記録した・ふだんで言う。足りない・おかえりのときは言わない', () => {
+  const none = { daysToPayday: null, budget: null, weekday: null };
+  const facts = { ...none, todayShift: { job: 'カフェ', start: '17:00', end: '22:00', nth: 3 } };
+  const v = s => mascotView({ spendable: 50000, streak: 0, recordedToday: false, daysSinceRecord: 1, today: '2026-11-17', hour: 12, facts, ...s });
+  for (const s of [{}, { recordedToday: true }, { streak: 5 }]) assert.match(v(s).text, /今月3日目のバイト/, JSON.stringify(s));
+  assert.equal(v({ streak: 5 }).mood, 'happy'); // 表情は状況のまま
+  for (const s of [{ spendable: -1 }, { daysSinceRecord: 6 }]) assert.doesNotMatch(v(s).text, /バイト/, JSON.stringify(s));
+  assert.equal(v({ spendable: -1 }).mood, 'worried');
+});
+
+test('mascotView: 夜の明日のシフトが最優先。今日のお知らせが複数あるときは時間帯で入れ替わる', () => {
+  const none = { daysToPayday: null, budget: null, weekday: null };
+  const facts = { ...none, holiday: '文化の日', todayShift: { job: 'カフェ', start: '17:00', end: '22:00', nth: 3 }, tomorrowShift: { job: 'カフェ', start: '09:00', end: '13:00' } };
+  const v = hour => mascotView({ spendable: 50000, streak: 0, recordedToday: false, daysSinceRecord: 1, today: '2026-11-17', hour, facts }).text;
+  assert.match(v(22), /明日は9時からカフェ/);
+  assert.match(v(8), /文化の日/); // 6〜11時 → 時間帯の番号1 → 2つのうち2番目（祝日）
+  assert.match(v(13), /バイト/); // 12〜17時 → 番号2 → 1番目（シフト）
+  assert.equal(v(8), v(9)); // 同じ時間帯なら同じ文
+});
+
+test('mascotView: ふだんのあいさつは時間帯で変わる（夜に「こんにちは」と言わない）。季節のひとことも混ざる', () => {
+  const v = (hour, today) => mascotView({ spendable: 50000, streak: 0, recordedToday: false, daysSinceRecord: 1, today, hour }).text;
+  const days = ['2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'];
+  for (const d of days) { assert.doesNotMatch(v(23, d), /こんにちは|おはよう/); assert.doesNotMatch(v(8, d), /こんにちは|こんばんは/); }
+  assert.ok(days.some(d => /冷える日/.test(v(12, d)))); // 11月のひとこと（4日で一巡する中に入る）
+});
