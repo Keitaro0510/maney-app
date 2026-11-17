@@ -30,3 +30,21 @@ test('urlBase64ToBytes: 公開鍵は 65 バイトで、0x04 から始まる', ()
 test('urlBase64ToBytes: - と _ を、+ と / として読む', () => {
   assert.deepEqual([...urlBase64ToBytes('-_8')], [251, 255]);
 });
+
+import { tabFromSearch, tabFromMessage } from '../src/push.ts';
+
+test('tabFromSearch: 通知から開いたときの ?tab= を、決まった画面だけ受け付ける', () => {
+  assert.equal(tabFromSearch('?tab=task'), 'task');
+  assert.equal(tabFromSearch('?x=1&tab=home'), 'home');
+  assert.equal(tabFromSearch('?tab=set'), null); // 設定は開かない
+  assert.equal(tabFromSearch('?tab=%3Cscript%3E'), null);
+  assert.equal(tabFromSearch(''), null);
+});
+
+test('tabFromMessage: Service Worker からの open-tab だけ受け付ける', () => {
+  assert.equal(tabFromMessage({ type: 'open-tab', tab: 'cal' }), 'cal');
+  assert.equal(tabFromMessage({ type: 'open-tab', tab: 'nope' }), null);
+  assert.equal(tabFromMessage({ type: 'other', tab: 'home' }), null);
+  assert.equal(tabFromMessage(null), null);
+  assert.equal(tabFromMessage('home'), null);
+});

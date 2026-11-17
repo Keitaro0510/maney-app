@@ -5,7 +5,8 @@ import { createDayWatcher, msUntilNextDay } from './clock.ts';
 import { state } from './state.ts';
 import { resyncRemote } from './sync.ts';
 import { loadData, loginWithGoogle, logout } from './auth.ts';
-import { bindNavigation, renderCurrentSection } from './navigation.ts';
+import { bindNavigation, renderCurrentSection, sw } from './navigation.ts';
+import { tabFromMessage } from './push.ts';
 import { bindCalendarControls, onCalendarDayChanged } from './screens/calendar.ts';
 import { bindShiftControls, onShiftDayChanged } from './screens/shift.ts';
 import { bindLedgerControls, onLedgerDayChanged } from './screens/ledger.ts';
@@ -63,6 +64,10 @@ export function startBootstrap(): void {
   bindShiftControls();
   elementById('google-login-btn').addEventListener('click', () => { void loginWithGoogle(); });
   elementById('logout-btn').addEventListener('click', () => { void logout(); });
+  // 通知を押したとき、アプリが開いていれば、Service Worker が「この画面を開いて」と知らせてくる（D36）
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', event => { const tab = tabFromMessage(event.data); if (tab) sw(tab); });
+  }
   if ('serviceWorker' in navigator && ENV.target === 'prod') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(() => console.log('SW registered'))
