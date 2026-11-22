@@ -711,36 +711,24 @@ button.color-swatch.sel{transform:none}
 @keyframes wh-in{from{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.wh-bar{transition:none;animation:none}}
 
-/* マスコットのキリン（D33）。ホームの「使えるお金」の上。絵は img/、表情とセリフは src/mascot.ts */
+/* マスコットの棒人間（D33・D42）。ホームの「使えるお金」の上。絵は SVG（index.html）、骨組みと動きは src/mascot-rig.ts、動かすのは src/mascot-motion.ts */
 .mascot{display:flex;align-items:flex-end;gap:10px;margin:0 0 10px}
 .mascot[hidden]{display:none}
-.mascot-img{width:64px;height:auto;flex-shrink:0;transform-origin:50% 100%;-webkit-mask-image:linear-gradient(#000 78%,transparent);mask-image:linear-gradient(#000 78%,transparent);display:block}
 .mascot-bubble{position:relative;flex:1;min-width:0;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);color:var(--color-text-primary);border-radius:14px;padding:9px 12px;font-size:13px;line-height:1.5;font-weight:600;margin-bottom:14px}
 .mascot-bubble::before{content:"";position:absolute;left:-7px;bottom:12px;width:12px;height:12px;background:var(--color-background-primary);border-left:1px solid var(--color-border-tertiary);border-bottom:1px solid var(--color-border-tertiary);transform:rotate(45deg);border-radius:2px}
-@keyframes mascot-bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
-@media (prefers-reduced-motion:reduce){.mascot-bob{animation:none}}
 
-/* キリンの動き（D41。src/mascot-motion.ts）。ボタン（.mascot-btn）が「ぽよん」などの動きをし、中の .mascot-bob が、ゆっくり揺れる */
+/* 棒人間の体（線）・影・服・靴。跳んだり腕を上げたりして枠の外へ出てもよいので、overflow は見せる */
 .mascot-stage{position:relative;width:64px;flex-shrink:0}
-.mascot-btn{display:block;position:relative;width:64px;padding:0;margin:0;border:0;background:none;cursor:pointer;transform-origin:50% 100%;border-radius:12px;-webkit-tap-highlight-color:transparent}
+.mascot-btn{display:block;position:relative;width:64px;padding:0;margin:0;border:0;background:none;cursor:pointer;border-radius:12px;-webkit-tap-highlight-color:transparent}
 .mascot-btn:focus-visible{outline:2px solid var(--color-brand);outline-offset:3px}
-.mascot-bob{display:block;position:relative;transform-origin:50% 100%;animation:mascot-bob 3.6s ease-in-out infinite}
-.mascot.night .mascot-bob{animation-duration:6.4s}
-.mascot-btn.play-poyon{animation:mascot-poyon .62s cubic-bezier(.3,.7,.4,1)}
-.mascot-btn.play-spin{animation:mascot-spin .9s ease-in-out;transform-origin:50% 60%}
-.mascot-btn.play-tilt{animation:mascot-tilt 1.7s ease-in-out}
-.mascot-btn.play-stretch{animation:mascot-stretch 1.9s ease-in-out}
-.mascot-btn.play-hop{animation:mascot-hop .95s ease-out}
-@keyframes mascot-poyon{0%{transform:none}18%{transform:scale(1.14,.8)}42%{transform:translateY(-16px) scale(.9,1.16)}68%{transform:scale(1.08,.9)}85%{transform:scale(.98,1.03)}100%{transform:none}}
-@keyframes mascot-spin{0%{transform:none}25%{transform:translateY(-14px)}100%{transform:rotate(720deg)}}
-@keyframes mascot-tilt{0%,100%{transform:rotate(0)}25%,70%{transform:rotate(-9deg)}45%{transform:rotate(-7deg)}}
-@keyframes mascot-stretch{0%,100%{transform:none}35%,65%{transform:scale(.97,1.14)}}
-@keyframes mascot-hop{0%,100%{transform:translateY(0)}18%{transform:translateY(-12px)}34%{transform:translateY(0)}52%{transform:translateY(-8px)}68%{transform:translateY(0)}}
-/* 頭の上の王冠（記録が7日以上続いているとき）・夜の Zzz */
-.mascot-crown{position:absolute;left:50%;top:-9px;width:26px;margin-left:-13px;transform:rotate(-5deg);pointer-events:none}
-.mascot-crown svg{display:block;width:100%;height:auto}
-.mascot-crown[hidden]{display:none}
-.mascot-zzz{position:absolute;right:-8px;top:0;width:24px;height:22px;font-size:14px;font-weight:700;color:#7B8FA6;pointer-events:none}
+.mascot-fig{display:block;overflow:visible}
+.mascot-fig [hidden]{display:none}
+.mascot-fig #mf-shadow{fill:var(--color-text-primary);opacity:.14}
+.mf-line{stroke:var(--color-text-primary);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.mf-top{stroke-width:6.4;stroke-linecap:round;fill:none}
+.mf-shoe{stroke:none}
+/* 夜の Zzz（座って眠っている頭のあたり） */
+.mascot-zzz{position:absolute;right:-6px;top:16px;width:24px;height:22px;font-size:14px;font-weight:700;color:#7B8FA6;pointer-events:none}
 .mascot-zzz[hidden]{display:none}
 .mascot-zzz i{position:absolute;right:0;top:0;font-style:normal;opacity:0;animation:mascot-z 3.3s ease-in infinite}
 .mascot-zzz i:nth-child(2){animation-delay:1.1s}

@@ -1,7 +1,7 @@
 import { factLines, noticeLines, ambientLines, periodOf, type MascotFacts, type Period } from './mascot-facts.ts';
 
-// マスコット（キリン）の表情とセリフ（D33・D34・D35）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
-// 表情は「ふつう」「うれしい」「心配」「応援」の4つ。足りないときは泣き顔の「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
+// マスコット（棒人間）の表情とセリフ（D33・D34・D35・D42）。ホームに出す。画面を使わない関数だけ置く（テストできるように）。
+// 表情は「ふつう」「うれしい」「心配」「応援」の4つ。顔は丸だけなので、姿勢と動きで表す（src/mascot-rig.ts）。足りないときは肩を落とした「心配」だが、セリフは責めずに一緒に考える言い方にする（D33）。
 
 export type Mood = 'normal' | 'happy' | 'worried' | 'cheer';
 export type Situation = 'short' | 'streak' | 'recorded' | 'away' | 'greeting';
@@ -115,11 +115,3 @@ export function mascotView(i: MascotInput): MascotView {
 export function charDelayMs(length: number): number {
   return Math.max(15, Math.min(40, Math.floor(1600 / Math.max(length, 1))));
 }
-
-/** 表情ごとの絵（public ではなく、公開するときにそのままコピーする img/ の中）。ビルドの対象にしないよう、文字として持つ */
-export const MASCOT_IMAGE: Record<Mood, string> = {
-  normal: 'img/giraffe-normal.webp',
-  happy: 'img/giraffe-happy.webp',
-  worried: 'img/giraffe-worried.webp',
-  cheer: 'img/giraffe-cheer.webp',
-};

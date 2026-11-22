@@ -1,4 +1,4 @@
-// 祝日（Google Calendar API）。カレンダー（src/screens/calendar.ts）とホームのキリン（D34）が使う。
+// 祝日（Google Calendar API）。カレンダー（src/screens/calendar.ts）とホームの棒人間（D34）が使う。
 // 取得した祝日は、このファイルの中に持つ。ネットにつながらないときは、祝日なしとして動く。
 // 祝日を読むための Google のキー（ブラウザで使うので公開される）。Google Cloud で、使えるサイト（keitaro0510.github.io・手元の 127.0.0.1:8765）と
 // 使える API（Google Calendar API だけ）に制限している。キーを替えたら、古いキーは Google Cloud で消す

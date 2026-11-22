@@ -1,7 +1,7 @@
-// マスコットの表情とセリフ（src/mascot.ts）。D33。実行: node --test "tests/*.test.mjs"
+// マスコットの表情とセリフ（src/mascot.ts）。D33・D42。実行: node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { situationOf, mascotView, daysSinceRecord, STREAK_CHEER, AWAY_DAYS, MASCOT_IMAGE } from '../src/mascot.ts';
+import { situationOf, mascotView, daysSinceRecord, STREAK_CHEER, AWAY_DAYS } from '../src/mascot.ts';
 
 const base = { spendable: 50000, streak: 0, recordedToday: false, daysSinceRecord: 1, today: '2026-11-17' };
 
@@ -44,11 +44,6 @@ test('mascotView: 足りないときのセリフは、責めずに一緒に考�
     assert.doesNotMatch(text, /使いすぎ|ダメ|だめ|ざんねん|残念|！{2}/);
     assert.ok(text.length > 0);
   }
-});
-
-test('MASCOT_IMAGE: 絵のファイルは img/ にある', async () => {
-  const { existsSync } = await import('node:fs');
-  for (const path of Object.values(MASCOT_IMAGE)) assert.ok(existsSync(new URL(`../${path}`, import.meta.url)), path);
 });
 
 test('daysSinceRecord: 最後に記録した日から何日か。今日なら0・記録なしは null・今日より先の記録は数えない', () => {
