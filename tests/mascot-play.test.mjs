@@ -1,16 +1,31 @@
-// キリンの動きの決め事（src/mascot-play.ts）。D41。実行: node --test "tests/*.test.mjs"
+// 棒人間の動きの決め事（src/mascot-play.ts）。D41・D42。実行: node --test "tests/*.test.mjs"
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  TRICKS, pickTrick, nextIdleDelayMs, isNight, isMorning, hasCrown, CROWN_STREAK, TAP_COMBO_MS, SPIN_TAPS,
+  TRICKS, NIGHT_TRICKS, TAP_PLAYS, pickTrick, nightClip, nextIdleDelayMs, isNight, isMorning, hasCrown, CROWN_STREAK, TAP_COMBO_MS, SPIN_TAPS,
   nextTapCount, tapLine, tapPlay, celebrateLine, coinBurst,
 } from '../src/mascot-play.ts'; // Node が型を消して読む（D17）
+import { CLIPS, NIGHT_CLIPS } from '../src/mascot-rig.ts';
 
-test('pickTrick: 乱数の範囲に応じて3つの小ワザを選ぶ（端でも範囲を出ない）', () => {
+test('pickTrick: 乱数の範囲に応じて昼の小ワザを選ぶ（端でも範囲を出ない）。どれも、動きの定義がある', () => {
   assert.equal(pickTrick(0), TRICKS[0]);
-  assert.equal(pickTrick(0.5), TRICKS[1]);
-  assert.equal(pickTrick(0.999999), TRICKS[2]);
-  assert.equal(pickTrick(1), TRICKS[2]); // 1 が来ても落ちない
+  assert.equal(pickTrick(0.999999), TRICKS[TRICKS.length - 1]);
+  assert.equal(pickTrick(1), TRICKS[TRICKS.length - 1]); // 1 が来ても落ちない
+  for (const t of TRICKS) assert.ok(t in CLIPS, t);
+});
+
+test('pickTrick: 直前と同じ小ワザは続けて選ばない。夜は座ったままの小ワザだけ', () => {
+  for (let i = 0; i < 100; i++) assert.notEqual(pickTrick(i / 100, false, 'dance'), 'dance');
+  for (const last of TRICKS) for (const r of [0, 0.3, 0.7, 1]) assert.notEqual(pickTrick(r, false, last), last);
+  for (let i = 0; i <= 10; i++) assert.ok(NIGHT_TRICKS.includes(pickTrick(i / 10, true)));
+});
+
+test('nightClip: 夜は座ったままの動きに置き換える（お祝い → 座って万歳、くるくる → 座って回る、つつく → 起きてのび）。どれも定義がある', () => {
+  assert.equal(nightClip('banzai'), 'cheer');
+  assert.equal(nightClip('spin'), 'spin');
+  assert.equal(nightClip('nod'), 'nod');
+  for (const name of [...TRICKS, 'banzai', 'spin', 'scratch', 'nod']) assert.ok(nightClip(name) in NIGHT_CLIPS, name);
+  assert.equal(nightClip('wave'), 'wake');
 });
 
 test('nextIdleDelayMs: 7〜16秒', () => {
@@ -40,10 +55,11 @@ test('nextTapCount: 1.5秒以内なら続き、空いたら1から', () => {
   assert.equal(nextTapCount(2, 1000, 1500), 3);
 });
 
-test('tapPlay: 5回続けたら回る', () => {
-  assert.equal(tapPlay(1), 'poyon');
-  assert.equal(tapPlay(SPIN_TAPS - 1), 'poyon');
-  assert.equal(tapPlay(SPIN_TAPS), 'spin');
+test('tapPlay: 5回続けたら回る。それまでは、手を振る・頭をかく・跳ねる のどれか（乱数の端でも落ちない）', () => {
+  for (const r of [0, 0.4, 0.99, 1]) assert.ok(TAP_PLAYS.includes(tapPlay(1, r)));
+  for (const name of TAP_PLAYS) assert.ok(name in CLIPS, name);
+  assert.ok(TAP_PLAYS.includes(tapPlay(SPIN_TAPS - 1, 0.5)));
+  assert.equal(tapPlay(SPIN_TAPS, 0.5), 'spin');
 });
 
 test('tapLine: 昼は ふつうのセリフ、夜は眠そう、回るときは回るセリフ。乱数の端でも落ちない', () => {

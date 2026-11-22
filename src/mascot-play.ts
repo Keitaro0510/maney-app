@@ -1,13 +1,25 @@
-// キリンの動き（D41）の決め事。画面を使わない関数だけ置く（テストできるように）。動かす部分は src/mascot-motion.ts。
+// 棒人間の動き（D41・D42）の決め事。画面を使わない関数だけ置く（テストできるように）。動かす部分は src/mascot-motion.ts。
 // 守ること（D33）: お金の状況で責めたり笑ったりしない。セリフは短く、画像に文字は入れない。動きを減らす設定では動かさない
+import type { ClipName, NightClipName } from './mascot-rig.ts';
 
-/** ときどき勝手に出す小ワザ */
-export const TRICKS = ['tilt', 'stretch', 'hop'] as const;
+/** 動きの名前（昼の動き、と、夜に座って眠っているときの「こくり」） */
+export type PlayName = ClipName | 'nod';
+
+/** ときどき勝手に出す小ワザ（昼） */
+export const TRICKS = ['stretch', 'yawn', 'tilt', 'march', 'walk', 'hop', 'dance', 'exercise', 'wave', 'clap'] as const satisfies readonly ClipName[];
 export type Trick = typeof TRICKS[number];
+/** 夜（座って眠っているとき）の小ワザ */
+export const NIGHT_TRICKS = ['nod'] as const;
 
-/** 0以上1未満の乱数 r から、小ワザを選ぶ */
-export function pickTrick(r: number): Trick {
-  return TRICKS[Math.min(TRICKS.length - 1, Math.floor(r * TRICKS.length))];
+/** 0以上1未満の乱数 r から、小ワザを選ぶ。直前に出したもの（last）は、続けて選ばない。夜は夜用 */
+export function pickTrick(r: number, night = false, last?: string): Trick | 'nod' {
+  const pool: readonly (Trick | 'nod')[] = night ? NIGHT_TRICKS : TRICKS.filter(t => t !== last);
+  return pool[Math.min(pool.length - 1, Math.floor(r * pool.length))];
+}
+
+/** 夜（座って眠っているとき）に、この動きの代わりに出す動き。お祝いは座って万歳、くるくるは座って回る、それ以外は、起きてのびをする（つつかれたとき） */
+export function nightClip(name: PlayName): NightClipName {
+  return name === 'nod' ? 'nod' : name === 'spin' ? 'spin' : name === 'banzai' ? 'cheer' : 'wake';
 }
 
 /** 次の小ワザまでの間（7〜16秒） */
@@ -36,8 +48,8 @@ const TAP_LINES = [
   'わっ！くすぐったいよ〜',
   'なあに？',
   'えへへ、もっとつついてもいいよ',
-  '首が長いから、つつきやすいでしょ',
-  'ぽよん！',
+  '細いから、つつきやすいでしょ',
+  'やあ！',
   '今日もいっしょにがんばろ',
   'おさんぽ行きたいなあ',
   'ちょっとだけならコインあげるよ',
@@ -51,9 +63,13 @@ export function tapLine(count: number, hour: number, r: number): string {
   return pool[Math.min(pool.length - 1, Math.floor(r * pool.length))];
 }
 
-export type TapPlay = 'poyon' | 'spin';
-/** タップの動き。続けて SPIN_TAPS 回めで回る。そのあとは1から数え直す（呼ぶ側で） */
-export const tapPlay = (count: number): TapPlay => (count >= SPIN_TAPS ? 'spin' : 'poyon');
+/** つついたときに返す動き（続けて SPIN_TAPS 回めは、くるくる） */
+export const TAP_PLAYS = ['wave', 'scratch', 'hop'] as const;
+export type TapPlay = typeof TAP_PLAYS[number] | 'spin';
+/** タップの動き。続けて SPIN_TAPS 回めで回る（そのあとは1から数え直す。呼ぶ側で）。ふだんは、手を振る・頭をかく・跳ねる、のどれか（乱数 r） */
+export function tapPlay(count: number, r: number): TapPlay {
+  return count >= SPIN_TAPS ? 'spin' : TAP_PLAYS[Math.min(TAP_PLAYS.length - 1, Math.floor(r * TAP_PLAYS.length))];
+}
 
 // ---- 記録したときのお祝い ----
 const CELEBRATE_LINES = ['記録できたね！えらい！', 'コツコツ、いいね！', 'ナイス記録！', 'その調子〜！'];

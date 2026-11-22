@@ -5,7 +5,7 @@ import { getToday, getNow, gY, gM, gD, toDS, addM, ds2d, monthDay, DAYS } from '
 import * as MoneyCalc from '../money.ts';
 import * as MoneyUI from '../ui.ts';
 import { estimateAcct, buildBalanceSeries } from '../home.ts';
-import { mascotView, daysSinceRecord, charDelayMs, MASCOT_IMAGE } from '../mascot.ts';
+import { mascotView, daysSinceRecord, charDelayMs } from '../mascot.ts';
 import { mascotFacts } from '../mascot-facts.ts';
 import { decorateMascot, initMascotMotion } from '../mascot-motion.ts';
 import { ensureHolidays, getHoliday } from '../holidays.ts';
@@ -56,7 +56,7 @@ export function renderHome(): void{const y=gY(),m=gM(),d=gD();
   if(MoneyUI.dialogById('home-more').open)renderHomeMore();
 }
 
-// マスコットのキリン（D33）。表情とセリフは src/mascot.ts が決める。絵の src は、変わったときだけ入れ直す
+// マスコットの棒人間（D33・D42）。表情（姿勢）とセリフは src/mascot.ts が決める。動かすのは src/mascot-motion.ts
 let holidayAskedFor: string | null=null; // 今日の祝日を、もう調べに行ったか（1日1回。ネットにつながらなければ、祝日なしで動く）
 function renderMascot(spendable: number): void{
   const today=getToday(),dates=state.st.ledger.map(l=>l.date);
@@ -67,9 +67,6 @@ function renderMascot(spendable: number): void{
     plans:state.st.plans,shifts:state.st.shifts,holiday:getHoliday(today),
   });
   const v=mascotView({spendable,streak:recordStreak(dates,today).current,recordedToday:dates.includes(today),daysSinceRecord:daysSinceRecord(dates,today),facts,hour:getNow().getHours(),today});
-  const img=MoneyUI.imageById('home-mascot-img');
-  if(img.getAttribute('src')!==MASCOT_IMAGE[v.mood])img.setAttribute('src',MASCOT_IMAGE[v.mood]);
-  img.dataset.mood=v.mood;
   setMascotLine(MoneyUI.elementById('home-mascot-text'),v.text);
   MoneyUI.elementById('home-mascot').hidden=false;
   decorateMascot({hour:getNow().getHours(),streak:recordStreak(dates,today).current,mood:v.mood,line:v.text}); // 動き（D41）: 夜・王冠・朝ののび・記録のお祝い

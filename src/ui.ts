@@ -51,6 +51,12 @@ export function selectById(id: string): HTMLSelectElement { return byId(id, HTML
 export function textareaById(id: string): HTMLTextAreaElement { return byId(id, HTMLTextAreaElement, '入力欄（textarea）'); }
 export function imageById(id: string): HTMLImageElement { return byId(id, HTMLImageElement, '画像（img）'); }
 export function dialogById(id: string): HTMLDialogElement { return byId(id, HTMLDialogElement, '画面（dialog）'); }
+/** 必ずある SVG の要素（棒人間の骨組みなど。SVG の要素は HTMLElement ではない）。ないときは、どの id かを書いて止める */
+export function svgById(id: string): SVGElement {
+  const node = document.getElementById(id);
+  if (!(node instanceof SVGElement)) throw new Error(`SVG の要素が見つかりません: #${id}`);
+  return node;
+}
 /** 必ずある要素（div・section など）。ないときは、どの id かを書いて止める */
 export function elementById(id: string): HTMLElement { return byId(id, HTMLElement, '要素'); }
 

@@ -5,8 +5,10 @@
 import { test, expect } from '@playwright/test';
 import { EMAIL, PASSWORD, NOW, HOLIDAYS } from './constants.mjs';
 
-// 時刻を固定し、祝日の取得を固定の答えにして、テスト用のユーザーでログインする
-async function open(page, path = '/', { anyScreen = false, now = NOW } = {}) {
+// 時刻を固定し、祝日の取得を固定の答えにして、テスト用のユーザーでログインする。
+// 棒人間（D42）は動くので、写真と DOM の写しが毎回変わらないように、ふだんは「動きを減らす設定」で開く（止まった姿勢になる）。動きを確かめるテストだけ motion: true
+async function open(page, path = '/', { anyScreen = false, now = NOW, motion = false } = {}) {
+  await page.emulateMedia({ reducedMotion: motion ? 'no-preference' : 'reduce' });
   await page.clock.setFixedTime(now);
   await page.route('https://www.googleapis.com/**', route => route.fulfill({ json: HOLIDAYS }));
   await page.goto(path);
@@ -680,53 +682,67 @@ test('シフトタブ: 今年の収入の数字が重ならない', async ({ pag
   await expect(page.locator('#year-transport')).toBeVisible();
 });
 
-// ホームのキリンの動き（D41）。どの動きを出すかの決め事は tests/mascot-play.test.mjs。ここでは、画面で動くことを確かめる
-test('キリン: つつくと「ぽよん」と動いて、ひとこと返す。5回続けると回る', async ({ page }) => {
-  await open(page);
+// ホームの棒人間の動き（D41・D42）。どの動きを出すかの決め事は tests/mascot-play.test.mjs、骨組みと動きの計算は tests/mascot-rig.test.mjs。ここでは、画面で動くことを確かめる
+const figureLines = page => page.locator('#mf-lines').getAttribute('d');
+
+test('棒人間: つつくと、動きを出して、ひとこと返す。5回続けると回る', async ({ page }) => {
+  await open(page, '/', { motion: true });
   await closeAll(page);
   const btn = page.locator('#home-mascot-btn');
   const text = page.locator('#home-mascot-text');
   await expect(btn).toBeVisible();
   const before = await text.textContent();
   await btn.click();
-  await expect(btn).toHaveClass(/play-poyon/);
+  await expect(btn).toHaveClass(/play-(wave|scratch|hop)/);
   await expect(text).not.toHaveText(before);
-  await expect(btn).not.toHaveClass(/play-poyon/); // 動きが終われば、クラスは外れる
+  await expect(btn).not.toHaveClass(/play-/, { timeout: 6000 }); // 動きが終われば、クラスは外れる
   for (let i = 0; i < 4; i++) await btn.click();
   await expect(btn).toHaveClass(/play-spin/);
 });
 
-test('キリン: 動きを減らす設定では、動かさずに、ひとことだけ返す', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await open(page);
+test('棒人間: 動きの最中は、骨組みが変わる（止まっていない）', async ({ page }) => {
+  await open(page, '/', { motion: true });
+  await closeAll(page);
+  const first = await figureLines(page);
+  await page.locator('#home-mascot-btn').click();
+  await expect.poll(() => figureLines(page), { timeout: 3000 }).not.toBe(first);
+});
+
+test('棒人間: 動きを減らす設定では、動かさずに、ひとことだけ返す。骨組みも止まっている', async ({ page }) => {
+  await open(page); // ふだんの open が、動きを減らす設定
   await closeAll(page);
   const btn = page.locator('#home-mascot-btn');
   const text = page.locator('#home-mascot-text');
   const before = await text.textContent();
+  const still = await figureLines(page);
   await btn.click();
   await expect(text).not.toHaveText(before);
   expect(await btn.evaluate(el => [...el.classList].filter(c => c.startsWith('play-')))).toEqual([]);
+  await page.waitForTimeout(300);
+  expect(await figureLines(page)).toBe(still);
 });
 
-test('キリン: 夜は眠そうで Zzz が出る。昼は出ない', async ({ page }) => {
-  await open(page, '/', { now: new Date('2026-11-12T22:30:00+09:00') });
+test('棒人間: 夜は座って眠っていて Zzz が出る', async ({ page }) => {
+  await open(page, '/', { now: new Date('2026-11-12T22:30:00+09:00'), motion: true });
   await closeAll(page);
   await expect(page.locator('#home-mascot')).toHaveClass(/night/);
   await expect(page.locator('#home-mascot-zzz')).toBeVisible();
+  await expect.poll(async () => Number(await page.locator('#mf-head').getAttribute('cy'))).toBeGreaterThan(32); // 座っているので、頭が低い
   await page.locator('#home-mascot-btn').click();
   await expect(page.locator('#home-mascot-text')).toContainText(/ふあぁ|むにゃ|zzz/);
 });
 
-test('キリン: 昼は Zzz も王冠も出ない（記録の連続が7日に満たない）', async ({ page }) => {
+test('棒人間: 昼は立っていて、Zzz も王冠も出ない（記録の連続が7日に満たない）', async ({ page }) => {
   await open(page);
   await closeAll(page);
   await expect(page.locator('#home-mascot')).not.toHaveClass(/night/);
   await expect(page.locator('#home-mascot-zzz')).toBeHidden();
   await expect(page.locator('#home-mascot-crown')).toBeHidden();
+  expect(Number(await page.locator('#mf-head').getAttribute('cy'))).toBeLessThan(28); // 立っているので、頭が高い
 });
 
-test('キリン: 記録を足すと、コインが跳ねてお祝いする（直したり消したりでは出ない）', async ({ page }) => {
-  await open(page);
+test('棒人間: 記録を足すと、コインが跳ねて万歳でお祝いする（直したり消したりでは出ない）', async ({ page }) => {
+  await open(page, '/', { motion: true });
   await closeAll(page);
   await expect(page.locator('#home-mascot-coins .mascot-coin')).toHaveCount(0);
   await page.locator('#home-add-ledger').click();
@@ -736,6 +752,6 @@ test('キリン: 記録を足すと、コインが跳ねてお祝いする（直
   await expect(page.locator('#ldg-mbg')).not.toHaveClass(/open/);
   await expect(page.locator('#home-mascot-coins .mascot-coin').first()).toBeAttached();
   await expect(page.locator('#home-mascot-text')).toContainText(/記録|ナイス|コツコツ|その調子/);
-  await expect(page.locator('#home-mascot-btn')).toHaveClass(/play-hop/);
+  await expect(page.locator('#home-mascot-btn')).toHaveClass(/play-banzai/);
   await expect(page.locator('#home-mascot-coins .mascot-coin')).toHaveCount(0, { timeout: 5000 }); // 跳ね終わると消える
 });

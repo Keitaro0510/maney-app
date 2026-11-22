@@ -1,30 +1,51 @@
 <div id="sec-home" class="sec active">
 <div class="page-title">ホーム</div>
 <!-- いちばん大事な数字（D11・D22）: この先90日の残高の最低点（使えるお金）。足りないときはマイナスのまま。数えるのは src/money.ts -->
-<!-- マスコットのキリン（D33）。表情とセリフは src/mascot.ts。絵は img/（公開するときにそのままコピー）。src は JS で入れる（Vite が名前を書き換えないように） -->
+<!-- マスコットの棒人間（D33・D42）。表情（姿勢）とセリフは src/mascot.ts、骨組みと動きは src/mascot-rig.ts。絵は SVG で、動かすのは src/mascot-motion.ts -->
 <div class="mascot" id="home-mascot">
-<!-- 動き（D41。src/mascot-motion.ts）: つつくと「ぽよん」・ときどき小ワザ・記録でコインのお祝い・夜は Zzz・記録が7日続くと王冠。ボタンが動き、中の .mascot-bob がゆっくり揺れる -->
+<!-- 動き（D41・D42）: 呼吸・つつくと反応・ときどき小ワザ・記録でコインのお祝い・夜は座って眠る（Zzz）・記録が7日続くと王冠。小物は着せ替え -->
 <div class="mascot-stage">
-<button type="button" class="mascot-btn" id="home-mascot-btn" aria-label="キリンをつつく">
-<span class="mascot-bob">
-<img class="mascot-img" id="home-mascot-img" alt="" width="64" height="70" src="img/giraffe-happy.webp" data-mood="happy">
-<span class="mascot-crown" id="home-mascot-crown" aria-hidden="true" hidden="">
-<svg viewBox="0 0 32 22" width="100%" height="auto">
-<path d="M3 20 1.5 6 9 12.5 16 2.5l7 10L30.5 6 29 20Z" fill="#F5B82E" stroke="#C98A12" stroke-width="1.6" stroke-linejoin="round">
+<button type="button" class="mascot-btn" id="home-mascot-btn" aria-label="棒人間をつつく">
+<svg class="mascot-fig" viewBox="0 0 64 70" width="64" height="70" aria-hidden="true" focusable="false">
+<ellipse id="mf-shadow" cx="32.84" cy="66.8" rx="11" ry="2.2" style="opacity: 0.14;">
+</ellipse>
+<g id="mf-body" transform="translate(32.84 0) scale(1 1) translate(-32.84 0)">
+<path id="mf-lines" class="mf-line" d="M32.84 43.25L32.32 28.26L32.16 26.26M32.32 28.26L26.97 35.49L20.23 41.46M32.32 28.26L38.16 35.1L45.29 40.58M32.84 43.25L31.49 54.67L29.54 66M32.84 43.25L34.79 54.58L36.14 66">
 </path>
-<circle cx="1.5" cy="5.5" r="2" fill="#E5533D">
+<path id="mf-top" class="mf-top" hidden="">
+</path>
+<circle id="mf-shoe-l" class="mf-shoe" r="3" hidden="">
 </circle>
-<circle cx="16" cy="2.5" r="2.2" fill="#E5533D">
+<circle id="mf-shoe-r" class="mf-shoe" r="3" hidden="">
 </circle>
-<circle cx="30.5" cy="5.5" r="2" fill="#E5533D">
+<circle id="mf-head" class="mf-line" r="6.5" cx="31.67" cy="19.78">
 </circle>
+<g id="mf-neck-grp" transform="translate(32.32 28.26) rotate(-2)">
+<g id="mf-neck-acc">
+</g>
+</g>
+<g id="mf-head-grp" transform="translate(31.67 19.78) rotate(-4.33)">
+<g id="mf-head-acc">
+</g>
+<g id="home-mascot-crown" hidden="" transform="translate(0 0)">
+<g transform="translate(-9 -17.4) scale(.56)">
+<path d="M3 20 1.5 6 9 12.5 16 2.5l7 10L30.5 6 29 20Z" fill="#F5B82E" stroke="#C98A12" stroke-width="1.8" stroke-linejoin="round">
+</path>
+<circle cx="1.5" cy="5.5" r="2.2" fill="#E5533D">
+</circle>
+<circle cx="16" cy="2.5" r="2.4" fill="#E5533D">
+</circle>
+<circle cx="30.5" cy="5.5" r="2.2" fill="#E5533D">
+</circle>
+</g>
+</g>
+</g>
+</g>
 </svg>
-</span>
 <span class="mascot-zzz" id="home-mascot-zzz" aria-hidden="true" hidden="">
 <i>z</i>
 <i>z</i>
 <i>Z</i>
-</span>
 </span>
 </button>
 <div class="mascot-coins" id="home-mascot-coins" aria-hidden="true">
