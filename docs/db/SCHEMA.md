@@ -4,7 +4,7 @@ Supabase（PostgreSQL）のリレーショナルデータベース。2026-10-29 
 
 古い `fixed_incomes` 表は、空になったのを確かめて 2026-11-01 に消した（`20261101013510_drop_fixed_incomes.sql`。行の履歴にも写しにも、固定収入の行は残っていなかった）。1行だけ戻す操作（`put_row`）は、`fixed_incomes` の行を渡されたら `fixed_costs` の収入に変える部分を残している。
 
-2026-11-05 に、姉妹アプリ [gymapp](https://github.com/Keitaro0510/gymapp)（筋トレの記録）のためのテーブル `gym_exercises`・`gym_workouts`・`gym_sets` を、同じ Supabase プロジェクトに足した（D23。`20261105140000_gym_tables.sql`）。名前は `gym_` で始める。maney-app の画面はまだ読まない（あとで連携する）。
+2026-11-05 に、姉妹アプリ [gymapp](https://github.com/Keitaro0510/gymapp)（筋トレの記録）のためのテーブル `gym_exercises`・`gym_workouts`・`gym_sets` を、同じ Supabase プロジェクトに足した（D23。`20261105140000_gym_tables.sql`）。名前は `gym_` で始める。maney-app の画面は読まない（画面の連携は 2026-11-24 にやめた。D43）。
 
 - 定義はすべて [`supabase/migrations/`](../../supabase/migrations/) にある。テストは [`supabase/tests/`](../../supabase/tests/)
 - どのテーブルにも `id`（uuid）・`user_id`（`auth.users` を指す）・`created_at`・`updated_at`（サーバーの時刻）がある。一覧のテーブルには並び順の `position` もある（下の図では省いた）
